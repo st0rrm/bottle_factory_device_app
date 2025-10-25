@@ -1,0 +1,104 @@
+/* src/screens/HomeScreen.css */
+
+/*
+**🌟 수정된 부분:**
+1. 홈 컨테이너에 배경 이미지와 설정을 추가했습니다.
+2. 버튼 색상을 공유해 주신 팔레트로 변경했습니다.
+*/
+
+:root {
+    /* 공유해 주신 색상을 CSS 변수로 정의합니다. */
+    --color-dark-green: #478A81; /* 앞 언덕 색상 */
+    --color-light-green: #7DBA98; /* 중간 언덕 색상 (주요 버튼에 사용) */
+    --color-background: #E2E2E2; /* 하늘/밝은 배경색 */
+}
+
+.home-container {
+    width: 834px;      /* 🚨 가로 크기 고정 */
+    height: 1194px;    /* 🚨 세로 크기 고정 */
+    
+    /* 💡 Step 2: 배경 이미지 설정 */
+    background-image: url('../../assets/images/Background.jpg'); 
+    background-size: 100% 100%; /* 컨테이너 크기에 꽉 맞춥니다. */
+    background-position: center; 
+    background-repeat: no-repeat;
+    background-color: var(--color-background); 
+    
+    /* 💡 Step 3: 내부 콘텐츠 배치 기준 설정 */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 내부 콘텐츠는 왼쪽 상단 기준 */
+    position: relative; /* 내부 absolute 요소의 기준점 */
+    
+    /* 브라우저 중앙에 고정 배치 */
+    margin: 0 auto; 
+    
+    /* padding이나 min-height는 이 컨테이너에서는 제거합니다. */
+    /* padding: 0; */
+    /* min-height: initial; */ 
+    box-sizing: border-box;
+}
+
+.tree-area {
+    /* 기존 나무 이미지를 배경으로 사용하기 때문에, 이 영역은 비어 있거나 */
+    /* 중앙의 나무 이미지와 텍스트 등의 콘텐츠를 담을 수 있습니다. */
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 30px 0;
+}
+.button-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-top: 20px;
+}
+
+/* 🌟 새로 추가: 대여/반납 버튼 그룹을 위한 스타일 🌟 */
+.main-action-group {
+    display: flex;
+    /* 그룹이 차지할 공간을 최대한 확보합니다 (flex-grow: 1 유지) */
+    flex-grow: 1; 
+    margin-right: 10px; /* 기존 main-action-button의 오른쪽 마진을 이 그룹에 적용 */
+}
+
+/* 🌟 기존 .main-action-button을 대체하는 공통 버튼 스타일 🌟 */
+.action-button {
+    background-color: var(--color-light-green); /* 중간 연두색 */
+    color: white;
+    padding: 15px 10px; /* 좌우 패딩을 줄여서 두 버튼이 들어갈 공간 확보 */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    
+    /* 두 버튼이 공간을 균등하게 차지하도록 설정 */
+    flex-grow: 1; 
+}
+
+/* 🌟 중요: 두 버튼 사이에 간격(띄움) 추가 🌟 */
+.borrow-button {
+    /* 오른쪽(반납 버튼 쪽)에 간격을 줍니다. */
+    margin-right: 10px; 
+}
+
+/* .return-button은 별도 마진 없이 왼쪽 버튼과 붙어 있지 않도록 유지 */
+/* .return-button { ... } */
+
+/* 도움말 버튼 스타일은 그대로 유지 */
+.help-button {
+    background-color: var(--color-dark-green); 
+    color: white;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    width: 120px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+}

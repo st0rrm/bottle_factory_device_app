@@ -1,0 +1,158 @@
+/* src/components/VerificationModal.css */
+
+/* 배경 오버레이: 배경화면 위에 띄웁니다. */
+.modal-overlay {
+    position: fixed; /* 뷰포트에 고정 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* 어두운 투명 배경 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* 다른 모든 요소 위에 표시 */
+}
+
+/* 모달 본체: 전화번호/QR 입력 창 */
+.modal-content {
+    /* 이전에 사용한 배경 색상과 유사하게 설정 */
+    background-color: #F8F8F8; 
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%; /* 화면 너비에 맞게 */
+    max-width: 450px; /* 데스크탑 등 큰 화면에서 너무 커지지 않도록 */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 1. 모드 전환 버튼 그룹 */
+.mode-toggle-group {
+    display: flex;
+    width: 100%;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #E0E0E0;
+}
+
+.mode-btn {
+    flex-grow: 1;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #A0A0A0;
+    cursor: pointer;
+    transition: color 0.3s, border-bottom 0.3s;
+}
+
+.mode-btn.active {
+    color: var(--color-dark-green); /* 활성화된 버튼 색상 */
+    border-bottom: 3px solid var(--color-dark-green);
+}
+
+/* 2. 모드 콘텐츠 영역 */
+.mode-content-area {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 안내 문구 */
+.instruction-text {
+    font-size: 1em;
+    color: #555;
+    margin: 10px 0 20px 0;
+    text-align: center;
+}
+
+/* 전화번호 입력 디스플레이 */
+.input-display {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #E0E0E0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 2em;
+    font-weight: 300;
+    color: #333;
+}
+.input-display .placeholder {
+    margin: 0;
+}
+
+
+/* 키패드 그리드 */
+.keypad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 300px; /* 키패드 너비 제한 */
+    margin-top: 10px;
+}
+
+.keypad-btn {
+    padding: 20px 0;
+    font-size: 1.5em;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    background-color: #EAEAEA;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.keypad-btn:active {
+    background-color: #DCDCDC;
+}
+
+/* 특수 버튼 스타일 (지우기, 확인) */
+.keypad-btn:nth-child(10), /* 지우기 */
+.keypad-btn:nth-child(12)  /* 확인 */ {
+    font-size: 1em;
+    background-color: var(--color-light-green); 
+    color: white;
+}
+.keypad-btn:nth-child(10):active,
+.keypad-btn:nth-child(12):active {
+    background-color: #6aaa85; /* 눌렀을 때 색상 변화 */
+}
+
+/* QR 코드 모드 스타일 */
+.qr-image-container {
+    width: 100%;
+    max-width: 200px;
+    height: 200px;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    border: 1px solid #E0E0E0;
+}
+
+.qr-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* 이미지 비율 유지 */
+}
+
+.usage-guide {
+    width: 100%;
+    text-align: left;
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 10px;
+}
+.usage-guide ul {
+    padding-left: 20px;
+    margin-top: 5px;
+}
