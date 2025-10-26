@@ -49,56 +49,78 @@
     width: 100%;
     margin: 30px 0;
 }
+
+
 .button-area {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
     padding-top: 20px;
+    position: absolute;
+    top: 983px; /* 원하는 위치 지정 */
+    left: 78px; /* 원하는 위치 지정 */
 }
 
 /* 🌟 새로 추가: 대여/반납 버튼 그룹을 위한 스타일 🌟 */
 .main-action-group {
     display: flex;
     /* 그룹이 차지할 공간을 최대한 확보합니다 (flex-grow: 1 유지) */
-    flex-grow: 1; 
-    margin-right: 10px; /* 기존 main-action-button의 오른쪽 마진을 이 그룹에 적용 */
-}
-
-/* 🌟 기존 .main-action-button을 대체하는 공통 버튼 스타일 🌟 */
-.action-button {
-    background-color: var(--color-light-green); /* 중간 연두색 */
-    color: white;
-    padding: 15px 10px; /* 좌우 패딩을 줄여서 두 버튼이 들어갈 공간 확보 */
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1.1em;
-    font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    flex-grow: 0; 
+    margin-right: 20px;
     
-    /* 두 버튼이 공간을 균등하게 차지하도록 설정 */
-    flex-grow: 1; 
 }
 
 /* 🌟 중요: 두 버튼 사이에 간격(띄움) 추가 🌟 */
 .borrow-button {
-    /* 오른쪽(반납 버튼 쪽)에 간격을 줍니다. */
-    margin-right: 10px; 
-}
-
-/* .return-button은 별도 마진 없이 왼쪽 버튼과 붙어 있지 않도록 유지 */
-/* .return-button { ... } */
-
-/* 도움말 버튼 스타일은 그대로 유지 */
-.help-button {
-    background-color: var(--color-dark-green); 
+    width: 276.5px;
+    height: 120px;
+    background-color: #4F7FC9;
     color: white;
-    padding: 15px 20px;
+    margin-right: 15px; 
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 1em;
-    width: 120px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    font-family: 'Pretendard_Bold';
+    font-size: 42px;
+}
+
+.return-button {
+    /* 오른쪽(반납 버튼 쪽)에 간격을 줍니다. */
+    width: 276.5px;
+    height: 120px;
+    background-color: #4AC295;
+    color: white; 
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    font-family: 'Pretendard_Bold';
+    font-size: 42px;
+}
+
+
+/* 도움말 버튼 스타일은 그대로 유지 */
+.help-button {
+    width: 90px; 
+    height: 119px; 
+    
+    /* 🚨 텍스트 관련 스타일 제거 🚨 */
+    /* font-size: 1em; 은 더 이상 필요 없음 */
+    color: transparent; /* 혹시 모를 텍스트 색상을 투명하게 */
+    
+    /* 🚨 flex-box 설정 제거 (더 이상 내부 텍스트를 정렬할 필요가 없으므로) 🚨 */
+    display: block; /* 또는 inline-block */
+    
+    background-image: url('../../assets/images/help.svg');
+    background-size: 100% 100%; /* 이미지가 버튼 크기에 꽉 맞도록 */
+    background-repeat: no-repeat; /* 이미지가 반복되지 않도록 */
+    background-position: center; /* 이미지가 중앙에 오도록 */
+    background-color: transparent; /* 배경색이 있다면 투명하게 */
+    
+    border: none;
+    border-radius: 0;
+    box-shadow: none; 
+    cursor: pointer;
 }

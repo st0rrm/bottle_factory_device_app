@@ -1,0 +1,19 @@
+/* src/components/TreeImage.css */
+
+.tree-wrapper {
+  text-align: center;
+}
+
+.tree-image {
+  width: 80%; /* 컨테이너에 맞춰 크기 조정 */
+  max-width: 300px;
+  height: auto;
+  /* 애니메이션 효과를 위해 CSS transition을 추가할 수 있습니다. */
+}
+
+.stage-info {
+  margin-top: 15px;
+  font-size: 0.9em;
+  color: #4CAF50;
+  font-weight: bold;
+}

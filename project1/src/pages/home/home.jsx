@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import './home.css';
-import VerificationModal from '../../components/VerificationModal';
-import StatDisplay from '../../components/StatDisplay';
-import TreeImage from '../../components/TreeImage';
+import VerificationModal from '../identification/VerificationModal';
+import StatDisplay from './components/StatDisplay';
+import TreeImage from './components/TreeImage';
 
 
 function HomeScreen() {
@@ -19,7 +19,7 @@ function HomeScreen() {
   // 대여 버튼 핸들러 모달 열기
   const handleBorrowCupAction = () => {
     // console.log('리턴미컵 대여 버튼 클릭됨. 로직 처리 필요');
-    setIsModalOpen(true); // 🌟 모달 열기 🌟
+    setIsModalOpen(true); // 🌟 모달 열기 / identification으로 넘어감
   };
   
   const handleReturnCupAction = () => { // 🌟 반납 기능 분리 🌟
@@ -47,18 +47,18 @@ function HomeScreen() {
           <div className="main-action-group">
               {/* 대여 버튼 (왼쪽) */}
               <button
-                className="action-button borrow-button" // 클래스 이름 변경
+                className="borrow-button" // 클래스 이름 변경
                 onClick={handleBorrowCupAction}
               >
-                리턴미컵 대여
+                대여
               </button>
 
               {/* 반납 버튼 (오른쪽) */}
               <button
-                className="action-button return-button" // 클래스 이름 변경
+                className="return-button" // 클래스 이름 변경
                 onClick={handleReturnCupAction}
               >
-                리턴미컵 반납
+                반납
               </button>
           </div>
 
@@ -67,7 +67,6 @@ function HomeScreen() {
             className="help-button"
             onClick={handleHelpAction}
           >
-            도움말
           </button>
       </div>
       {/* 🌟 4. 모달 조건부 렌더링 🌟 */}
