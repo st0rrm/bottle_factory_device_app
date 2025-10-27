@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './home.css';
-import VerificationModal from '../identification/VerificationModal';
+import VerificationModal from '../../components/VerificationModal';
 import StatDisplay from './components/StatDisplay';
 import TreeImage from './components/TreeImage';
 
