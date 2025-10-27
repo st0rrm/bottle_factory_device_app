@@ -1,128 +1,524 @@
-/* src/screens/HomeScreen.css */
-
-/*
-**🌟 수정된 부분:**
-1. 홈 컨테이너에 배경 이미지와 설정을 추가했습니다.
-2. 버튼 색상을 공유해 주신 팔레트로 변경했습니다.
-*/
-
-:root {
-    /* 공유해 주신 색상을 CSS 변수로 정의합니다. */
-    --color-dark-green: #478A81; /* 앞 언덕 색상 */
-    --color-light-green: #7DBA98; /* 중간 언덕 색상 (주요 버튼에 사용) */
-    --color-background: #E2E2E2; /* 하늘/밝은 배경색 */
-}
-
+/* Home Container */
 .home-container {
-    width: 834px;      /* 🚨 가로 크기 고정 */
-    height: 1194px;    /* 🚨 세로 크기 고정 */
-    
-    /* 💡 Step 2: 배경 이미지 설정 */
-    background-image: url('../../assets/images/Background.jpg'); 
-    background-size: 100% 100%; /* 컨테이너 크기에 꽉 맞춥니다. */
-    background-position: center; 
-    background-repeat: no-repeat;
-    background-color: var(--color-background); 
-    
-    /* 💡 Step 3: 내부 콘텐츠 배치 기준 설정 */
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* 내부 콘텐츠는 왼쪽 상단 기준 */
-    position: relative; /* 내부 absolute 요소의 기준점 */
-    
-    /* 브라우저 중앙에 고정 배치 */
-    margin: 0 auto; 
-    
-    /* padding이나 min-height는 이 컨테이너에서는 제거합니다. */
-    /* padding: 0; */
-    /* min-height: initial; */ 
-    box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  background-color: #e2e2e2;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Pretendard', sans-serif;
 }
 
-.tree-area {
-    /* 기존 나무 이미지를 배경으로 사용하기 때문에, 이 영역은 비어 있거나 */
-    /* 중앙의 나무 이미지와 텍스트 등의 콘텐츠를 담을 수 있습니다. */
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    margin: 30px 0;
+/* Header Section */
+.header-section {
+  padding: 2.5rem 1.5rem;
 }
 
-
-.button-area {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    width: 100%;
-    padding-top: 20px;
-    position: absolute;
-    top: 983px; /* 원하는 위치 지정 */
-    left: 78px; /* 원하는 위치 지정 */
+.cafe-name {
+  font-size: 2rem;
+  font-weight: var(--pretendard-bold);
+  color: #000000;
+  margin-bottom: 0.75rem;
 }
 
-/* 🌟 새로 추가: 대여/반납 버튼 그룹을 위한 스타일 🌟 */
-.main-action-group {
-    display: flex;
-    /* 그룹이 차지할 공간을 최대한 확보합니다 (flex-grow: 1 유지) */
-    flex-grow: 0; 
-    margin-right: 20px;
-    
+.total-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-/* 🌟 중요: 두 버튼 사이에 간격(띄움) 추가 🌟 */
-.borrow-button {
-    width: 276.5px;
-    height: 120px;
-    background-color: #4F7FC9;
-    color: white;
-    margin-right: 15px; 
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
-    font-family: 'Pretendard';
-    font-weight: var(--pretendard-bold);
-    font-size: 42px;
+.droplet-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #497fc6;
+}
+
+.count-number {
+  font-size: 2.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #497fc6;
+}
+
+.sub-stats {
+  font-size: 1.125rem;
+  color: #8798a1;
+}
+
+.stat-value {
+  font-weight: var(--pretendard-semibold);
+}
+
+/* Tree Section */
+.tree-section {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-container {
+  position: relative;
+  z-index: 10;
+  margin-bottom: 10rem;
+}
+
+.tree-foliage {
+  position: relative;
+  width: 7rem;
+  height: 7rem;
+  margin-bottom: 0.5rem;
+}
+
+.foliage-circle {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.foliage-top {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3.5rem;
+  height: 3.5rem;
+  background-color: #4ac295;
+}
+
+.foliage-left {
+  top: 0.75rem;
+  left: 0.25rem;
+  width: 3rem;
+  height: 3rem;
+  background-color: #478a81;
+}
+
+.foliage-right {
+  top: 0.75rem;
+  right: 0.25rem;
+  width: 3rem;
+  height: 3rem;
+  background-color: #4ac295;
+  opacity: 0.9;
+}
+
+.foliage-center {
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: #478a81;
+}
+
+.tree-trunk {
+  width: 0.75rem;
+  height: 5rem;
+  background-color: #000000;
+  margin: 0 auto;
+  border-radius: 0.125rem;
+}
+
+/* Hills Background */
+.hills-background {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20rem;
+  overflow: hidden;
+}
+
+.hill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.hill svg {
+  width: 100%;
+  display: block;
+}
+
+/* Action Bar */
+.action-bar {
+  position: relative;
+  background-color: #478a81;
+  padding: 1.25rem 1rem 1.5rem;
+}
+
+.action-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.brand-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+}
+
+.clock-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.brand-name {
+  font-size: 1.125rem;
+  font-weight: var(--pretendard-semibold);
+}
+
+.divider-line {
+  flex: 1;
+  margin: 0 0.75rem;
+  border-top: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.reward-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: white;
+}
+
+.droplet-icon-small {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.reward-value {
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+}
+
+/* Button Group */
+.button-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.action-button {
+  flex: 1;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.rent-button {
+  background-color: #44748a;
+}
+
+.rent-button:hover {
+  background-color: #497fc6;
 }
 
 .return-button {
-    /* 오른쪽(반납 버튼 쪽)에 간격을 줍니다. */
-    width: 276.5px;
-    height: 120px;
-    background-color: #4AC295;
-    color: white; 
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
-    font-family: 'Pretendard';
-    font-weight: var(--pretendard-bold);
-    font-size: 42px;
+  background-color: #4ac295;
 }
 
+.return-button:hover {
+  background-color: #478a81;
+}
 
-/* 도움말 버튼 스타일은 그대로 유지 */
-.help-button {
-    width: 90px; 
-    height: 119px; 
-    
-    /* 🚨 텍스트 관련 스타일 제거 🚨 */
-    /* font-size: 1em; 은 더 이상 필요 없음 */
-    color: transparent; /* 혹시 모를 텍스트 색상을 투명하게 */
-    
-    /* 🚨 flex-box 설정 제거 (더 이상 내부 텍스트를 정렬할 필요가 없으므로) 🚨 */
-    display: block; /* 또는 inline-block */
-    
-    background-image: url('../../assets/images/help.svg');
-    background-size: 100% 100%; /* 이미지가 버튼 크기에 꽉 맞도록 */
-    background-repeat: no-repeat; /* 이미지가 반복되지 않도록 */
-    background-position: center; /* 이미지가 중앙에 오도록 */
-    background-color: transparent; /* 배경색이 있다면 투명하게 */
-    
-    border: none;
-    border-radius: 0;
-    box-shadow: none; 
-    cursor: pointer;
+/* Help Section */
+.help-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.bird-container {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  background-color: #6e88a9;
+  border-radius: 1rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.bird {
+  position: relative;
+}
+
+.bird-body {
+  width: 3.5rem;
+  height: 4rem;
+  background-color: #f8f8f8;
+  border-radius: 50%;
+}
+
+.bird-head {
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3rem;
+  height: 3rem;
+  background-color: #6e88a9;
+  border-radius: 50%;
+}
+
+.bird-beak {
+  position: absolute;
+  top: 0.5rem;
+  left: -0.5rem;
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 10px solid #deb044;
+}
+
+.bird-eye {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  width: 0.375rem;
+  height: 0.25rem;
+  background-color: #000000;
+  border-radius: 50%;
+}
+
+.bird-cheek {
+  position: absolute;
+  top: 1.25rem;
+  left: 0.5rem;
+  width: 0.625rem;
+  height: 0.375rem;
+  background-color: #deb044;
+  border-radius: 50%;
+  opacity: 0.4;
+}
+
+.speech-bubble {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #6e88a9;
+  font-size: 0.875rem;
+  font-weight: var(--pretendard-bold);
+}
+
+.help-text {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: white;
+  font-size: 0.75rem;
+}
+
+.help-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .header-section {
+    padding: 3rem 2rem;
+  }
+
+  .cafe-name {
+    font-size: 2.5rem;
+  }
+
+  .droplet-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .count-number {
+    font-size: 3rem;
+  }
+
+  .sub-stats {
+    font-size: 1.25rem;
+  }
+
+  .tree-foliage {
+    width: 8rem;
+    height: 8rem;
+  }
+
+  .foliage-top {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .foliage-left,
+  .foliage-right {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .foliage-center {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .tree-trunk {
+    width: 1rem;
+    height: 6rem;
+  }
+
+  .hills-background {
+    height: 24rem;
+  }
+
+  .action-bar {
+    padding: 1.5rem 1.5rem 2rem;
+  }
+
+  .action-bar-header {
+    margin-bottom: 1rem;
+  }
+
+  .clock-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .brand-name {
+    font-size: 1.25rem;
+  }
+
+  .droplet-icon-small {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .reward-value {
+    font-size: 1.5rem;
+  }
+
+  .button-group {
+    gap: 1rem;
+  }
+
+  .action-button {
+    font-size: 1.875rem;
+    padding: 1.5rem;
+  }
+
+  .bird-container {
+    width: 6rem;
+    height: 6rem;
+  }
+
+  .help-text {
+    font-size: 0.875rem;
+  }
+
+  .help-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header-section {
+    padding: 3.5rem 2.5rem;
+  }
+
+  .cafe-name {
+    font-size: 3rem;
+  }
+
+  .droplet-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .count-number {
+    font-size: 3.75rem;
+  }
+
+  .sub-stats {
+    font-size: 1.5rem;
+  }
+
+  .tree-foliage {
+    width: 10rem;
+    height: 10rem;
+  }
+
+  .foliage-top {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .foliage-left,
+  .foliage-right {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .foliage-center {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .tree-trunk {
+    width: 1.25rem;
+    height: 7rem;
+  }
+
+  .hills-background {
+    height: 28rem;
+  }
+
+  .action-bar {
+    padding: 2rem 2rem 2.5rem;
+  }
+
+  .clock-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .brand-name {
+    font-size: 1.5rem;
+  }
+
+  .droplet-icon-small {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .reward-value {
+    font-size: 1.75rem;
+  }
+
+  .action-button {
+    font-size: 2.25rem;
+    padding: 1.75rem;
+  }
+
+  .bird-container {
+    width: 7rem;
+    height: 7rem;
+    border-radius: 1.5rem;
+  }
 }

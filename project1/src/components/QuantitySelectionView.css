@@ -1,0 +1,310 @@
+/* Quantity Selection View Container */
+.quantity-selection-view {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Title Section */
+.quantity-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.quantity-heading {
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+  margin-bottom: 0.5rem;
+}
+
+.quantity-subheading {
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+}
+
+/* Cup Illustration */
+.cup-illustration {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.cup-container {
+  position: relative;
+}
+
+.cup-body {
+  width: 8rem;
+  height: 10rem;
+  background: linear-gradient(to bottom, #f8f8f8, #e2e2e2);
+  border-radius: 0 0 1.5rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.cup-label {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  color: #9c9c9c;
+  font-size: 0.75rem;
+  font-weight: var(--pretendard-medium);
+}
+
+.cup-shine {
+  position: absolute;
+  left: 1.5rem;
+  top: 2rem;
+  width: 0.5rem;
+  height: 4rem;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+}
+
+.cup-lid-top {
+  position: absolute;
+  top: -1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9rem;
+  height: 2rem;
+  background-color: #0c2950;
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.cup-lid-bottom {
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8rem;
+  height: 1rem;
+  background-color: #0c2950;
+}
+
+/* Voucher Info */
+.voucher-info {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.voucher-text {
+  font-size: 1rem;
+  color: #44748a;
+}
+
+.voucher-count {
+  font-weight: var(--pretendard-bold);
+  font-size: 1.25rem;
+}
+
+/* Quantity Selector */
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.quantity-button {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+  border: none;
+  cursor: pointer;
+}
+
+.quantity-button-minus {
+  background-color: #9c9c9c;
+  color: white;
+}
+
+.quantity-button-minus:hover {
+  background-color: #8798a1;
+}
+
+.quantity-button-plus {
+  background-color: #478a81;
+  color: white;
+}
+
+.quantity-button-plus:hover {
+  background-color: #44748a;
+}
+
+.quantity-button-disabled {
+  background-color: #d4d4d4;
+  color: #9c9c9c;
+  cursor: not-allowed;
+}
+
+.quantity-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.quantity-display {
+  font-size: 3rem;
+  font-weight: var(--pretendard-bold);
+  color: #0c2950;
+  min-width: 5rem;
+  text-align: center;
+}
+
+/* Information Text */
+.quantity-info {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+}
+
+.info-text {
+  font-size: 0.875rem;
+  color: #8798a1;
+  line-height: 1.5;
+}
+
+.info-link {
+  color: #497fc6;
+  text-decoration: underline;
+  font-weight: var(--pretendard-medium);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.info-link:hover {
+  color: #44748a;
+}
+
+/* Confirm Button */
+.quantity-confirm-button {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  background-color: #478a81;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.quantity-confirm-button:hover {
+  background-color: #44748a;
+}
+
+/* Placeholder for modal */
+.download-modal-placeholder {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .quantity-title {
+    margin-bottom: 2rem;
+  }
+
+  .quantity-heading,
+  .quantity-subheading {
+    font-size: 1.5rem;
+  }
+
+  .cup-illustration {
+    margin-bottom: 2rem;
+  }
+
+  .cup-body {
+    width: 10rem;
+    height: 12rem;
+  }
+
+  .cup-label {
+    font-size: 0.875rem;
+  }
+
+  .cup-lid-top {
+    width: 11rem;
+    height: 2.5rem;
+  }
+
+  .cup-lid-bottom {
+    width: 10rem;
+    height: 1.25rem;
+  }
+
+  .voucher-info {
+    margin-bottom: 2rem;
+  }
+
+  .voucher-text {
+    font-size: 1.125rem;
+  }
+
+  .voucher-count {
+    font-size: 1.5rem;
+  }
+
+  .quantity-selector {
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .quantity-button {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .quantity-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .quantity-display {
+    font-size: 3.75rem;
+  }
+
+  .quantity-info {
+    margin-bottom: 2rem;
+  }
+
+  .info-text {
+    font-size: 1rem;
+  }
+
+  .quantity-confirm-button {
+    padding: 1.25rem;
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .quantity-heading,
+  .quantity-subheading {
+    font-size: 1.875rem;
+  }
+
+  .quantity-display {
+    font-size: 4.5rem;
+  }
+}

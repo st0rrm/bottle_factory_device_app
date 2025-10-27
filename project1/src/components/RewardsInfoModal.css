@@ -1,0 +1,365 @@
+/* Rewards Info Modal - Overlay Wrapper */
+.rewards-modal-overlay-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Dimmed Background */
+.rewards-modal-background {
+  position: absolute;
+  inset: 0;
+  background-color: #e2e2e2;
+  opacity: 0.8;
+}
+
+/* Modal Content Container */
+.rewards-modal-content-container {
+  position: relative;
+  width: 85%;
+  max-width: 1600px;
+  height: 95%;
+  background-color: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rewards-modal-content-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rewards-modal-content-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rewards-modal-content-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.rewards-modal-content-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.rewards-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.rewards-modal-title {
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+}
+
+.rewards-close-button {
+  color: #9c9c9c;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.rewards-close-button:hover {
+  color: #44748a;
+}
+
+.rewards-close-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* Page Content */
+.rewards-page-content {
+  min-height: 25rem;
+}
+
+.rewards-page-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Description Text */
+.rewards-description-text {
+  font-size: 1rem;
+  color: #44748a;
+  line-height: 1.625;
+}
+
+/* Bottle Badge */
+.bottle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #497fc6;
+  font-weight: var(--pretendard-bold);
+}
+
+.bottle-icon-inline {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Bottle Club Link */
+.bottle-club-link {
+  color: #497fc6;
+  font-weight: var(--pretendard-bold);
+  text-decoration: underline;
+}
+
+/* Illustration */
+.rewards-illustration-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.rewards-illustration-image {
+  width: 16rem;
+  height: 16rem;
+  object-fit: contain;
+}
+
+/* Rewards Grid */
+.rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+/* Reward Item */
+.reward-item {
+  background-color: #f8f8f8;
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reward-item-image {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  margin: 0 auto;
+}
+
+.reward-item-title {
+  font-weight: var(--pretendard-bold);
+  font-size: 0.875rem;
+  color: #0c2950;
+}
+
+.reward-item-points {
+  font-size: 0.75rem;
+  color: #497fc6;
+  font-weight: var(--pretendard-bold);
+}
+
+.reward-item-store {
+  font-size: 0.75rem;
+  color: #8798a1;
+}
+
+/* QR Code */
+.rewards-qr-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.rewards-qr-box {
+  width: 12rem;
+  height: 12rem;
+  background-color: white;
+  border: 4px solid #000000;
+  padding: 0.5rem;
+}
+
+.rewards-qr-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Download Text */
+.rewards-download-text {
+  font-size: 0.875rem;
+  color: #44748a;
+  line-height: 1.625;
+  text-align: center;
+}
+
+/* Navigation */
+.rewards-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.nav-button {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.nav-button-active {
+  background-color: #478a81;
+  color: white;
+}
+
+.nav-button-active:hover {
+  background-color: #44748a;
+}
+
+.nav-button-disabled {
+  background-color: #d4d4d4;
+  color: #9c9c9c;
+  cursor: not-allowed;
+}
+
+.nav-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.page-indicator {
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .rewards-modal-content-container {
+    padding: 2rem;
+  }
+
+  .rewards-modal-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .rewards-modal-title {
+    font-size: 1.875rem;
+  }
+
+  .rewards-close-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .rewards-page-content {
+    min-height: 31.25rem;
+  }
+
+  .rewards-page-section {
+    gap: 2rem;
+  }
+
+  .rewards-description-text {
+    font-size: 1.125rem;
+  }
+
+  .bottle-icon-inline {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .rewards-illustration-container {
+    padding: 3rem 0;
+  }
+
+  .rewards-illustration-image {
+    width: 20rem;
+    height: 20rem;
+  }
+
+  .rewards-grid {
+    gap: 1rem;
+  }
+
+  .reward-item-image {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .reward-item-title {
+    font-size: 1rem;
+  }
+
+  .reward-item-points {
+    font-size: 0.875rem;
+  }
+
+  .reward-item-store {
+    font-size: 0.875rem;
+  }
+
+  .rewards-qr-container {
+    padding: 3rem 0;
+  }
+
+  .rewards-qr-box {
+    width: 14rem;
+    height: 14rem;
+  }
+
+  .rewards-download-text {
+    font-size: 1rem;
+  }
+
+  .rewards-navigation {
+    gap: 3rem;
+    margin-top: 2.5rem;
+  }
+
+  .nav-button {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .nav-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .page-indicator {
+    font-size: 1.875rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .rewards-modal-content-container {
+    padding: 2.5rem;
+  }
+
+  .rewards-modal-title {
+    font-size: 2.25rem;
+  }
+
+  .rewards-description-text {
+    font-size: 1.25rem;
+  }
+}

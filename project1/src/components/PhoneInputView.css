@@ -1,0 +1,227 @@
+/* Return Phone View */
+.phone-input-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.phone-input-heading {
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.phone-input-subheading {
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #deb044;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.phone-input-notice {
+  font-size: 0.75rem;
+  color: #8798a1;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.notice-link {
+  color: #497fc6;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.phone-display-section {
+  width: 100%;
+  max-width: 28rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.phone-display {
+  text-align: center;
+  font-size: 2.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #8798a1;
+  padding: 1rem;
+  border-bottom: 2px solid #c7d2d7;
+  min-height: 5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+  margin-left: 0.25rem;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.number-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 28rem;
+  margin-bottom: 1.5rem;
+}
+
+.number-button {
+  aspect-ratio: 1;
+  font-size: 2.5rem;
+  font-weight: var(--pretendard-light);
+  color: #8798a1;
+  background-color: #f8f8f8;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.number-button:hover {
+  background-color: #e2e2e2;
+}
+
+.number-button-spacer {
+  aspect-ratio: 1;
+}
+
+.delete-button {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c7d2d7;
+  background: none;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.delete-button:hover {
+  background-color: #f8f8f8;
+}
+
+.delete-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.confirm-button {
+  width: 100%;
+  max-width: 28rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.confirm-button-active {
+  background-color: #44748a;
+  color: white;
+}
+
+.confirm-button-active:hover {
+  background-color: #497fc6;
+}
+
+.confirm-button-disabled {
+  background-color: #d9d9d9;
+  color: #9c9c9c;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .phone-input-heading {
+    font-size: 1.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .phone-input-subheading {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .phone-input-notice {
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+  }
+
+  .notice-link {
+    font-size: 0.875rem;
+  }
+
+  .phone-display-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .phone-display {
+    font-size: 3rem;
+    padding: 1.5rem;
+    min-height: 6.25rem;
+  }
+
+  .number-pad {
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .number-button {
+    font-size: 3rem;
+  }
+
+  .delete-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .confirm-button {
+    padding: 1.25rem;
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .phone-input-heading {
+    font-size: 2.25rem;
+  }
+
+  .phone-input-subheading {
+    font-size: 1.875rem;
+  }
+
+  .phone-display {
+    font-size: 3.75rem;
+  }
+
+  .number-button {
+    font-size: 4rem;
+  }
+
+  .number-pad {
+    gap: 1.5rem;
+  }
+}

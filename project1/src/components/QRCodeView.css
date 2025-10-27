@@ -1,0 +1,154 @@
+/* Return QR View */
+.qr-code-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-heading {
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.qr-subheading {
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #deb044;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.qr-scanner-box {
+  width: 12rem;
+  height: 12rem;
+  background-color: #000000;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-scanner-text {
+  color: white;
+  font-size: 0.875rem;
+}
+
+.qr-instructions {
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: #44748a;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.instruction-bullet {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: #c7d2d7;
+  margin-top: 0.5rem;
+  flex-shrink: 0;
+}
+
+.instruction-text {
+  font-size: 1rem;
+}
+
+.instruction-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pause-icon-container {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: #497fc6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pause-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid white;
+  border-radius: 0.125rem;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .qr-heading {
+    font-size: 1.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .qr-subheading {
+    font-size: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .qr-scanner-box {
+    width: 14rem;
+    height: 14rem;
+    margin-bottom: 3rem;
+  }
+
+  .qr-scanner-text {
+    font-size: 1rem;
+  }
+
+  .qr-instructions {
+    gap: 1rem;
+  }
+
+  .instruction-bullet {
+    width: 0.625rem;
+    height: 0.625rem;
+  }
+
+  .instruction-text {
+    font-size: 1.125rem;
+  }
+
+  .pause-icon-container {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .pause-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .qr-heading {
+    font-size: 2.25rem;
+  }
+
+  .qr-subheading {
+    font-size: 1.875rem;
+  }
+
+  .qr-scanner-box {
+    width: 16rem;
+    height: 16rem;
+  }
+
+  .instruction-text {
+    font-size: 1.25rem;
+  }
+}

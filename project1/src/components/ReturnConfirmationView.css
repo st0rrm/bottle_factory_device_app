@@ -1,0 +1,266 @@
+/* Return Confirmation View - Modal Overlay */
+.return-confirmation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(71, 138, 129, 0.8);
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Modal Container */
+.return-confirmation-modal {
+  width: 100%;
+  max-width: 42rem;
+  background-color: white;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Close Button */
+.return-confirmation-close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #9c9c9c;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.return-confirmation-close-button:hover {
+  color: #000000;
+}
+
+.return-close-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Content Container */
+.return-confirmation-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Heading */
+.return-confirmation-heading {
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+/* Cup with Quantity */
+.return-cup-quantity-display {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 4rem;
+}
+
+.return-confirmation-cup-svg {
+  width: 8rem;
+  height: 10rem;
+}
+
+.return-confirmation-quantity {
+  font-size: 3rem;
+  font-weight: var(--pretendard-bold);
+  color: #0c2950;
+}
+
+/* Reward Section */
+.return-reward-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.reward-label-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reward-label-text {
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+}
+
+.reward-help-button {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid #44748a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #44748a;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.reward-help-button:hover {
+  background-color: #f8f8f8;
+}
+
+.help-question-mark {
+  font-size: 0.875rem;
+  font-weight: var(--pretendard-bold);
+}
+
+.reward-value-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bottle-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.return-reward-value {
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #497fc6;
+}
+
+/* Action Buttons */
+.return-action-buttons {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  max-width: 28rem;
+}
+
+.return-cancel-button,
+.return-confirm-action-button {
+  flex: 1;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.return-cancel-button {
+  background-color: #e9edef;
+  color: #44748a;
+}
+
+.return-cancel-button:hover {
+  background-color: #d9d9d9;
+}
+
+.return-confirm-action-button {
+  background-color: #44748a;
+  color: white;
+}
+
+.return-confirm-action-button:hover {
+  background-color: #497fc6;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .return-confirmation-modal {
+    padding: 2rem;
+  }
+
+  .return-confirmation-close-button {
+    top: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .return-close-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .return-confirmation-heading {
+    font-size: 1.875rem;
+    margin-bottom: 4rem;
+  }
+
+  .return-cup-quantity-display {
+    gap: 2rem;
+    margin-bottom: 5rem;
+  }
+
+  .return-confirmation-cup-svg {
+    width: 10rem;
+    height: 12rem;
+  }
+
+  .return-confirmation-quantity {
+    font-size: 3.75rem;
+  }
+
+  .return-reward-section {
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .reward-label-text {
+    font-size: 1.5rem;
+  }
+
+  .reward-help-button {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .help-question-mark {
+    font-size: 1rem;
+  }
+
+  .bottle-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .return-reward-value {
+    font-size: 1.875rem;
+  }
+
+  .return-cancel-button,
+  .return-confirm-action-button {
+    padding: 1.25rem;
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .return-confirmation-modal {
+    max-width: 48rem;
+    padding: 2.5rem;
+  }
+
+  .return-confirmation-heading {
+    font-size: 2.25rem;
+  }
+
+  .return-confirmation-quantity {
+    font-size: 4.5rem;
+  }
+
+  .return-reward-value {
+    font-size: 2.25rem;
+  }
+}

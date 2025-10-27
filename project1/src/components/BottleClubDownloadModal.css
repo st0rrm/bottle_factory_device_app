@@ -1,0 +1,324 @@
+/* Bottle Club Download Modal - Overlay */
+.bottle-club-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(226, 226, 226, 0.9);
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Modal Container */
+.bottle-club-modal-container {
+  width: 85%;
+  max-width: 1600px;
+  height: 95%;
+  background-color: white;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bottle-club-modal-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bottle-club-modal-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bottle-club-modal-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.bottle-club-modal-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Close Button */
+.bottle-club-close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #9c9c9c;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s;
+  z-index: 10;
+}
+
+.bottle-club-close-button:hover {
+  color: #000000;
+}
+
+.bottle-club-close-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Title */
+.bottle-club-title {
+  font-size: 1.5rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+  margin-bottom: 2rem;
+}
+
+/* QR Code */
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.qr-code-box {
+  width: 12rem;
+  height: 12rem;
+  background-color: white;
+  border: 4px solid #000000;
+  padding: 0.5rem;
+}
+
+.qr-code-image {
+  width: 100%;
+  height: 100%;
+}
+
+/* Description Text */
+.bottle-club-description {
+  text-align: center;
+  font-size: 1rem;
+  color: #44748a;
+  line-height: 1.625;
+  margin-bottom: 3rem;
+  padding: 0 1rem;
+}
+
+/* Illustration */
+.bottle-club-illustration {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 2rem;
+}
+
+.illustration-container {
+  position: relative;
+  width: 12rem;
+  height: 12rem;
+}
+
+/* Sun Circle */
+.sun-circle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6rem;
+  height: 6rem;
+  background-color: #ff6b35;
+  border-radius: 50%;
+}
+
+/* Plant */
+.plant-svg-container {
+  position: absolute;
+  top: 2rem;
+  right: 3rem;
+}
+
+/* Books/Laptop */
+.books-container {
+  position: absolute;
+  bottom: 3rem;
+  right: 2rem;
+}
+
+.book-top {
+  width: 6rem;
+  height: 0.75rem;
+  background-color: #0c2950;
+  border-radius: 0.125rem;
+  margin-bottom: 0.25rem;
+}
+
+.book-bottom {
+  width: 6rem;
+  height: 2rem;
+  background-color: #44748a;
+  border-radius: 0.125rem;
+}
+
+/* Coffee Cup */
+.illustration-cup-container {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.illustration-cup-wrapper {
+  position: relative;
+}
+
+.illustration-cup-body {
+  width: 4rem;
+  height: 5rem;
+  background: linear-gradient(to bottom, #f8f8f8, #e2e2e2);
+  border-radius: 0 0 1rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.illustration-cup-label {
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  color: #9c9c9c;
+  font-size: 0.5rem;
+  font-weight: var(--pretendard-medium);
+}
+
+.illustration-cup-shine {
+  position: absolute;
+  left: 0.75rem;
+  top: 1rem;
+  width: 0.25rem;
+  height: 2rem;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+}
+
+.illustration-cup-lid-top {
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4.5rem;
+  height: 1rem;
+  background-color: #0c2950;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.illustration-cup-lid-bottom {
+  position: absolute;
+  top: -0.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4rem;
+  height: 0.5rem;
+  background-color: #0c2950;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .bottle-club-modal-container {
+    padding: 2rem;
+  }
+
+  .bottle-club-close-button {
+    top: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .bottle-club-close-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .bottle-club-title {
+    font-size: 1.875rem;
+    margin-bottom: 3rem;
+  }
+
+  .qr-code-container {
+    margin-bottom: 2.5rem;
+  }
+
+  .qr-code-box {
+    width: 14rem;
+    height: 14rem;
+  }
+
+  .bottle-club-description {
+    font-size: 1.125rem;
+    margin-bottom: 4rem;
+  }
+
+  .bottle-club-illustration {
+    padding-right: 3rem;
+  }
+
+  .illustration-container {
+    width: 14rem;
+    height: 14rem;
+  }
+
+  .sun-circle {
+    width: 7rem;
+    height: 7rem;
+  }
+
+  .plant-svg-container {
+    top: 2.5rem;
+    right: 3.5rem;
+  }
+
+  .books-container {
+    bottom: 3.5rem;
+    right: 2.5rem;
+  }
+
+  .book-top {
+    width: 7rem;
+    height: 1rem;
+  }
+
+  .book-bottom {
+    width: 7rem;
+    height: 2.5rem;
+  }
+
+  .illustration-cup-body {
+    width: 5rem;
+    height: 6rem;
+  }
+
+  .illustration-cup-label {
+    font-size: 0.625rem;
+  }
+
+  .illustration-cup-lid-top {
+    width: 5.5rem;
+    height: 1.25rem;
+  }
+
+  .illustration-cup-lid-bottom {
+    width: 5rem;
+    height: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bottle-club-modal-container {
+    max-width: 48rem;
+    padding: 2.5rem;
+  }
+
+  .bottle-club-title {
+    font-size: 2.25rem;
+  }
+
+  .bottle-club-description {
+    font-size: 1.25rem;
+  }
+}

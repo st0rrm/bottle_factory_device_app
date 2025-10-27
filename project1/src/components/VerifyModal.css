@@ -1,0 +1,181 @@
+/* Verify Modal - Overlay */
+.verify-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(71, 138, 129, 0.8);
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Modal Container */
+.verify-modal-container {
+  width: 85%;
+  max-width: 1600px;
+  height: 95%;
+  background-color: white;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.verify-modal-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.verify-modal-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.verify-modal-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.verify-modal-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Close Button */
+.verify-close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #9c9c9c;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s;
+  z-index: 10;
+}
+
+.verify-close-button:hover {
+  color: #000000;
+}
+
+.verify-close-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Tooltip */
+.verify-tooltip-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  padding-right: 12.5%;
+}
+
+.verify-tooltip-wrapper {
+  position: relative;
+}
+
+.verify-tooltip-bubble {
+  background-color: #deb044;
+  color: white;
+  padding: 0.375rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: var(--pretendard-medium);
+}
+
+.verify-tooltip-arrow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 100%;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #deb044;
+}
+
+/* Tabs Container */
+.verify-tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.verify-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s, border 0.3s;
+}
+
+.verify-tab-active {
+  background-color: white;
+  border: 2px solid #8798a1;
+  color: #000000;
+}
+
+.verify-tab-inactive {
+  background-color: #8798a1;
+  color: white;
+}
+
+.verify-tab-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .verify-modal-container {
+    padding: 2rem;
+  }
+
+  .verify-close-button {
+    top: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .verify-close-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .verify-tooltip-container {
+    margin-bottom: 1.5rem;
+  }
+
+  .verify-tooltip-bubble {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .verify-tabs-container {
+    margin-bottom: 2rem;
+  }
+
+  .verify-tab {
+    padding: 1rem;
+  }
+
+  .verify-tab-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .verify-modal-container {
+    max-width: 48rem;
+    padding: 2.5rem;
+  }
+}

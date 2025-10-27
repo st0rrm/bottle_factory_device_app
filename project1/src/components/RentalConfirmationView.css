@@ -1,0 +1,380 @@
+/* Rental Confirmation View Container */
+.rental-confirmation-view {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Title Section */
+.confirmation-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.confirmation-heading {
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #44748a;
+}
+
+/* Cup Illustration with Quantity */
+.cup-quantity-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.cup-container {
+  position: relative;
+}
+
+.cup-body {
+  width: 6rem;
+  height: 8rem;
+  background: linear-gradient(to bottom, #f8f8f8, #e2e2e2);
+  border-radius: 0 0 1.5rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.cup-label {
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  color: #9c9c9c;
+  font-size: 0.625rem;
+  font-weight: var(--pretendard-medium);
+}
+
+.cup-shine {
+  position: absolute;
+  left: 1rem;
+  top: 1.5rem;
+  width: 0.375rem;
+  height: 3rem;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+}
+
+.cup-lid-top {
+  position: absolute;
+  top: -0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 7rem;
+  height: 1.5rem;
+  background-color: #0c2950;
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.cup-lid-bottom {
+  position: absolute;
+  top: -0.375rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6rem;
+  height: 0.75rem;
+  background-color: #0c2950;
+}
+
+.quantity-multiplier {
+  font-size: 2.25rem;
+  font-weight: var(--pretendard-bold);
+  color: #0c2950;
+}
+
+/* Rental Information */
+.rental-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  max-width: 32rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+}
+
+.info-label {
+  font-size: 1rem;
+  font-weight: var(--pretendard-medium);
+  color: #44748a;
+}
+
+.info-value {
+  font-size: 1rem;
+  color: #44748a;
+}
+
+.reward-label-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #8798a1;
+  transition: color 0.3s;
+  display: flex;
+  align-items: center;
+}
+
+.help-button:hover {
+  color: #44748a;
+}
+
+.help-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.reward-value-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.coins-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #497fc6;
+}
+
+.reward-value {
+  font-size: 1rem;
+  font-weight: var(--pretendard-bold);
+  color: #497fc6;
+}
+
+/* SMS Notification Checkbox */
+.sms-notification-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.sms-toggle-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.sms-active {
+  background-color: #497fc6;
+}
+
+.sms-inactive {
+  background-color: #c7d2d7;
+}
+
+.checkbox-circle {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s, border 0.3s;
+  background-color: white;
+}
+
+.checkbox-unchecked {
+  border: 2px solid #8798a1;
+}
+
+.check-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #497fc6;
+}
+
+.sms-text {
+  font-size: 0.875rem;
+}
+
+.sms-text-active {
+  color: white;
+}
+
+.sms-text-inactive {
+  color: #44748a;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cancel-button,
+.confirm-button {
+  flex: 1;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 1.25rem;
+  font-weight: var(--pretendard-bold);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cancel-button {
+  background-color: #e2e2e2;
+  color: #8798a1;
+}
+
+.cancel-button:hover {
+  background-color: #d4d4d4;
+}
+
+.confirm-button {
+  background-color: #478a81;
+  color: white;
+}
+
+.confirm-button:hover {
+  background-color: #44748a;
+}
+
+/* Placeholder for modal */
+.rewards-modal-placeholder {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .confirmation-title {
+    margin-bottom: 2rem;
+  }
+
+  .confirmation-heading {
+    font-size: 1.5rem;
+  }
+
+  .cup-quantity-display {
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .cup-body {
+    width: 8rem;
+    height: 10rem;
+  }
+
+  .cup-label {
+    font-size: 0.75rem;
+  }
+
+  .cup-lid-top {
+    width: 9rem;
+    height: 2rem;
+  }
+
+  .cup-lid-bottom {
+    width: 8rem;
+    height: 1rem;
+  }
+
+  .quantity-multiplier {
+    font-size: 3rem;
+  }
+
+  .rental-info {
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-label,
+  .info-value {
+    font-size: 1.125rem;
+  }
+
+  .help-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .coins-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .reward-value {
+    font-size: 1.125rem;
+  }
+
+  .sms-notification-container {
+    margin-bottom: 2.5rem;
+  }
+
+  .checkbox-circle {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .check-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .sms-text {
+    font-size: 1rem;
+  }
+
+  .action-buttons {
+    gap: 1rem;
+  }
+
+  .cancel-button,
+  .confirm-button {
+    padding: 1.25rem;
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .confirmation-heading {
+    font-size: 1.875rem;
+  }
+
+  .quantity-multiplier {
+    font-size: 3.75rem;
+  }
+
+  .info-label,
+  .info-value {
+    font-size: 1.25rem;
+  }
+
+  .reward-value {
+    font-size: 1.25rem;
+  }
+}
