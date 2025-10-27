@@ -3,6 +3,17 @@
   line-height: 1.5;
   font-weight: 400;
 
+  /* Pretendard font-weight variables (전역에서 사용) */
+  --pretendard-thin: 100;
+  --pretendard-extralight: 200;
+  --pretendard-light: 300;
+  --pretendard-regular: 400;
+  --pretendard-medium: 500;
+  --pretendard-semibold: 600;
+  --pretendard-bold: 700;
+  --pretendard-extrabold: 800;
+  --pretendard-black: 900;
+
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;

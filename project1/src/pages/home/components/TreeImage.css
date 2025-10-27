@@ -15,5 +15,6 @@
   margin-top: 15px;
   font-size: 0.9em;
   color: #4CAF50;
-  font-weight: bold;
+  font-family: 'Pretendard';
+  font-weight: var(--pretendard-bold);
 }
