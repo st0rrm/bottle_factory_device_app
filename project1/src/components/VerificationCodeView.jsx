@@ -22,19 +22,20 @@ export default function VerificationCodeView({
       {/* Title */}
       <div className="verification-title">
         {isError ? (
-          <h2 className="verification-error-heading">
-            인증번호가 일치하지 않습니다 ({attempts}/{maxAttempts})
-          </h2>
+          <p className="verification-error-heading">
+            <span className="verification-error-text">인증번호</span>가 일치하지 않습니다 ({attempts}/{maxAttempts})
+          </p>
         ) : (
-          <>
-            <h2 className="verification-heading">입력하신 전화번호로</h2>
-            <h3 className="verification-subheading">인증번호가 발신되었습니다</h3>
-          </>
+          <p className="verification-heading-combined">
+            입력하신 전화번호로
+            <br />
+            <span className="verification-subheading-text">인증번호</span>가 발신되었습니다
+          </p>
         )}
       </div>
 
       {/* Verification Code Input Boxes */}
-      <div className="verification-boxes">
+      <div className={`verification-boxes ${isError ? 'error-shake' : ''}`}>
         {[0, 1, 2, 3, 4, 5].map((index) => (
           <div
             key={index}

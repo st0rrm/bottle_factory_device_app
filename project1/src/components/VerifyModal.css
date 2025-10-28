@@ -6,24 +6,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: clamp(0.5rem, 2vw, 1rem);
   background-color: rgba(71, 138, 129, 0.8);
   font-family: 'Pretendard', sans-serif;
 }
 
 /* Modal Container */
 .verify-modal-container {
-  width: 85%;
-  max-width: 1600px;
-  height: 95%;
+  width: clamp(280px, 90%, 48rem);
+  max-height: 95vh;
+  max-height: 95dvh;
   background-color: white;
-  border-radius: 1.5rem;
-  padding: 2rem;
+  border-radius: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(3rem, 5vh, 4rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 3vh, 2.5rem);
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .verify-modal-container::-webkit-scrollbar {
@@ -46,8 +47,8 @@
 /* Close Button */
 .verify-close-button {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: clamp(0.75rem, 2vh, 1.5rem);
+  right: clamp(0.75rem, 2vw, 1.5rem);
   color: #9c9c9c;
   background: none;
   border: none;
@@ -61,16 +62,25 @@
 }
 
 .verify-close-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: clamp(1.25rem, 3vw, 2rem);
+  height: clamp(1.25rem, 3vw, 2rem);
+}
+
+/* Tabs Wrapper - contains both tooltip and tabs */
+.verify-tabs-wrapper {
+  position: relative;
+  margin-bottom: clamp(1.5rem, 3vh, 3rem);
+  flex-shrink: 0;
 }
 
 /* Tooltip */
 .verify-tooltip-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1rem;
-  padding-right: 12.5%;
+  position: absolute;
+  top: 0;
+  left: 75%;
+  transform: translate(-50%, calc(-100% - 0.75rem));
+  pointer-events: none;
+  z-index: 5;
 }
 
 .verify-tooltip-wrapper {
@@ -80,10 +90,11 @@
 .verify-tooltip-bubble {
   background-color: #deb044;
   color: white;
-  padding: 0.375rem 1rem;
+  padding: clamp(0.25rem, 0.5vh, 0.5rem) clamp(0.75rem, 2vw, 1.5rem);
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: clamp(0.625rem, 1.5vw, 0.875rem);
   font-weight: var(--pretendard-medium);
+  white-space: nowrap;
 }
 
 .verify-tooltip-arrow {
@@ -93,16 +104,17 @@
   top: 100%;
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid #deb044;
+  border-left: clamp(4px, 1vw, 6px) solid transparent;
+  border-right: clamp(4px, 1vw, 6px) solid transparent;
+  border-top: clamp(4px, 1vw, 6px) solid #deb044;
 }
 
 /* Tabs Container */
 .verify-tabs-container {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: clamp(0.375rem, 1vw, 0.5rem);
+  max-width: 29.625rem;
+  margin: 0 auto;
 }
 
 .verify-tab {
@@ -110,8 +122,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  padding: clamp(0.5rem, 1.5vh, 1rem);
   border-radius: 9999px;
   border: none;
   cursor: pointer;
@@ -130,52 +142,6 @@
 }
 
 .verify-tab-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* Responsive Design */
-@media (min-width: 768px) {
-  .verify-modal-container {
-    padding: 2rem;
-  }
-
-  .verify-close-button {
-    top: 1.5rem;
-    right: 1.5rem;
-  }
-
-  .verify-close-icon {
-    width: 2rem;
-    height: 2rem;
-  }
-
-  .verify-tooltip-container {
-    margin-bottom: 1.5rem;
-  }
-
-  .verify-tooltip-bubble {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.875rem;
-  }
-
-  .verify-tabs-container {
-    margin-bottom: 2rem;
-  }
-
-  .verify-tab {
-    padding: 1rem;
-  }
-
-  .verify-tab-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .verify-modal-container {
-    max-width: 48rem;
-    padding: 2.5rem;
-  }
+  width: clamp(1rem, 2.5vw, 1.5rem);
+  height: clamp(1rem, 2.5vw, 1.5rem);
 }

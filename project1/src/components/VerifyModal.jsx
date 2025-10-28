@@ -28,11 +28,21 @@ export default function VerifyModal({ onClose }) {
         setTimer((prev) => prev - 1);
       }, 1000);
       return () => clearInterval(interval);
+    } else if (showVerification && timer === 0) {
+      // Timer expired, go back to phone input
+      setTimeout(() => {
+        setShowVerification(false);
+        setPhoneNumber('010');
+        setVerificationCode('');
+        setTimer(180);
+        setAttempts(0);
+        setIsError(false);
+      }, 500);
     }
   }, [showVerification, timer]);
 
   useEffect(() => {
-    if (verificationCode.length === 6) {
+    if (verificationCode.length === 6 && !isError) {
       const timeoutId = setTimeout(() => {
         if (verificationCode === CORRECT_CODE) {
           setShowQuantitySelection(true);
@@ -43,8 +53,14 @@ export default function VerifyModal({ onClose }) {
 
           if (newAttempts >= MAX_ATTEMPTS) {
             setTimeout(() => {
-              onClose();
-            }, 1500);
+              // Reset to phone input screen
+              setShowVerification(false);
+              setPhoneNumber('010');
+              setVerificationCode('');
+              setTimer(180);
+              setAttempts(0);
+              setIsError(false);
+            }, 500);
           } else {
             setTimeout(() => {
               setVerificationCode('');
@@ -56,7 +72,7 @@ export default function VerifyModal({ onClose }) {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [verificationCode, attempts, onClose]);
+  }, [verificationCode]);
 
   const handleNumberClick = (num) => {
     if (showVerification) {
@@ -89,6 +105,7 @@ export default function VerifyModal({ onClose }) {
 
   const handleBackToPhone = () => {
     setShowVerification(false);
+    setPhoneNumber('010');
     setVerificationCode('');
     setTimer(180);
     setAttempts(0);
@@ -149,35 +166,38 @@ export default function VerifyModal({ onClose }) {
           />
         ) : (
           <>
-            {/* Tooltip */}
-            <div className="verify-tooltip-container">
-              <div className="verify-tooltip-wrapper">
-                <div className="verify-tooltip-bubble">보틀클럽 이용자세요?</div>
-                <div className="verify-tooltip-arrow" />
+            {/* Toggle Tabs with Tooltip */}
+            <div className="verify-tabs-wrapper">
+              {/* Tooltip */}
+              <div className="verify-tooltip-container">
+                <div className="verify-tooltip-wrapper">
+                  <div className="verify-tooltip-bubble">보틀클럽 이용자세요?</div>
+                  <div className="verify-tooltip-arrow" />
+                </div>
               </div>
-            </div>
 
-            {/* Toggle Tabs */}
-            <div className="verify-tabs-container">
-              <button
-                onClick={() => setActiveTab('phone')}
-                className={`verify-tab ${activeTab === 'phone' ? 'verify-tab-active' : 'verify-tab-inactive'}`}
-              >
-                <svg className="verify-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setActiveTab('qr')}
-                className={`verify-tab ${activeTab === 'qr' ? 'verify-tab-active' : 'verify-tab-inactive'}`}
-              >
-                <svg className="verify-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="3" width="8" height="8" rx="1" strokeWidth="2" />
-                  <rect x="13" y="3" width="8" height="8" rx="1" strokeWidth="2" />
-                  <rect x="3" y="13" width="8" height="8" rx="1" strokeWidth="2" />
-                  <rect x="13" y="13" width="8" height="8" rx="1" strokeWidth="2" />
-                </svg>
-              </button>
+              {/* Toggle Tabs */}
+              <div className="verify-tabs-container">
+                <button
+                  onClick={() => setActiveTab('phone')}
+                  className={`verify-tab ${activeTab === 'phone' ? 'verify-tab-active' : 'verify-tab-inactive'}`}
+                >
+                  <svg className="verify-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setActiveTab('qr')}
+                  className={`verify-tab verify-tab-qr ${activeTab === 'qr' ? 'verify-tab-active' : 'verify-tab-inactive'}`}
+                >
+                  <svg className="verify-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="8" height="8" rx="1" strokeWidth="2" />
+                    <rect x="13" y="3" width="8" height="8" rx="1" strokeWidth="2" />
+                    <rect x="3" y="13" width="8" height="8" rx="1" strokeWidth="2" />
+                    <rect x="13" y="13" width="8" height="8" rx="1" strokeWidth="2" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {activeTab === 'phone' ? (

@@ -1,22 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './PhoneInputView.css';
 
 export default function PhoneInputView({ phoneNumber, onNumberClick, onDelete, onConfirm, title = "리턴미컵 대여를 위해" }) {
+  const [maskedIndices, setMaskedIndices] = useState(new Set());
+  const [lastInputIndex, setLastInputIndex] = useState(-1);
+
+  useEffect(() => {
+    if (phoneNumber.length > 3) {
+      const currentIndex = phoneNumber.length - 1;
+
+      // If there was a previous input, mask it immediately
+      if (lastInputIndex >= 3 && lastInputIndex !== currentIndex) {
+        setMaskedIndices(prev => new Set([...prev, lastInputIndex]));
+      }
+
+      setLastInputIndex(currentIndex);
+
+      // Set timer to mask current input after 0.5s
+      const timer = setTimeout(() => {
+        setMaskedIndices(prev => new Set([...prev, currentIndex]));
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [phoneNumber]);
+
+  useEffect(() => {
+    // Reset masking when phone number is cleared or less than 4 digits
+    if (phoneNumber.length <= 3) {
+      setMaskedIndices(new Set());
+      setLastInputIndex(-1);
+    }
+  }, [phoneNumber.length]);
+
   const formatPhoneNumber = (num) => {
-    if (num.length <= 3) return num;
-    if (num.length <= 7) return `${num.slice(0, 3)} - ${num.slice(3)}`;
-    return `${num.slice(0, 3)} - ${num.slice(3, 7)} - ${num.slice(7)}`;
+    // Keep 010 visible, mask the rest after 0.5s
+    const maskedNum = num.split('').map((digit, index) => {
+      if (index < 3) return digit; // Keep first 3 digits (010) visible
+      return maskedIndices.has(index) ? '*' : digit;
+    }).join('');
+
+    if (maskedNum.length <= 3) return maskedNum;
+    if (maskedNum.length <= 7) return `${maskedNum.slice(0, 3)} - ${maskedNum.slice(3)}`;
+    return `${maskedNum.slice(0, 3)} - ${maskedNum.slice(3, 7)} - ${maskedNum.slice(7)}`;
   };
 
   return (
     <div className="phone-input-view">
       {/* Title */}
       <div className="phone-input-title">
-        <h2 className="phone-input-heading">{title}</h2>
-        <h3 className="phone-input-subheading">전화번호를 입력해주세요</h3>
+        <p className="phone-input-heading-combined">
+          {title}
+          <br />
+          <span className="phone-input-subheading-text">전화번호</span>를 입력해주세요
+        </p>
         <p className="phone-input-notice">
-          전화번호 입력 시, <span className="notice-link">개인정보처리 약관</span>에 동의한 것으로
-          처리됩니다.
+          전화번호 입력 시, <span className="notice-link">개인정보처리 약관</span>에 동의한 것으로 처리됩니다.
         </p>
       </div>
 
@@ -24,7 +63,6 @@ export default function PhoneInputView({ phoneNumber, onNumberClick, onDelete, o
       <div className="phone-display-section">
         <div className="phone-display">
           {formatPhoneNumber(phoneNumber)}
-          <span className="cursor-blink">|</span>
         </div>
         <div className="phone-display-underline" />
       </div>
