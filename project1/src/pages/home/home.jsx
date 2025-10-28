@@ -35,42 +35,9 @@ function HomeScreen() {
         </p>
       </div>
 
-      {/* Tree Illustration Section */}
+      {/* Tree Illustration Section - Placeholder for background image */}
       <div className="tree-section">
-        {/* Tree */}
-        <div className="tree-container">
-          {/* Tree foliage */}
-          <div className="tree-foliage">
-            <div className="foliage-circle foliage-top"></div>
-            <div className="foliage-circle foliage-left"></div>
-            <div className="foliage-circle foliage-right"></div>
-            <div className="foliage-circle foliage-center"></div>
-          </div>
-          {/* Tree trunk */}
-          <div className="tree-trunk"></div>
-        </div>
-
-        {/* Rolling hills background */}
-        <div className="hills-background">
-          {/* Back hill */}
-          <div className="hill hill-back">
-            <svg viewBox="0 0 1000 400" preserveAspectRatio="none">
-              <path d="M0,200 Q250,100 500,150 T1000,200 L1000,400 L0,400 Z" fill="#8798a1" />
-            </svg>
-          </div>
-          {/* Middle hill */}
-          <div className="hill hill-middle">
-            <svg viewBox="0 0 1000 350" preserveAspectRatio="none">
-              <path d="M0,180 Q300,80 600,140 T1000,180 L1000,350 L0,350 Z" fill="#4ac295" />
-            </svg>
-          </div>
-          {/* Front hill */}
-          <div className="hill hill-front">
-            <svg viewBox="0 0 1000 300" preserveAspectRatio="none">
-              <path d="M0,150 Q200,50 400,100 T800,120 L1000,140 L1000,300 L0,300 Z" fill="#478a81" />
-            </svg>
-          </div>
-        </div>
+        {/* Background image will be added here */}
       </div>
 
       {/* Bottom Action Bar */}

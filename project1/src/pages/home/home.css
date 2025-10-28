@@ -1,46 +1,56 @@
 /* Home Container */
 .home-container {
   width: 100%;
-  height: 100%;
-  background-color: #e2e2e2;
+  max-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh; /* Use dynamic viewport height for mobile browsers */
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   font-family: 'Pretendard', sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0 auto;
 }
 
 /* Header Section */
 .header-section {
-  padding: 2.5rem 1.5rem;
+  width: 100%;
+  max-width: 100%;
+  padding: clamp(1.5rem, 4vh, 2.5rem) clamp(1.5rem, 5vw, 3rem);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .cafe-name {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
   font-weight: var(--pretendard-bold);
   color: #000000;
-  margin-bottom: 0.75rem;
+  margin-bottom: clamp(0.5rem, 1vh, 1rem);
 }
 
 .total-count {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: clamp(0.375rem, 1vw, 0.75rem);
+  margin-bottom: clamp(0.375rem, 1vh, 0.75rem);
 }
 
 .droplet-icon {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: clamp(2rem, 4vw, 3rem);
+  height: clamp(2rem, 4vw, 3rem);
   color: #497fc6;
+  flex-shrink: 0;
 }
 
 .count-number {
-  font-size: 2.5rem;
+  font-size: clamp(2rem, 4vw, 3.5rem);
   font-weight: var(--pretendard-bold);
   color: #497fc6;
 }
 
 .sub-stats {
-  font-size: 1.125rem;
+  font-size: clamp(0.875rem, 2vw, 1.25rem);
   color: #8798a1;
 }
 
@@ -48,149 +58,79 @@
   font-weight: var(--pretendard-semibold);
 }
 
-/* Tree Section */
+/* Tree Section - Placeholder for background image */
 .tree-section {
   flex: 1;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.tree-container {
-  position: relative;
-  z-index: 10;
-  margin-bottom: 10rem;
-}
-
-.tree-foliage {
-  position: relative;
-  width: 7rem;
-  height: 7rem;
-  margin-bottom: 0.5rem;
-}
-
-.foliage-circle {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.foliage-top {
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3.5rem;
-  height: 3.5rem;
-  background-color: #4ac295;
-}
-
-.foliage-left {
-  top: 0.75rem;
-  left: 0.25rem;
-  width: 3rem;
-  height: 3rem;
-  background-color: #478a81;
-}
-
-.foliage-right {
-  top: 0.75rem;
-  right: 0.25rem;
-  width: 3rem;
-  height: 3rem;
-  background-color: #4ac295;
-  opacity: 0.9;
-}
-
-.foliage-center {
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 2.5rem;
-  height: 2.5rem;
-  background-color: #478a81;
-}
-
-.tree-trunk {
-  width: 0.75rem;
-  height: 5rem;
-  background-color: #000000;
-  margin: 0 auto;
-  border-radius: 0.125rem;
-}
-
-/* Hills Background */
-.hills-background {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 20rem;
+  min-height: clamp(200px, 30vh, 400px);
   overflow: hidden;
-}
-
-.hill {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-
-.hill svg {
-  width: 100%;
-  display: block;
+  background-color: #ffffff;
 }
 
 /* Action Bar */
 .action-bar {
   position: relative;
+  width: 100%;
+  max-width: 100%;
   background-color: #478a81;
-  padding: 1.25rem 1rem 1.5rem;
+  padding: clamp(0.75rem, 2vh, 1.5rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 2.5vh, 2rem);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .action-bar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
 }
 
 .brand-info {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.375rem, 1vw, 0.625rem);
   color: white;
+  flex-shrink: 0;
 }
 
 .clock-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: clamp(1.25rem, 2.5vw, 1.75rem);
+  height: clamp(1.25rem, 2.5vw, 1.75rem);
+  flex-shrink: 0;
 }
 
 .brand-name {
-  font-size: 1.125rem;
+  font-size: clamp(0.875rem, 2vw, 1.25rem);
   font-weight: var(--pretendard-semibold);
+  white-space: nowrap;
 }
 
 .divider-line {
   flex: 1;
-  margin: 0 0.75rem;
+  min-width: 1rem;
+  margin: 0 clamp(0.5rem, 2vw, 1rem);
   border-top: 2px dashed rgba(255, 255, 255, 0.3);
 }
 
 .reward-info {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: clamp(0.25rem, 0.5vw, 0.5rem);
   color: white;
+  flex-shrink: 0;
 }
 
 .droplet-icon-small {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: clamp(1.25rem, 2.5vw, 1.75rem);
+  height: clamp(1.25rem, 2.5vw, 1.75rem);
+  flex-shrink: 0;
 }
 
 .reward-value {
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 2vw, 1.5rem);
   font-weight: var(--pretendard-bold);
 }
 
@@ -198,20 +138,22 @@
 .button-group {
   display: flex;
   align-items: flex-end;
-  gap: 0.75rem;
+  gap: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .action-button {
   flex: 1;
+  min-width: 0; /* Prevent flex items from overflowing */
   color: white;
-  font-size: 1.5rem;
+  font-size: clamp(1.125rem, 2.5vw, 1.75rem);
   font-weight: var(--pretendard-bold);
-  padding: 1.25rem;
-  border-radius: 1rem;
+  padding: clamp(1rem, 2vh, 1.5rem) clamp(0.75rem, 2vw, 1.25rem);
+  border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
   border: none;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease;
   font-family: 'Pretendard', sans-serif;
+  white-space: nowrap;
 }
 
 .rent-button {
@@ -222,6 +164,10 @@
   background-color: #497fc6;
 }
 
+.rent-button:active {
+  transform: scale(0.98);
+}
+
 .return-button {
   background-color: #4ac295;
 }
@@ -230,25 +176,40 @@
   background-color: #478a81;
 }
 
+.return-button:active {
+  transform: scale(0.98);
+}
+
 /* Help Section */
 .help-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: clamp(0.25rem, 0.5vh, 0.5rem);
+  flex-shrink: 0;
 }
 
 .bird-container {
   position: relative;
-  width: 5rem;
-  height: 5rem;
+  width: clamp(4.5rem, 8vw, 6rem);
+  height: clamp(4.5rem, 8vw, 6rem);
   background-color: #6e88a9;
-  border-radius: 1rem;
+  border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.bird-container:hover {
+  transform: scale(1.05);
+}
+
+.bird-container:active {
+  transform: scale(0.95);
 }
 
 .bird {
@@ -324,201 +285,18 @@
 .help-text {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: clamp(0.2rem, 0.5vw, 0.375rem);
   color: white;
-  font-size: 0.75rem;
+  font-size: clamp(0.625rem, 1.5vw, 0.875rem);
+  white-space: nowrap;
 }
 
 .help-icon {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: clamp(0.625rem, 1.5vw, 1rem);
+  height: clamp(0.625rem, 1.5vw, 1rem);
+  flex-shrink: 0;
 }
 
-/* Responsive Design */
-@media (min-width: 768px) {
-  .header-section {
-    padding: 3rem 2rem;
-  }
+/* All responsive sizing is now handled by clamp() in the base styles above.
+   No media queries needed - elements scale smoothly with viewport size. */
 
-  .cafe-name {
-    font-size: 2.5rem;
-  }
-
-  .droplet-icon {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .count-number {
-    font-size: 3rem;
-  }
-
-  .sub-stats {
-    font-size: 1.25rem;
-  }
-
-  .tree-foliage {
-    width: 8rem;
-    height: 8rem;
-  }
-
-  .foliage-top {
-    width: 4rem;
-    height: 4rem;
-  }
-
-  .foliage-left,
-  .foliage-right {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-
-  .foliage-center {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .tree-trunk {
-    width: 1rem;
-    height: 6rem;
-  }
-
-  .hills-background {
-    height: 24rem;
-  }
-
-  .action-bar {
-    padding: 1.5rem 1.5rem 2rem;
-  }
-
-  .action-bar-header {
-    margin-bottom: 1rem;
-  }
-
-  .clock-icon {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .brand-name {
-    font-size: 1.25rem;
-  }
-
-  .droplet-icon-small {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .reward-value {
-    font-size: 1.5rem;
-  }
-
-  .button-group {
-    gap: 1rem;
-  }
-
-  .action-button {
-    font-size: 1.875rem;
-    padding: 1.5rem;
-  }
-
-  .bird-container {
-    width: 6rem;
-    height: 6rem;
-  }
-
-  .help-text {
-    font-size: 0.875rem;
-  }
-
-  .help-icon {
-    width: 1rem;
-    height: 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .header-section {
-    padding: 3.5rem 2.5rem;
-  }
-
-  .cafe-name {
-    font-size: 3rem;
-  }
-
-  .droplet-icon {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-
-  .count-number {
-    font-size: 3.75rem;
-  }
-
-  .sub-stats {
-    font-size: 1.5rem;
-  }
-
-  .tree-foliage {
-    width: 10rem;
-    height: 10rem;
-  }
-
-  .foliage-top {
-    width: 5rem;
-    height: 5rem;
-  }
-
-  .foliage-left,
-  .foliage-right {
-    width: 4rem;
-    height: 4rem;
-  }
-
-  .foliage-center {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-
-  .tree-trunk {
-    width: 1.25rem;
-    height: 7rem;
-  }
-
-  .hills-background {
-    height: 28rem;
-  }
-
-  .action-bar {
-    padding: 2rem 2rem 2.5rem;
-  }
-
-  .clock-icon {
-    width: 2rem;
-    height: 2rem;
-  }
-
-  .brand-name {
-    font-size: 1.5rem;
-  }
-
-  .droplet-icon-small {
-    width: 2rem;
-    height: 2rem;
-  }
-
-  .reward-value {
-    font-size: 1.75rem;
-  }
-
-  .action-button {
-    font-size: 2.25rem;
-    padding: 1.75rem;
-  }
-
-  .bird-container {
-    width: 7rem;
-    height: 7rem;
-    border-radius: 1.5rem;
-  }
-}

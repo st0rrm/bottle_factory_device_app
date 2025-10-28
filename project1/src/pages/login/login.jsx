@@ -24,7 +24,7 @@ function LoginScreen() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1 className="login-title">커피포임팩트</h1>
+          <h1 className="login-title">리턴미컵</h1>
           <p className="login-subtitle">카페 관리자 로그인</p>
         </div>
 
