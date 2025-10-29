@@ -1,6 +1,6 @@
 import './App.css'
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import LoginScreen from './pages/login/login.jsx';
 import HomeScreen from './pages/home/home.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -8,7 +8,7 @@ const BASE_NAME = "/bottle_factory_device_app/";
 
 function App() {
   return (
-    <HashRouter basename={BASE_NAME}>
+    <BrowserRouter basename={BASE_NAME}>
       <div className="App">
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -17,7 +17,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 
