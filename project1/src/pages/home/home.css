@@ -72,7 +72,8 @@
 
 /* Action Bar */
 .action-bar {
-  position: relative;
+  position: fixed;
+  bottom: 0;
   width: 100%;
   max-width: 100%;
   background-color: #478a81;

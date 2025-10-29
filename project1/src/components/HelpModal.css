@@ -12,79 +12,89 @@
 
 /* --- 모달 콘텐츠 (중앙 카드 + 새 이미지) --- */
 .help-modal-content {
-  /* 컨테이너의 최대 너비를 증가시키고 유연하게 조정 */
-  width: clamp(280px, 90%, 48rem);
+  /* 컨테이너의 최대 너비, 높이 조정 */
+  width: clamp(280px, 90%, 300rem);
   max-height: 95vh;
   max-height: 95dvh;
-  /* 중앙 정렬로 인해 margin-top 제거 */
-  margin-top: 0; 
-  position: relative; 
-  background-color: white;
-  border-radius: clamp(1rem, 2vw, 1.5rem);
-  padding: clamp(3rem, 5vh, 4rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 3vh, 2.5rem);
-  position: relative;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  margin-top: 0;
+  
+  /* 배경색과 그림자는 modal-card로 옮김 */
+  background-color: transparent; /* 배경 투명하게 */
+  border-radius: 0; /* 불필요한 border-radius 제거 */
+  padding: 0; /* 불필요한 padding 제거 */
+  box-shadow: none; /* 그림자 제거 */
+  
+  position: absolute;
+  top: 334px;
+  left: 78px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow-y: visible; /* 헤더가 밖으로 나갈 수 있도록 */
   overflow-x: hidden;
+  
+  /* 모달의 전체 높이 제한 */
+  max-height: 90vh; /* 뷰포트 대비 최대 높이 */
 }
 
 /* 닫기 버튼 (X 표시) */
 .close-button {
   position: absolute;
-  /* 위치 조정 (말풍선과 겹치지 않도록 조정) */
-  top: clamp(1rem, 3vw, 1.5rem); 
-  right: clamp(1rem, 3vw, 1.5rem);
+  /* 말풍선 오른쪽 위로 이동, 절대적인 위치 부여 */
+  top: 1.5rem; /* 고정값 */
+  right: 1.5rem; /* 고정값 */
   background: none;
   border: none;
   font-size: 2rem;
-  color: #333; 
+  color: #a0a0a0; /* 말풍선 색상과 대비되도록 */
   cursor: pointer;
-  z-index: 10;
-  opacity: 0.7;
+  z-index: 100; /* 말풍선보다 위에 오도록 */
+  opacity: 1;
 }
 
 /* --- 헤더 (새 이미지 + 말풍선) --- */
 .header-message-area {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  /* 요소를 오른쪽으로 정렬 */
-  justify-content: flex-end; 
-  /* 모달 창의 전체 너비를 사용 */
-  width: 100%; 
-  
-  /* 마진을 사용하여 카드 영역 위에 위치시키고 위치 조정 */
-  margin-bottom: -1rem; 
-  margin-left: 0; /* 불필요한 마진 제거 */
-  
-  position: relative;
-  z-index: 2; 
+  /* header-message-area 자체는 flex container로 유지하되, */
+  /* 새와 말풍선은 absolute로 배치 */
+  width: 100%;
+  height: 100px; /* 새와 말풍선을 담을 공간 확보, 필요에 따라 조절 */
+  position: absolute; /* 모달 콘텐츠 기준 절대 위치 */
+  top: 0;
+  left: 0;
+  pointer-events: none; /* 클릭 이벤트가 하단 모달로 전달되도록 */
+  z-index: 30; /* modal-card보다 위에 오도록 */
 }
 
 .bird-image {
-  /* 새 이미지 크기 조정 */
-  width: clamp(60px, 15vw, 80px); 
+  position: absolute;
+  /* 절대적인 위치와 크기 */
+  width: 80px; /* 고정값 */
   height: auto;
-  margin-left: 0; /* 마진 제거 */
-  flex-shrink: 0;
+  top: 0; /* modal-content 기준 상단 */
+  left: 10%; /* modal-content 기준 왼쪽 */
+  transform: translateY(-50%); /* 정확히 위로 절반 이동 */
+  z-index: 31;
+  pointer-events: auto; /* 새 이미지는 클릭 가능하도록 (없으면 마우스 이벤트가 박스로 넘어감) */
 }
 
 .speech-bubble {
   background-color: #ffffff;
-  border-radius: 1.2rem 1.2rem 1.2rem 0.2rem; 
-  /* 패딩 유연하게 증가 */
-  padding: clamp(0.75rem, 3vw, 1.25rem);
+  border-radius: 1.2rem 1.2rem 1.2rem 0.2rem;
+  padding: 1.25rem; /* 고정 패딩 */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  /* 말풍선 너비 제한 */
-  max-width: 85%; 
-  min-width: 385px;
+  
+  position: absolute;
+  /* 절대적인 위치와 크기 */
+  width: 320px; /* 고정값 */
+  top: 10px; /* modal-content 기준 상단 */
+  right: 10%; /* modal-content 기준 오른쪽 */
+  z-index: 30;
+  pointer-events: auto; /* 말풍선은 클릭 가능하도록 */
+  
+  text-align: left; /* 텍스트 정렬은 유지 */
 }
 
 .bubble-text {
-  /* 폰트 크기 유연하게 증가 */
-  font-size: clamp(0.9rem, 3vw, 1.1rem); 
+  font-size: 1.1rem; /* 고정 폰트 크기 */
   line-height: 1.4;
   color: #333;
   margin: 0;
@@ -92,25 +102,31 @@
 
 .bold-choice {
   font-weight: bold;
-  color: #478a81; 
+  color: #478a81;
 }
 
 .cup-name {
-  /* 폰트 크기 유연하게 증가 */
-  font-size: clamp(1.2rem, 4.5vw, 1.5rem); 
+  font-size: 1.5rem; /* 고정 폰트 크기 */
   font-weight: bold;
-  color: #4ac295; 
+  color: #4ac295;
 }
 
 /* --- 메인 카드 영역 --- */
 .modal-card {
   background-color: #ffffff;
-  border-radius: 1rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  /* 내부 패딩 유연하게 증가 */
-  padding: clamp(1.5rem, 5vw, 2.5rem); 
-  padding-top: clamp(3.5rem, 9vw, 4.5rem); 
+  border-radius: clamp(1rem, 2vw, 1.5rem); /* 모달 콘텐츠의 border-radius를 여기로 옮김 */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* 그림자도 여기로 옮김 */
+  
+  /* 새와 말풍선이 위로 올라온 만큼 상단 패딩을 조정하여 콘텐츠가 겹치지 않게 합니다. */
+  /* clamp(최소, 뷰포트 비례, 최대) */
+  padding: clamp(3rem, 5vh, 4rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 3vh, 2.5rem); 
+  padding-top: clamp(6rem, 15vh, 8rem); /* 새/말풍선 높이 고려하여 충분한 상단 패딩 */
+  
   position: relative;
+  /* height: 100%; (help-modal-content에서 flex-direction: column을 사용하므로, 자동으로 남은 공간을 채움) */
+  flex-grow: 1; /* 남은 공간을 차지하도록 */
+  overflow-y: auto; /* 카드 내용이 길어질 경우 스크롤 */
+  overflow-x: hidden;
 }
 
 /* --- 탭 네비게이션 --- */
@@ -118,21 +134,22 @@
   display: flex;
   justify-content: space-between;
   position: absolute;
-  top: 0;
+  top: 4.5rem; /* modal-card 상단에 맞춰 위치 조정 */
   left: 0;
   right: 0;
-  padding: 0 clamp(1.5rem, 5vw, 2.5rem);
+  padding: 0 clamp(1rem, 3vw, 2rem); /* modal-card의 좌우 패딩과 일치하도록 조정 */
   transform: translateY(-50%); 
+  z-index: 40; /* 탭 버튼이 카드 위에 보이도록 */
 }
 
 .tab-button {
   flex-grow: 1;
-  padding: clamp(0.75rem, 2vw, 1rem) 0;
+  padding: clamp(0.75rem, 2vw, 1.25rem) clamp(0.5rem, 1vw, 1rem); /* 패딩 조정 */
   margin: 0 0.25rem;
   background-color: #e0e0e0;
   border: none;
   cursor: pointer;
-  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+  font-size: clamp(0.9rem, 2.8vw, 1.1rem); /* 폰트 크기 조정 */
   color: #666;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -153,7 +170,6 @@
 /* --- 탭 콘텐츠 --- */
 .tab-content {
   padding-top: clamp(0.5rem, 1vh, 1rem); 
-  /* 최소 높이 증가 */
   min-height: 250px; 
 }
 
@@ -173,19 +189,19 @@
 .how-to-use-steps {
   display: flex;
   flex-direction: column;
-  /* 간격 유연하게 증가 */
   gap: clamp(1.5rem, 5vw, 2.5rem); 
   padding-top: 1rem;
+  align-items: center;
 }
 
 .step-item {
   display: flex;
   align-items: center;
   gap: clamp(0.75rem, 3vw, 1rem);
+  justify-content: center;
 }
 
 .step-icon-wrapper {
-  /* 아이콘 영역 크기 증가 */
   width: clamp(60px, 14vw, 70px); 
   height: clamp(60px, 14vw, 70px); 
   display: flex;
@@ -197,14 +213,13 @@
 }
 
 .step-icon {
-  /* 아이콘 이미지 크기 */
   width: 80%;
   height: 80%;
   object-fit: contain;
 }
 
 .step-text {
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem); /* 폰트 크기 증가 */
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem); 
   color: #333;
   line-height: 1.5;
   margin: 0;
@@ -215,7 +230,6 @@
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
-  /* 마진 유연하게 증가 */
   margin-top: clamp(2rem, 6vw, 3rem); 
   padding-top: clamp(1rem, 3vw, 1.5rem);
   border-top: 1px solid #eee;
@@ -234,7 +248,7 @@
 }
 
 .use-button {
-  flex-grow: 2; /* '사용할래요' 버튼을 더 크게 */
+  flex-grow: 2; 
   padding: clamp(0.75rem, 2.5vw, 1.1rem);
   font-size: clamp(0.9rem, 2.5vw, 1.1rem);
   font-weight: bold;
@@ -257,9 +271,9 @@
 /* 작은 화면 (모바일) 대응 */
 @media (max-width: 450px) {
   .button-area {
-    flex-direction: column; /* 버튼 세로 정렬 */
+    flex-direction: column; 
   }
   .use-button, .later-button {
-    flex-grow: 1; /* 다시 균등하게 */
+    flex-grow: 1; 
   }
 }
