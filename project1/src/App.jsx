@@ -4,10 +4,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginScreen from './pages/login/login.jsx';
 import HomeScreen from './pages/home/home.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+const BASE_NAME = "/bottle_factory_device_app/";
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter basename={BASE_NAME}>
       <div className="App">
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -16,7 +17,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
 
