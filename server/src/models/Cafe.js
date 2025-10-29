@@ -1,51 +1,88 @@
-const db = require('../config/database');
+const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class Cafe {
-  static findByCafeId(cafeId, callback) {
-    db.get('SELECT * FROM cafes WHERE cafe_id = ?', [cafeId], callback);
+  static async findByCafeId(cafeId) {
+    try {
+      const result = await pool.query(
+        'SELECT * FROM cafes WHERE cafe_id = $1',
+        [cafeId]
+      );
+      return result.rows[0];
+    } catch (err) {
+      throw err;
+    }
   }
 
-  static findById(id, callback) {
-    db.get('SELECT * FROM cafes WHERE id = ?', [id], callback);
+  static async findById(id) {
+    try {
+      const result = await pool.query(
+        'SELECT * FROM cafes WHERE id = $1',
+        [id]
+      );
+      return result.rows[0];
+    } catch (err) {
+      throw err;
+    }
   }
 
-  static findAll(callback) {
-    db.all('SELECT id, cafe_id, cafe_name, created_at FROM cafes', callback);
+  static async findAll() {
+    try {
+      const result = await pool.query(
+        'SELECT id, cafe_id, cafe_name, created_at FROM cafes ORDER BY cafe_name'
+      );
+      return result.rows;
+    } catch (err) {
+      throw err;
+    }
   }
 
   static verifyPassword(password, hash) {
     return bcrypt.compareSync(password, hash);
   }
 
-  static create(cafeId, password, cafeName, createdBy, callback) {
-    const passwordHash = bcrypt.hashSync(password, 10);
-    db.run(
-      'INSERT INTO cafes (cafe_id, password_hash, cafe_name, created_by) VALUES (?, ?, ?, ?)',
-      [cafeId, passwordHash, cafeName, createdBy],
-      callback
-    );
+  static async create(cafeId, password, cafeName, createdBy) {
+    try {
+      const passwordHash = bcrypt.hashSync(password, 10);
+      const result = await pool.query(
+        'INSERT INTO cafes (cafe_id, password_hash, cafe_name, created_by) VALUES ($1, $2, $3, $4) RETURNING id',
+        [cafeId, passwordHash, cafeName, createdBy]
+      );
+      return result.rows[0];
+    } catch (err) {
+      throw err;
+    }
   }
 
-  static update(id, cafeName, callback) {
-    db.run(
-      'UPDATE cafes SET cafe_name = ? WHERE id = ?',
-      [cafeName, id],
-      callback
-    );
+  static async update(id, cafeName) {
+    try {
+      await pool.query(
+        'UPDATE cafes SET cafe_name = $1 WHERE id = $2',
+        [cafeName, id]
+      );
+    } catch (err) {
+      throw err;
+    }
   }
 
-  static updatePassword(id, newPassword, callback) {
-    const passwordHash = bcrypt.hashSync(newPassword, 10);
-    db.run(
-      'UPDATE cafes SET password_hash = ? WHERE id = ?',
-      [passwordHash, id],
-      callback
-    );
+  static async updatePassword(id, newPassword) {
+    try {
+      const passwordHash = bcrypt.hashSync(newPassword, 10);
+      await pool.query(
+        'UPDATE cafes SET password_hash = $1 WHERE id = $2',
+        [passwordHash, id]
+      );
+    } catch (err) {
+      throw err;
+    }
   }
 
-  static delete(id, callback) {
-    db.run('DELETE FROM cafes WHERE id = ?', [id], callback);
+  static async delete(id) {
+    try {
+      await pool.query('DELETE FROM cafes WHERE id = $1', [id]);
+    } catch (err) {
+      throw err;
+    }
   }
 }
 

@@ -5,17 +5,15 @@ const Admin = require('../models/Admin');
 const { authenticateAdmin } = require('../middleware/auth');
 
 // Admin login
-router.post('/login', (req, res) => {
-  const { username, password } = req.body;
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
-  }
-
-  Admin.findByUsername(username, (err, admin) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
     }
+
+    const admin = await Admin.findByUsername(username);
 
     if (!admin) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -25,8 +23,10 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Update last login
-    Admin.updateLastLogin(admin.id, () => {});
+    // Update last login (fire and forget)
+    Admin.updateLastLogin(admin.id).catch(err =>
+      console.error('Error updating last login:', err)
+    );
 
     // Generate JWT token
     const token = jwt.sign(
@@ -43,17 +43,26 @@ router.post('/login', (req, res) => {
         email: admin.email
       }
     });
-  });
+  } catch (err) {
+    console.error('Admin login error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Get current admin info
-router.get('/me', authenticateAdmin, (req, res) => {
-  Admin.findById(req.user.id, (err, admin) => {
-    if (err || !admin) {
+router.get('/me', authenticateAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id);
+
+    if (!admin) {
       return res.status(404).json({ error: 'Admin not found' });
     }
+
     res.json(admin);
-  });
+  } catch (err) {
+    console.error('Get admin error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;
