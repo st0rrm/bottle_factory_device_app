@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
-
+import HelpModal from '../../components/HelpModal';
 function HomeScreen() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const handleBorrowCupAction = () => {
     setShowVerifyModal(true);
@@ -16,7 +17,7 @@ function HomeScreen() {
   };
 
   const handleHelpAction = () => {
-    console.log('도움말 버튼 클릭됨');
+    setShowHelpModal(true);
   };
 
   return (
@@ -99,6 +100,7 @@ function HomeScreen() {
       {/* Modals */}
       {showVerifyModal && <VerifyModal onClose={() => setShowVerifyModal(false)} />}
       {showReturnModal && <ReturnModal onClose={() => setShowReturnModal(false)} />}
+      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
     </div>
   );
 }
