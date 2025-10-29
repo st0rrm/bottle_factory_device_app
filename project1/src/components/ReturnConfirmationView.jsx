@@ -1,7 +1,12 @@
 import React from 'react';
+import returnMeCupImage from '../assets/images/returnmecup.svg';
+import bottlePointIcon from '../assets/images/bottlepoint_icon.svg';
 import './ReturnConfirmationView.css';
+<<<<<<< HEAD
 import returnmecup from '../assets/images/returnmecup.svg';
 import xIcon from '../assets/images/x_icon.svg';
+=======
+>>>>>>> 860a6d0a6a8f54932c1a3ceeccd3e85dd2527364
 
 export default function ReturnConfirmationView({
   quantity,
@@ -25,7 +30,7 @@ export default function ReturnConfirmationView({
 
           {/* Cup with Quantity */}
           <div className="return-cup-quantity-display">
-            <img src={returnmecup} alt="Return Me Cup" />
+            <img src={returnMeCupImage} alt="Return Me Cup" className="return-confirmation-cup-svg" />
             <div className="return-confirmation-quantity">×{quantity}</div>
           </div>
 
@@ -38,13 +43,11 @@ export default function ReturnConfirmationView({
               </button>
             </div>
             <div className="reward-value-group">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="bottle-icon">
-                <circle cx="12" cy="12" r="10" fill="#497fc6" />
-                <text x="12" y="16" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
-                  B
-                </text>
-              </svg>
-              <span className="return-reward-value">{rewardPoints}보틀</span>
+              <img src={bottlePointIcon} alt="Bottle Point" className="bottle-icon" />
+              <span className="return-reward-value">
+                <span className="reward-number">{rewardPoints}</span>
+                <span className="reward-text">보틀</span>
+              </span>
             </div>
           </div>
 

@@ -76,7 +76,7 @@
   width: 100%;
   max-width: 100%;
   background-color: #478a81;
-  padding: clamp(0.5rem, 1.5vh, 1.5rem) clamp(1rem, 3vw, 2rem) clamp(0.75rem, 2vh, 2rem);
+  padding: clamp(1.5rem, 3vh, 3rem) clamp(1rem, 3vw, 2rem) clamp(0.75rem, 2vh, 2rem);
   flex-shrink: 0;
   box-sizing: border-box;
 }
@@ -85,7 +85,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: clamp(0.375rem, 1vh, 1rem);
+  margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
 }
 
 .brand-info {
@@ -138,26 +138,32 @@
 .button-group {
   display: flex;
   align-items: flex-end;
-  gap: clamp(0.5rem, 1.5vw, 1rem);
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-top: clamp(-1rem, -2vh, -0.5rem);
 }
 
 .action-button {
   flex: 1;
   min-width: 0; /* Prevent flex items from overflowing */
   color: white;
-  font-size: clamp(1rem, 2.5vw, 1.75rem);
+  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
   font-weight: var(--pretendard-bold);
-  padding: clamp(0.75rem, 1.75vh, 1.5rem) clamp(0.75rem, 2vw, 1.25rem);
+  padding: clamp(0.6rem, 1.5vh, 1.2rem) clamp(1.5rem, 3vw, 3rem);
+  aspect-ratio: 2.5 / 1;
   border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
   border: none;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
   font-family: 'Pretendard', sans-serif;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .rent-button {
-  background-color: #44748a;
+  background-color: #4067A3;
 }
 
 .rent-button:hover {
@@ -169,7 +175,7 @@
 }
 
 .return-button {
-  background-color: #4ac295;
+  background-color: #3C9D79;
 }
 
 .return-button:hover {
@@ -187,6 +193,13 @@
   align-items: center;
   gap: clamp(0.25rem, 0.5vh, 0.5rem);
   flex-shrink: 0;
+  cursor: pointer;
+}
+
+.help-image {
+  width: clamp(6rem, 12vw + 4vh, 10rem);
+  height: clamp(6rem, 12vw + 4vh, 10rem);
+  object-fit: contain;
 }
 
 .bird-container {

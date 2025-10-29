@@ -45,6 +45,7 @@
   border: none;
   cursor: pointer;
   font-size: inherit;
+  font-weight: var(--pretendard-semibold);
 }
 
 .phone-display-section {
@@ -69,7 +70,7 @@
   justify-content: center;
   white-space: nowrap;
   overflow: visible;
-  letter-spacing: -0.064em;
+  letter-spacing: 0;
   gap: clamp(0.25rem, 0.5vw, 0.313rem);
 }
 
@@ -97,7 +98,7 @@
   font-size: clamp(2.5rem, 6vw + 2vh, 5rem);
   font-weight: var(--pretendard-semibold);
   color: #8798a1;
-  background-color: #ffffff;
+  background-color: #FFFFFF;
   border: none;
   border-radius: clamp(0.625rem, 1.5vw, 0.625rem);
   cursor: pointer;
@@ -167,7 +168,7 @@
 }
 
 .confirm-button-disabled {
-  background-color: #cccccc !important;
-  color: #888888 !important;
+  background-color: #D4D4D4 !important;
+  color: #FFFFFF !important;
   cursor: not-allowed !important;
 }

@@ -93,7 +93,7 @@
   padding: clamp(0.25rem, 0.5vh, 0.5rem) clamp(0.75rem, 2vw, 1.5rem);
   border-radius: 9999px;
   font-size: clamp(0.625rem, 1.5vw, 0.875rem);
-  font-weight: var(--pretendard-medium);
+  font-weight: var(--pretendard-bold);
   white-space: nowrap;
 }
 

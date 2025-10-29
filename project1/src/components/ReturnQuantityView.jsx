@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
+import returnMeCupImage from '../assets/images/returnmecup.svg';
 import './ReturnQuantityView.css';
+<<<<<<< HEAD
 import returnmecup from '../assets/images/returnmecup.svg';
 import xIcon from '../assets/images/x_icon.svg';
+=======
+>>>>>>> 860a6d0a6a8f54932c1a3ceeccd3e85dd2527364
 
 export default function ReturnQuantityView({ onClose, onConfirm }) {
   const [quantity, setQuantity] = useState(1);
@@ -38,7 +42,7 @@ export default function ReturnQuantityView({ onClose, onConfirm }) {
 
           {/* Cup Illustration */}
           <div className="return-cup-illustration">
-            <img src={returnmecup} alt="Return Me Cup" />
+            <img src={returnMeCupImage} alt="Return Me Cup" className="return-cup-svg" />
           </div>
 
           {/* Rented Cups Info */}

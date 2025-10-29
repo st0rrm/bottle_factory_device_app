@@ -1,4 +1,6 @@
 import React from 'react';
+import maskCupIcon from '../assets/images/mask_cup.svg';
+import applicationQR from '../assets/images/applicatioin_qr.svg';
 import './QRCodeView.css';
 
 export default function QRCodeView({ title = '리턴미컵 대여를 위해', mode = 'rental' }) {
@@ -17,7 +19,7 @@ export default function QRCodeView({ title = '리턴미컵 대여를 위해', mo
       <div className="qr-content-wrapper">
         {/* QR Code Scanner Placeholder */}
         <div className="qr-scanner-container">
-          <div className="qr-scanner-box" />
+          <img src={applicationQR} alt="QR Code" className="qr-scanner-box" />
         </div>
 
         {/* Instructions */}
@@ -31,10 +33,7 @@ export default function QRCodeView({ title = '리턴미컵 대여를 위해', mo
             <div className="instruction-with-icon">
               <p className="instruction-text">좌측 하단에서</p>
               <div className="pause-icon-container">
-                <svg className="pause-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="6" y="4" width="4" height="16" fill="currentColor" />
-                  <rect x="14" y="4" width="4" height="16" fill="currentColor" />
-                </svg>
+                <img src={maskCupIcon} alt="Cup Icon" className="pause-icon" />
               </div>
               <p className="instruction-text">터치</p>
             </div>

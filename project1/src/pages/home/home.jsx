@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
+import helpIcon from '../../assets/images/help.svg';
 import HelpModal from '../../components/HelpModal';
 function HomeScreen() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -71,28 +72,9 @@ function HomeScreen() {
             반납
           </button>
 
-          {/* Bird Character with Help */}
+          {/* Help Section */}
           <div className="help-section" onClick={handleHelpAction}>
-            <div className="bird-container">
-              {/* Bird illustration */}
-              <div className="bird">
-                <div className="bird-body"></div>
-                <div className="bird-head"></div>
-                <div className="bird-beak"></div>
-                <div className="bird-eye"></div>
-                <div className="bird-cheek"></div>
-              </div>
-              {/* Speech bubble */}
-              <div className="speech-bubble">?</div>
-            </div>
-            <div className="help-text">
-              <svg className="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-              <span>도움말</span>
-            </div>
+            <img src={helpIcon} alt="Help" className="help-image" />
           </div>
         </div>
       </div>
