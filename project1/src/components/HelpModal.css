@@ -61,17 +61,16 @@
   top: 0;
   left: 0;
   pointer-events: none; /* 클릭 이벤트가 하단 모달로 전달되도록 */
-  z-index: 30; /* modal-card보다 위에 오도록 */
+  z-index: 100; /* modal-card보다 위에 오도록 */
+  align-items: flex-start;
 }
 
 .bird-image {
   position: absolute;
   /* 절대적인 위치와 크기 */
-  width: 80px; /* 고정값 */
   height: auto;
-  top: 0; /* modal-content 기준 상단 */
-  left: 10%; /* modal-content 기준 왼쪽 */
-  transform: translateY(-50%); /* 정확히 위로 절반 이동 */
+  top: 145px; /* modal-content 기준 상단 */
+  left: 90px; /* modal-content 기준 왼쪽 */
   z-index: 31;
   pointer-events: auto; /* 새 이미지는 클릭 가능하도록 (없으면 마우스 이벤트가 박스로 넘어감) */
 }
@@ -84,9 +83,10 @@
   
   position: absolute;
   /* 절대적인 위치와 크기 */
-  width: 320px; /* 고정값 */
-  top: 10px; /* modal-content 기준 상단 */
-  right: 10%; /* modal-content 기준 오른쪽 */
+  width: 385px; /* 고정값 */
+  height: 130px;
+  top: 175px; /* modal-content 기준 상단 */
+  left: 340px;
   z-index: 30;
   pointer-events: auto; /* 말풍선은 클릭 가능하도록 */
   
@@ -196,9 +196,9 @@
 
 .step-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: clamp(0.75rem, 3vw, 1rem);
-  justify-content: center;
+  width: 468px;
 }
 
 .step-icon-wrapper {
@@ -219,6 +219,7 @@
 }
 
 .step-text {
+  flex-grow: 1;
   font-size: clamp(0.9rem, 2.5vw, 1.1rem); 
   color: #333;
   line-height: 1.5;

@@ -44,6 +44,17 @@ export default function HelpModal({ onClose }) {
   return (
     // 모달 오버레이 (화면 전체를 덮음)
     <div className="help-modal-overlay" onClick={onClose}>
+        {/* 새 이미지 및 말풍선 */}
+        <div className="header-message-area">
+            <img src={birdImage} alt="지구를 위한 선택을 권유하는 새" className="bird-image" />
+            <div className="speech-bubble">
+            <p className="bubble-text">
+                <span className="bold-choice">지구를 위한 선택!</span> 일회용 컵 대신
+                <br />
+                <strong className="cup-name">리턴미컵</strong> 어떠세요?
+            </p>
+            </div>
+        </div>
       {/* 모달 콘텐츠 (오버레이 클릭 시 닫히는 것을 방지) */}
       <div className="help-modal-content" onClick={e => e.stopPropagation()}>
         
@@ -52,17 +63,7 @@ export default function HelpModal({ onClose }) {
           <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
         </button>
 
-        {/* 새 이미지 및 말풍선 */}
-        <div className="header-message-area">
-          <img src={birdImage} alt="지구를 위한 선택을 권유하는 새" className="bird-image" />
-          <div className="speech-bubble">
-            <p className="bubble-text">
-              <span className="bold-choice">지구를 위한 선택!</span> 일회용 컵 대신
-              <br />
-              <strong className="cup-name">리턴미컵</strong> 어떠세요?
-            </p>
-          </div>
-        </div>
+        
 
         {/* 카드 영역 */}
         <div className="modal-card">
