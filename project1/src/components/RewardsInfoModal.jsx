@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './RewardsInfoModal.css';
+import xIcon from '../assets/images/x_icon.svg';
 
 export default function RewardsInfoModal({ onClose }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,10 +28,7 @@ export default function RewardsInfoModal({ onClose }) {
         <div className="rewards-modal-header">
           <h2 className="rewards-modal-title">보상</h2>
           <button onClick={onClose} className="rewards-close-button">
-            <svg className="rewards-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" strokeLinecap="round" />
-              <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
           </button>
         </div>
 

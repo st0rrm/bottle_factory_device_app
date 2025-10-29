@@ -4,6 +4,7 @@ import QRCodeView from './QRCodeView';
 import ReturnQuantityView from './ReturnQuantityView';
 import ReturnConfirmationView from './ReturnConfirmationView';
 import './ReturnModal.css';
+import xIcon from '../assets/images/x_icon.svg';
 
 export default function ReturnModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -61,10 +62,7 @@ export default function ReturnModal({ onClose }) {
       <div className="return-modal-container">
         {/* Close Button */}
         <button onClick={onClose} className="return-modal-close-button">
-          <svg className="return-modal-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" strokeLinecap="round" />
-            <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
         </button>
 
         {/* Toggle Tabs with Tooltip */}

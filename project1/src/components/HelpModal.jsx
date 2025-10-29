@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import './HelpModal.css';
 
 // ⚠️ 이미지 파일 이름은 예시입니다. 실제 파일 이름으로 대체하세요.
-import birdImage from '../assets/images/bird_recommendation.svg'; 
+import birdImage from '../assets/images/bird_recommendation.svg';
 import step1Icon from '../assets/images/1_recommendation_how.svg';
 import step2Icon from '../assets/images/2_recommendation_how.svg';
 import step3Icon from '../assets/images/1_recommendation_how.svg';
+import xIcon from '../assets/images/x_icon.svg';
 
 export default function HelpModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('howToUse'); // 'whatIsIt' 또는 'howToUse'
@@ -48,7 +49,7 @@ export default function HelpModal({ onClose }) {
         
         {/* 닫기 버튼 (X 표시) */}
         <button className="close-button" onClick={onClose} aria-label="닫기">
-          &times;
+          <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
         </button>
 
         {/* 새 이미지 및 말풍선 */}

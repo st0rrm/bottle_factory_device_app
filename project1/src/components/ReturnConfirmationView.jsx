@@ -1,6 +1,7 @@
 import React from 'react';
 import './ReturnConfirmationView.css';
 import returnmecup from '../assets/images/returnmecup.svg';
+import xIcon from '../assets/images/x_icon.svg';
 
 export default function ReturnConfirmationView({
   quantity,
@@ -15,10 +16,7 @@ export default function ReturnConfirmationView({
       <div className="return-confirmation-modal">
         {/* Close Button */}
         <button onClick={onClose} className="return-confirmation-close-button">
-          <svg className="return-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" strokeLinecap="round" />
-            <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
         </button>
 
         <div className="return-confirmation-content">
