@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './QuantitySelectionView.css';
+import returnmecup from '../assets/images/returnmecup.svg';
 
 export default function QuantitySelectionView({
   quantity,
@@ -20,17 +21,7 @@ export default function QuantitySelectionView({
 
       {/* Cup Illustration */}
       <div className="cup-illustration">
-        <div className="cup-container">
-          {/* Cup body */}
-          <div className="cup-body">
-            <div className="cup-label">Return Me</div>
-            {/* Cup shine effect */}
-            <div className="cup-shine" />
-          </div>
-          {/* Cup lid */}
-          <div className="cup-lid-top" />
-          <div className="cup-lid-bottom" />
-        </div>
+        <img src={returnmecup} alt="Return Me Cup" />
       </div>
 
       {/* Available Vouchers */}

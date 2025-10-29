@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './RentalConfirmationView.css';
+import returnmecup from '../assets/images/returnmecup.svg';
 
 export default function RentalConfirmationView({
   quantity,
@@ -30,17 +31,7 @@ export default function RentalConfirmationView({
 
       {/* Cup Illustration with Quantity */}
       <div className="cup-quantity-display">
-        <div className="cup-container">
-          {/* Cup body */}
-          <div className="cup-body">
-            <div className="cup-label">Return Me</div>
-            {/* Cup shine effect */}
-            <div className="cup-shine" />
-          </div>
-          {/* Cup lid */}
-          <div className="cup-lid-top" />
-          <div className="cup-lid-bottom" />
-        </div>
+        <img src={returnmecup} alt="Return Me Cup" />
         <div className="quantity-multiplier">×{quantity}</div>
       </div>
 
