@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/github/bottle_factory_device_app/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

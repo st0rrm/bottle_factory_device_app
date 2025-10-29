@@ -1,0 +1,2 @@
+# This file ensures the database directory is included in Git
+# The actual .db files are ignored via .gitignore
