@@ -149,6 +149,13 @@
   font-size: clamp(0.75rem, 1.75vw, 0.8125rem);
   font-weight: var(--pretendard-regular);
   color: #5f6368;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  text-decoration: underline;
+}
+
+.footer-text:hover {
+  color: #478a81;
 }
 
 /* All responsive sizing is now handled by clamp() in the base styles above.

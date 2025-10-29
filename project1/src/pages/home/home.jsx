@@ -1,14 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
 import helpIcon from '../../assets/images/help.svg';
 import HelpModal from '../../components/HelpModal';
+import { getMyStats } from '../../api/statistics';
+import { logout } from '../../api/auth';
 
 function HomeScreen() {
+  const navigate = useNavigate();
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [cafeInfo, setCafeInfo] = useState(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    today: 0,
+    weekly: 0
+  });
+
+  useEffect(() => {
+    // localStorage에서 카페 정보 가져오기
+    const userData = localStorage.getItem('userData');
+    const userType = localStorage.getItem('userType');
+    const authToken = localStorage.getItem('authToken');
+
+    if (!userData || !authToken || userType !== 'cafe') {
+      // 로그인하지 않았으면 로그인 페이지로
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    const cafe = JSON.parse(userData);
+    setCafeInfo(cafe);
+
+    // 서버에서 통계 데이터 가져오기
+    fetchStats();
+
+    // 브라우저 뒤로가기 방지
+    const handlePopState = () => {
+      // 뒤로가기 시 다시 현재 페이지로
+      window.history.pushState(null, '', window.location.pathname);
+    };
+
+    window.history.pushState(null, '', window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [navigate]);
+
+  const fetchStats = async () => {
+    try {
+      const data = await getMyStats();
+      setStats(data);
+    } catch (error) {
+      console.error('통계 불러오기 실패:', error);
+      // 에러 발생 시 기본값 유지
+    }
+  };
 
   const handleBorrowCupAction = () => {
     setShowVerifyModal(true);
@@ -22,36 +74,43 @@ function HomeScreen() {
     setShowHelpModal(true);
   };
 
-  // 💡 모달이 열려 있는지 확인하는 단일 변수
-  const isModalOpen = showVerifyModal || showReturnModal || showHelpModal;
+  const handleLogout = () => {
+    if (window.confirm('로그아웃 하시겠습니까?')) {
+      logout();
+      navigate('/login', { replace: true });
+    }
+  };
+
+  // 로딩 중이거나 카페 정보가 없으면 빈 화면
+  if (!cafeInfo) {
+    return <div className="home-container">Loading...</div>;
+  }
 
   return (
     <div className="home-container">
-      {/* ------------------------------------------------------------- */}
-      {/* 1. 모달이 열려 있지 않을 때만 상단 콘텐츠 (Header + Tree) 렌더링 */}
-      {/* ------------------------------------------------------------- */}
-      {!isModalOpen && (
-        <>
-          {/* Header Section */}
-          <div className="header-section">
-            <h1 className="cafe-name">커피포임팩트</h1>
-            <div className="total-count">
-              <svg className="droplet-icon" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-              </svg>
-              <span className="count-number">123</span>
-            </div>
-            <p className="sub-stats">
-              오늘 <span className="stat-value">12</span>회 | 주간 <span className="stat-value">34</span>회
-            </p>
-          </div>
+      {/* Header Section */}
+      <div className="header-section">
+        <div className="header-top">
+          <h1 className="cafe-name">{cafeInfo.cafeName}</h1>
+          <button className="logout-btn" onClick={handleLogout}>
+            로그아웃
+          </button>
+        </div>
+        <div className="total-count">
+          <svg className="droplet-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+          </svg>
+          <span className="count-number">{stats.total}</span>
+        </div>
+        <p className="sub-stats">
+          오늘 <span className="stat-value">{stats.today}</span>회 | 주간 <span className="stat-value">{stats.weekly}</span>회
+        </p>
+      </div>
 
-          {/* Tree Illustration Section - Placeholder for background image */}
-          <div className="tree-section">
-            {/* Background image will be added here */}
-          </div>
-        </>
-      )}
+      {/* Tree Illustration Section - Placeholder for background image */}
+      <div className="tree-section">
+        {/* Background image will be added here */}
+      </div>
 
       {/* ------------------------------------------------------------- */}
       {/* 2. Bottom Action Bar (모달 개방 여부와 관계없이 항상 렌더링) */}

@@ -1,0 +1,145 @@
+/* Admin Login Overlay */
+.admin-login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Admin Login Modal */
+.admin-login-modal {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  border-radius: 24px;
+  padding: 40px 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Close Button */
+.admin-close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.admin-close-button:hover {
+  opacity: 0.7;
+}
+
+/* Content */
+.admin-login-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Title */
+.admin-login-title {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+  margin: 0;
+}
+
+.admin-login-subtitle {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  text-align: center;
+  margin: -16px 0 0 0;
+}
+
+/* Login Form */
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Input Group */
+.admin-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-input-label {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-input {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-input:focus {
+  border-color: #4A90E2;
+}
+
+.admin-input::placeholder {
+  color: #aaa;
+}
+
+/* Error Message */
+.admin-error-message {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #E74C3C;
+  text-align: center;
+  padding: 12px;
+  background: #FEE;
+  border-radius: 8px;
+  margin-top: -8px;
+}
+
+/* Login Button */
+.admin-login-button {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background: #4A90E2;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.admin-login-button:hover {
+  background: #357ABD;
+}
+
+.admin-login-button:active {
+  transform: scale(0.98);
+}

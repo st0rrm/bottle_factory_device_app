@@ -9,9 +9,17 @@ import qrIcon from '../assets/images/qr_icon_identification.svg';
 import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './ReturnModal.css';
 import xIcon from '../assets/images/x_icon.svg';
+import { trackBehavior } from '../api/behaviors';
 
 export default function ReturnModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('phone');
+
+  // 탭 전환 추적
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // 탭 클릭 이벤트 추적 (반납 모달)
+    trackBehavior('tab_switch', `${tab}_return`);
+  };
   const [step, setStep] = useState('verification');
   const [returnQuantity, setReturnQuantity] = useState(1);
 
@@ -82,13 +90,13 @@ export default function ReturnModal({ onClose }) {
           {/* Toggle Tabs */}
           <div className="return-tabs-container">
             <button
-              onClick={() => setActiveTab('phone')}
+              onClick={() => handleTabChange('phone')}
               className={`return-tab ${activeTab === 'phone' ? 'return-tab-active' : 'return-tab-inactive'}`}
             >
               <img src={activeTab === 'phone' ? phoneIcon : phoneIconNot} alt="Phone" className="return-tab-icon" />
             </button>
             <button
-              onClick={() => setActiveTab('qr')}
+              onClick={() => handleTabChange('qr')}
               className={`return-tab return-tab-qr ${activeTab === 'qr' ? 'return-tab-active' : 'return-tab-inactive'}`}
             >
               <img src={activeTab === 'qr' ? qrIconActive : qrIcon} alt="QR" className="return-tab-icon" />

@@ -10,9 +10,17 @@ import qrIcon from '../assets/images/qr_icon_identification.svg';
 import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './VerifyModal.css';
 import xIcon from '../assets/images/x_icon.svg';
+import { trackBehavior } from '../api/behaviors';
 
 export default function VerifyModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('phone');
+
+  // 탭 전환 추적
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // 탭 클릭 이벤트 추적 (대여 모달)
+    trackBehavior('tab_switch', `${tab}_borrow`);
+  };
   const [phoneNumber, setPhoneNumber] = useState('010');
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerification, setShowVerification] = useState(false);
@@ -181,13 +189,13 @@ export default function VerifyModal({ onClose }) {
               {/* Toggle Tabs */}
               <div className="verify-tabs-container">
                 <button
-                  onClick={() => setActiveTab('phone')}
+                  onClick={() => handleTabChange('phone')}
                   className={`verify-tab ${activeTab === 'phone' ? 'verify-tab-active' : 'verify-tab-inactive'}`}
                 >
                   <img src={activeTab === 'phone' ? phoneIcon : phoneIconNot} alt="Phone" className="verify-tab-icon" />
                 </button>
                 <button
-                  onClick={() => setActiveTab('qr')}
+                  onClick={() => handleTabChange('qr')}
                   className={`verify-tab verify-tab-qr ${activeTab === 'qr' ? 'verify-tab-active' : 'verify-tab-inactive'}`}
                 >
                   <img src={activeTab === 'qr' ? qrIconActive : qrIcon} alt="QR" className="verify-tab-icon" />
