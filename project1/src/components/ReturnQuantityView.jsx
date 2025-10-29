@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import returnMeCupImage from '../assets/images/returnmecup.svg';
-import './ReturnQuantityView.css';
-<<<<<<< HEAD
-import returnmecup from '../assets/images/returnmecup.svg';
 import xIcon from '../assets/images/x_icon.svg';
-=======
->>>>>>> 860a6d0a6a8f54932c1a3ceeccd3e85dd2527364
+import './ReturnQuantityView.css';
 
 export default function ReturnQuantityView({ onClose, onConfirm }) {
   const [quantity, setQuantity] = useState(1);

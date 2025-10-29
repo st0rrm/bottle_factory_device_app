@@ -1,12 +1,8 @@
 import React from 'react';
 import returnMeCupImage from '../assets/images/returnmecup.svg';
 import bottlePointIcon from '../assets/images/bottlepoint_icon.svg';
-import './ReturnConfirmationView.css';
-<<<<<<< HEAD
-import returnmecup from '../assets/images/returnmecup.svg';
 import xIcon from '../assets/images/x_icon.svg';
-=======
->>>>>>> 860a6d0a6a8f54932c1a3ceeccd3e85dd2527364
+import './ReturnConfirmationView.css';
 
 export default function ReturnConfirmationView({
   quantity,
