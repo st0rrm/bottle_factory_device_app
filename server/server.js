@@ -21,32 +21,30 @@ const server = app.listen(PORT, () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
+  server.close(async () => {
     console.log('HTTP server closed');
-    db.close((err) => {
-      if (err) {
-        console.error('Error closing database:', err.message);
-      } else {
-        console.log('Database connection closed');
-      }
-      process.exit(0);
-    });
+    try {
+      await db.end();
+      console.log('Database connection pool closed');
+    } catch (err) {
+      console.error('Error closing database pool:', err.message);
+    }
+    process.exit(0);
   });
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\nSIGINT signal received: closing HTTP server');
-  server.close(() => {
+  server.close(async () => {
     console.log('HTTP server closed');
-    db.close((err) => {
-      if (err) {
-        console.error('Error closing database:', err.message);
-      } else {
-        console.log('Database connection closed');
-      }
-      process.exit(0);
-    });
+    try {
+      await db.end();
+      console.log('Database connection pool closed');
+    } catch (err) {
+      console.error('Error closing database pool:', err.message);
+    }
+    process.exit(0);
   });
 });

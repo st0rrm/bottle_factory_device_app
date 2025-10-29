@@ -6,8 +6,8 @@ node_modules/
 .env.local
 .env.production
 
-# Database
-# database/*.db  ← 프로토타입이므로 DB 파일 포함
+# Database (using PostgreSQL via Docker, no local DB files)
+database/*.db
 database/*.db-journal
 
 # Logs

@@ -1,97 +1,128 @@
-const db = require('../config/database');
+const pool = require('../config/database');
 
 class Statistics {
   // 거래 기록 추가 (대여 또는 반납)
-  static addTransaction(cafeId, transactionType, phoneNumber, quantity, callback) {
-    db.run(
-      'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity) VALUES (?, ?, ?, ?)',
-      [cafeId, transactionType, phoneNumber, quantity],
-      callback
-    );
+  static async addTransaction(cafeId, transactionType, phoneNumber, quantity) {
+    try {
+      const result = await pool.query(
+        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity) VALUES ($1, $2, $3, $4) RETURNING id',
+        [cafeId, transactionType, phoneNumber, quantity]
+      );
+      return result.rows[0];
+    } catch (err) {
+      throw err;
+    }
   }
 
   // 카페별 총 누적 횟수 (대여 + 반납)
-  static getTotalCount(cafeId, callback) {
-    db.get(
-      'SELECT COUNT(*) as total FROM transactions WHERE cafe_id = ?',
-      [cafeId],
-      callback
-    );
+  static async getTotalCount(cafeId) {
+    try {
+      const result = await pool.query(
+        'SELECT COUNT(*) as total FROM transactions WHERE cafe_id = $1',
+        [cafeId]
+      );
+      return parseInt(result.rows[0].total);
+    } catch (err) {
+      throw err;
+    }
   }
 
   // 카페별 오늘 거래 횟수
-  static getTodayCount(cafeId, callback) {
-    db.get(
-      `SELECT COUNT(*) as today FROM transactions
-       WHERE cafe_id = ?
-       AND DATE(created_at) = DATE('now', 'localtime')`,
-      [cafeId],
-      callback
-    );
+  static async getTodayCount(cafeId) {
+    try {
+      const result = await pool.query(
+        `SELECT COUNT(*) as today FROM transactions
+         WHERE cafe_id = $1
+         AND DATE(created_at) = CURRENT_DATE`,
+        [cafeId]
+      );
+      return parseInt(result.rows[0].today);
+    } catch (err) {
+      throw err;
+    }
   }
 
   // 카페별 주간 거래 횟수 (최근 7일)
-  static getWeeklyCount(cafeId, callback) {
-    db.get(
-      `SELECT COUNT(*) as weekly FROM transactions
-       WHERE cafe_id = ?
-       AND DATE(created_at) >= DATE('now', '-7 days', 'localtime')`,
-      [cafeId],
-      callback
-    );
+  static async getWeeklyCount(cafeId) {
+    try {
+      const result = await pool.query(
+        `SELECT COUNT(*) as weekly FROM transactions
+         WHERE cafe_id = $1
+         AND created_at >= CURRENT_DATE - INTERVAL '7 days'`,
+        [cafeId]
+      );
+      return parseInt(result.rows[0].weekly);
+    } catch (err) {
+      throw err;
+    }
   }
 
   // 카페별 전체 통계 한번에 가져오기
-  static getCafeStats(cafeId, callback) {
-    const stats = {};
+  static async getCafeStats(cafeId) {
+    try {
+      const result = await pool.query(
+        `SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE) as today,
+          COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '7 days') as weekly
+        FROM transactions
+        WHERE cafe_id = $1`,
+        [cafeId]
+      );
 
-    this.getTotalCount(cafeId, (err, result) => {
-      if (err) return callback(err);
-      stats.total = result.total;
-
-      this.getTodayCount(cafeId, (err, result) => {
-        if (err) return callback(err);
-        stats.today = result.today;
-
-        this.getWeeklyCount(cafeId, (err, result) => {
-          if (err) return callback(err);
-          stats.weekly = result.weekly;
-
-          callback(null, stats);
-        });
-      });
-    });
+      return {
+        total: parseInt(result.rows[0].total) || 0,
+        today: parseInt(result.rows[0].today) || 0,
+        weekly: parseInt(result.rows[0].weekly) || 0
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 
   // 카페별 거래 내역 조회 (페이징)
-  static getTransactionHistory(cafeId, limit = 50, offset = 0, callback) {
-    db.all(
-      `SELECT id, transaction_type, phone_number, quantity, created_at
-       FROM transactions
-       WHERE cafe_id = ?
-       ORDER BY created_at DESC
-       LIMIT ? OFFSET ?`,
-      [cafeId, limit, offset],
-      callback
-    );
+  static async getTransactionHistory(cafeId, limit = 50, offset = 0) {
+    try {
+      const result = await pool.query(
+        `SELECT id, transaction_type, phone_number, quantity, created_at
+         FROM transactions
+         WHERE cafe_id = $1
+         ORDER BY created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [cafeId, limit, offset]
+      );
+      return result.rows;
+    } catch (err) {
+      throw err;
+    }
   }
 
   // 관리자용: 모든 카페의 통계 요약
-  static getAllCafesStats(callback) {
-    db.all(
-      `SELECT
-        c.id,
-        c.cafe_id,
-        c.cafe_name,
-        COUNT(t.id) as total_transactions,
-        SUM(CASE WHEN DATE(t.created_at) = DATE('now', 'localtime') THEN 1 ELSE 0 END) as today_count,
-        SUM(CASE WHEN DATE(t.created_at) >= DATE('now', '-7 days', 'localtime') THEN 1 ELSE 0 END) as weekly_count
-      FROM cafes c
-      LEFT JOIN transactions t ON c.id = t.cafe_id
-      GROUP BY c.id
-      ORDER BY c.cafe_name`,
-      callback
-    );
+  static async getAllCafesStats() {
+    try {
+      const result = await pool.query(
+        `SELECT
+          c.id,
+          c.cafe_id,
+          c.cafe_name,
+          COUNT(t.id) as total_transactions,
+          COUNT(t.id) FILTER (WHERE DATE(t.created_at) = CURRENT_DATE) as today_count,
+          COUNT(t.id) FILTER (WHERE t.created_at >= CURRENT_DATE - INTERVAL '7 days') as weekly_count
+        FROM cafes c
+        LEFT JOIN transactions t ON c.id = t.cafe_id
+        GROUP BY c.id, c.cafe_id, c.cafe_name
+        ORDER BY c.cafe_name`
+      );
+
+      return result.rows.map(row => ({
+        ...row,
+        total_transactions: parseInt(row.total_transactions) || 0,
+        today_count: parseInt(row.today_count) || 0,
+        weekly_count: parseInt(row.weekly_count) || 0
+      }));
+    } catch (err) {
+      throw err;
+    }
   }
 }
 

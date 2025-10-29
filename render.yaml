@@ -1,0 +1,47 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: returnmecup-db
+    plan: free
+    region: singapore
+    databaseName: returnmecup_db
+    databaseUser: returnmecup
+    ipAllowList: []
+
+  # Backend API Server
+  - type: web
+    name: returnmecup-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_USER
+        fromDatabase:
+          name: returnmecup-db
+          property: user
+      - key: DB_HOST
+        fromDatabase:
+          name: returnmecup-db
+          property: host
+      - key: DB_NAME
+        fromDatabase:
+          name: returnmecup-db
+          property: database
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: returnmecup-db
+          property: password
+      - key: DB_PORT
+        fromDatabase:
+          name: returnmecup-db
+          property: port
+      - key: CORS_ORIGIN
+        value: https://your-vercel-url.vercel.app
