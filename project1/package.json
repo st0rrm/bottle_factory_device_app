@@ -6,7 +6,7 @@
   "homepage": "https://st0rrm.github.io/bottle_factory_device_app/",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && echo '/* /index.html 200' | cat > dist/_redirects",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
