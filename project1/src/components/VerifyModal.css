@@ -16,7 +16,7 @@
   width: clamp(280px, 90%, 48rem);
   max-height: 95vh;
   max-height: 95dvh;
-  background-color: white;
+  background-color: #F8F8F8;
   border-radius: clamp(1rem, 2vw, 1.5rem);
   padding: clamp(3rem, 5vh, 4rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 3vh, 2.5rem);
   position: relative;
@@ -93,7 +93,7 @@
   padding: clamp(0.25rem, 0.5vh, 0.5rem) clamp(0.75rem, 2vw, 1.5rem);
   border-radius: 9999px;
   font-size: clamp(0.625rem, 1.5vw, 0.875rem);
-  font-weight: var(--pretendard-medium);
+  font-weight: var(--pretendard-bold);
   white-space: nowrap;
 }
 

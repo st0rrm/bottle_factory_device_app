@@ -6,18 +6,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: clamp(0.5rem, 2vw, 1rem);
   background-color: rgba(71, 138, 129, 0.8);
   font-family: 'Pretendard', sans-serif;
 }
 
 /* Modal Container */
 .return-quantity-modal {
-  width: 100%;
-  max-width: 42rem;
+  width: clamp(280px, 90%, 48rem);
   background-color: white;
-  border-radius: 1.5rem;
-  padding: 1.5rem;
+  border-radius: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
@@ -25,8 +24,8 @@
 /* Close Button */
 .return-close-button {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: clamp(0.75rem, 2vh, 1.5rem);
+  right: clamp(0.75rem, 2vw, 1.5rem);
   color: #9c9c9c;
   background: none;
   border: none;
@@ -39,8 +38,8 @@
 }
 
 .close-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: clamp(1.25rem, 3vw, 2rem);
+  height: clamp(1.25rem, 3vw, 2rem);
 }
 
 /* Content Container */
@@ -52,36 +51,36 @@
 
 /* Headings */
 .return-quantity-heading {
-  font-size: 1.5rem;
+  font-size: clamp(1.5rem, 3vw + 1vh, 2.25rem);
   font-weight: var(--pretendard-bold);
   color: #44748a;
   text-align: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
 }
 
 .return-quantity-subheading {
-  font-size: 1.25rem;
+  font-size: clamp(1.25rem, 2.5vw + 1vh, 1.875rem);
   font-weight: var(--pretendard-bold);
   color: #44748a;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(2rem, 4vh, 3rem);
 }
 
 /* Cup Illustration */
 .return-cup-illustration {
-  margin-bottom: 2rem;
+  margin-bottom: clamp(2rem, 4vh, 3rem);
 }
 
 .return-cup-svg {
-  width: 8rem;
-  height: 10rem;
+  width: clamp(8rem, 15vw + 5vh, 11rem);
+  height: clamp(10rem, 18vw + 6vh, 13rem);
 }
 
 /* Rented Cups Info */
 .rented-cups-info {
-  font-size: 1.125rem;
+  font-size: clamp(1.125rem, 2vw + 0.5vh, 1.5rem);
   color: #44748a;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(2rem, 4vh, 3rem);
 }
 
 .rented-cups-count {
@@ -93,13 +92,13 @@
 .return-quantity-selector {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  margin-bottom: 3rem;
+  gap: clamp(2rem, 4vw, 3rem);
+  margin-bottom: clamp(3rem, 5vh, 4rem);
 }
 
 .return-quantity-button {
-  width: 4rem;
-  height: 4rem;
+  width: clamp(4rem, 8vw + 2vh, 5rem);
+  height: clamp(4rem, 8vw + 2vh, 5rem);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -123,28 +122,28 @@
 }
 
 .return-quantity-icon {
-  width: 2rem;
-  height: 2rem;
+  width: clamp(2rem, 4vw + 1vh, 2.5rem);
+  height: clamp(2rem, 4vw + 1vh, 2.5rem);
   color: white;
 }
 
 .return-quantity-display {
-  font-size: 3.75rem;
+  font-size: clamp(3.75rem, 7vw + 2vh, 5rem);
   font-weight: var(--pretendard-bold);
   color: #0c2950;
-  min-width: 6.25rem;
+  min-width: clamp(6.25rem, 12vw, 7.5rem);
   text-align: center;
 }
 
 /* Confirm Button */
 .return-confirm-button {
   width: 100%;
-  max-width: 28rem;
-  padding: 1rem;
-  border-radius: 1rem;
+  max-width: clamp(20rem, 50vw, 28rem);
+  padding: clamp(1rem, 2vh, 1.25rem);
+  border-radius: clamp(0.75rem, 1.5vw, 1rem);
   background-color: #44748a;
   color: white;
-  font-size: 1.25rem;
+  font-size: clamp(1.25rem, 2.5vw + 0.5vh, 1.5rem);
   font-weight: var(--pretendard-bold);
   border: none;
   cursor: pointer;
@@ -153,93 +152,4 @@
 
 .return-confirm-button:hover {
   background-color: #497fc6;
-}
-
-/* Responsive Design */
-@media (min-width: 768px) {
-  .return-quantity-modal {
-    padding: 2rem;
-  }
-
-  .return-close-button {
-    top: 1.5rem;
-    right: 1.5rem;
-  }
-
-  .close-icon {
-    width: 2rem;
-    height: 2rem;
-  }
-
-  .return-quantity-heading {
-    font-size: 1.875rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .return-quantity-subheading {
-    font-size: 1.5rem;
-    margin-bottom: 3rem;
-  }
-
-  .return-cup-illustration {
-    margin-bottom: 3rem;
-  }
-
-  .return-cup-svg {
-    width: 11rem;
-    height: 13rem;
-  }
-
-  .rented-cups-info {
-    font-size: 1.25rem;
-    margin-bottom: 3rem;
-  }
-
-  .return-quantity-selector {
-    gap: 3rem;
-    margin-bottom: 4rem;
-  }
-
-  .return-quantity-button {
-    width: 5rem;
-    height: 5rem;
-  }
-
-  .return-quantity-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  .return-quantity-display {
-    font-size: 4.5rem;
-    min-width: 7.5rem;
-  }
-
-  .return-confirm-button {
-    padding: 1.25rem;
-    font-size: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .return-quantity-modal {
-    max-width: 48rem;
-    padding: 2.5rem;
-  }
-
-  .return-quantity-heading {
-    font-size: 2.25rem;
-  }
-
-  .return-quantity-subheading {
-    font-size: 1.875rem;
-  }
-
-  .rented-cups-info {
-    font-size: 1.5rem;
-  }
-
-  .return-quantity-display {
-    font-size: 5rem;
-  }
 }

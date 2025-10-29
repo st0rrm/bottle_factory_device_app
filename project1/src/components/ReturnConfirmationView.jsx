@@ -1,4 +1,6 @@
 import React from 'react';
+import returnMeCupImage from '../assets/images/returnmecup.svg';
+import bottlePointIcon from '../assets/images/bottlepoint_icon.svg';
 import './ReturnConfirmationView.css';
 
 export default function ReturnConfirmationView({
@@ -26,16 +28,7 @@ export default function ReturnConfirmationView({
 
           {/* Cup with Quantity */}
           <div className="return-cup-quantity-display">
-            <svg width="180" height="220" viewBox="0 0 180 220" fill="none" className="return-confirmation-cup-svg">
-              {/* Cup lid */}
-              <rect x="40" y="20" width="100" height="30" rx="8" fill="#0c2950" />
-              <rect x="30" y="45" width="120" height="8" rx="4" fill="#0c2950" />
-              {/* Cup body */}
-              <path d="M 50 60 L 60 180 L 120 180 L 130 60 Z" fill="#e9edef" stroke="#d9d9d9" strokeWidth="2" />
-              <text x="90" y="120" textAnchor="middle" fill="#9c9c9c" fontSize="14" fontFamily="Arial">
-                Return Me
-              </text>
-            </svg>
+            <img src={returnMeCupImage} alt="Return Me Cup" className="return-confirmation-cup-svg" />
             <div className="return-confirmation-quantity">×{quantity}</div>
           </div>
 
@@ -48,13 +41,11 @@ export default function ReturnConfirmationView({
               </button>
             </div>
             <div className="reward-value-group">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="bottle-icon">
-                <circle cx="12" cy="12" r="10" fill="#497fc6" />
-                <text x="12" y="16" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
-                  B
-                </text>
-              </svg>
-              <span className="return-reward-value">{rewardPoints}보틀</span>
+              <img src={bottlePointIcon} alt="Bottle Point" className="bottle-icon" />
+              <span className="return-reward-value">
+                <span className="reward-number">{rewardPoints}</span>
+                <span className="reward-text">보틀</span>
+              </span>
             </div>
           </div>
 

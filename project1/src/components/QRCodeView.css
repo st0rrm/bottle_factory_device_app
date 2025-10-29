@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: center;
   flex: 1;
   height: 100%;
   min-height: 0;
@@ -17,13 +17,15 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  flex: 1;
-  justify-content: space-evenly;
+  max-width: min(90%, 28rem);
+  justify-content: center;
+  gap: clamp(1rem, 2vh, 2rem);
+  margin: 0 auto;
 }
 
 /* 세로 길이가 짧을 때 또는 가로 길이가 충분히 클 때 가로 레이아웃 */
 /* iPad Pro 13" 세로: 1024px, 가로: 1366px */
-@media (max-height: 600px) and (min-width: 500px), (min-width: 1100px) {
+@media (max-height: 700px) and (min-width: 600px), (min-width: 1200px) {
   .qr-code-view {
     justify-content: flex-start;
     padding-top: clamp(0.25rem, 1vh, 1rem);
@@ -34,11 +36,18 @@
     margin-bottom: clamp(0.25rem, 1vh, 1rem);
   }
 
+  .qr-code-view {
+    align-items: center;
+    justify-content: center;
+  }
+
   .qr-content-wrapper {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center;
     gap: clamp(0.5rem, 2vw + 1vh, 2rem);
     justify-content: center;
+    width: auto;
+    max-width: none;
   }
 
   .qr-scanner-container {
@@ -52,7 +61,7 @@
   }
 
   .qr-instructions {
-    flex: 1;
+    width: auto;
     max-width: none;
   }
 
@@ -105,14 +114,11 @@
 }
 
 .qr-scanner-box {
-  width: clamp(10rem, 20vw + 15vh, 16rem);
-  height: clamp(10rem, 20vw + 15vh, 16rem);
-  background-color: #000000;
+  width: clamp(8rem, 15vw + 10vh, 12rem);
+  height: clamp(8rem, 15vw + 10vh, 12rem);
   border-radius: clamp(0.5rem, 1vw, 1rem);
   margin-bottom: clamp(1rem, 2vh, 3rem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  object-fit: contain;
 }
 
 .qr-scanner-text {
@@ -122,7 +128,6 @@
 
 .qr-instructions {
   width: 100%;
-  max-width: min(90%, 28rem);
   display: flex;
   flex-direction: column;
   gap: clamp(0.5rem, 1vh, 1rem);
@@ -147,6 +152,8 @@
 .instruction-text {
   font-size: clamp(0.75rem, 1.5vw + 0.75vh, 1.25rem);
   line-height: 1.4;
+  font-weight: var(--pretendard-extralight);
+  color: #000000;
 }
 
 .instruction-with-icon {
@@ -157,10 +164,6 @@
 }
 
 .pause-icon-container {
-  width: clamp(1.25rem, 2.5vw + 1vh, 1.75rem);
-  height: clamp(1.25rem, 2.5vw + 1vh, 1.75rem);
-  border-radius: 50%;
-  background-color: #497fc6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,8 +171,7 @@
 }
 
 .pause-icon {
-  width: clamp(0.625rem, 1.5vw, 1rem);
-  height: clamp(0.625rem, 1.5vw, 1rem);
-  border: 2px solid white;
-  border-radius: 0.125rem;
+  width: clamp(2rem, 4vw + 2vh, 3rem);
+  height: clamp(2rem, 4vw + 2vh, 3rem);
+  object-fit: contain;
 }

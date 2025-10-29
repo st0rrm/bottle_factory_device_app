@@ -3,6 +3,10 @@ import PhoneInputView from './PhoneInputView';
 import QRCodeView from './QRCodeView';
 import ReturnQuantityView from './ReturnQuantityView';
 import ReturnConfirmationView from './ReturnConfirmationView';
+import phoneIcon from '../assets/images/phone_icon_identification.svg';
+import phoneIconNot from '../assets/images/phone_icon_identification_not.svg';
+import qrIcon from '../assets/images/qr_icon_identification.svg';
+import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './ReturnModal.css';
 
 export default function ReturnModal({ onClose }) {
@@ -83,20 +87,13 @@ export default function ReturnModal({ onClose }) {
               onClick={() => setActiveTab('phone')}
               className={`return-tab ${activeTab === 'phone' ? 'return-tab-active' : 'return-tab-inactive'}`}
             >
-              <svg className="return-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <img src={activeTab === 'phone' ? phoneIcon : phoneIconNot} alt="Phone" className="return-tab-icon" />
             </button>
             <button
               onClick={() => setActiveTab('qr')}
               className={`return-tab return-tab-qr ${activeTab === 'qr' ? 'return-tab-active' : 'return-tab-inactive'}`}
             >
-              <svg className="return-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <rect x="3" y="3" width="8" height="8" rx="1" strokeWidth="2" />
-                <rect x="13" y="3" width="8" height="8" rx="1" strokeWidth="2" />
-                <rect x="3" y="13" width="8" height="8" rx="1" strokeWidth="2" />
-                <rect x="13" y="13" width="8" height="8" rx="1" strokeWidth="2" />
-              </svg>
+              <img src={activeTab === 'qr' ? qrIconActive : qrIcon} alt="QR" className="return-tab-icon" />
             </button>
           </div>
         </div>

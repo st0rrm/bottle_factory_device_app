@@ -118,7 +118,7 @@
 
 .number-button {
   aspect-ratio: 1;
-  background-color: #f8f8f8;
+  background-color: #ffffff;
   border-radius: clamp(0.5rem, 1vw, 1rem);
   font-size: clamp(1.25rem, 3vw + 1.5vh, 2.25rem);
   font-weight: var(--pretendard-semibold);
