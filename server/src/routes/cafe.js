@@ -69,6 +69,18 @@ router.post('/', authenticateAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Cafe ID, password, and name required' });
     }
 
+    // Validate cafe ID format (only alphanumeric, hyphen, underscore)
+    const cafeIdRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!cafeIdRegex.test(cafeId)) {
+      return res.status(400).json({ error: 'Cafe ID can only contain letters, numbers, hyphens, and underscores' });
+    }
+
+    // Validate password format (8+ chars, must include letters and numbers)
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&_-]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters and include letters and numbers. Special characters allowed: @$!%*#?&_-' });
+    }
+
     const result = await Cafe.create(cafeId, password, cafeName, req.user.id);
 
     res.status(201).json({
@@ -110,6 +122,12 @@ router.put('/:id/password', authenticateAdmin, async (req, res) => {
 
     if (!newPassword) {
       return res.status(400).json({ error: 'New password required' });
+    }
+
+    // Validate password format (8+ chars, must include letters and numbers)
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&_-]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters and include letters and numbers. Special characters allowed: @$!%*#?&_-' });
     }
 
     await Cafe.updatePassword(cafeId, newPassword);

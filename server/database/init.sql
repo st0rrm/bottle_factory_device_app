@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS idx_user_behaviors_created_at ON user_behaviors(creat
 INSERT INTO admins (username, password_hash, email)
 VALUES (
   'admin',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  '$2a$10$YGT4ZN4GmKDouJObSzvEpuScYWJwcftnMilOjvVoSGZ1Ke5N53xqW',
   'admin@returnmecup.com'
 ) ON CONFLICT (username) DO NOTHING;
 

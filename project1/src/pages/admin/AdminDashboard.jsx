@@ -100,6 +100,21 @@ function AdminDashboard() {
 
   const handleCreateCafe = async (e) => {
     e.preventDefault();
+
+    // 카페 ID 유효성 검사 (영문, 숫자, 하이픈, 언더스코어만 허용)
+    const cafeIdRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!cafeIdRegex.test(formData.cafeId)) {
+      alert('카페 ID는 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있습니다.');
+      return;
+    }
+
+    // 비밀번호 유효성 검사 (8자 이상, 영문 + 숫자 포함)
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&_-]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      alert('비밀번호는 8자 이상, 영문과 숫자를 포함해야 합니다.\n특수문자는 @$!%*#?&_- 만 사용 가능합니다.');
+      return;
+    }
+
     try {
       await createCafe(formData);
       alert('카페가 생성되었습니다.');
@@ -128,8 +143,15 @@ function AdminDashboard() {
   };
 
   const handleChangePassword = async (cafeId) => {
-    const newPassword = prompt('새 비밀번호를 입력하세요:');
+    const newPassword = prompt('새 비밀번호를 입력하세요:\n(8자 이상, 영문+숫자 포함, 특수문자는 @$!%*#?&_- 만 가능)');
     if (!newPassword) return;
+
+    // 비밀번호 유효성 검사
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&_-]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      alert('비밀번호는 8자 이상, 영문과 숫자를 포함해야 합니다.\n특수문자는 @$!%*#?&_- 만 사용 가능합니다.');
+      return;
+    }
 
     try {
       await updateCafePassword(cafeId, newPassword);
@@ -475,9 +497,10 @@ function AdminDashboard() {
                   type="text"
                   value={formData.cafeId}
                   onChange={(e) => setFormData({ ...formData, cafeId: e.target.value })}
-                  placeholder="예: cafe001"
+                  placeholder="예: cafe001 (영문, 숫자, -, _ 만 가능)"
                   required
                 />
+                <small style={{ color: '#666', fontSize: '12px' }}>영문, 숫자, 하이픈(-), 언더스코어(_)만 사용 가능</small>
               </div>
               <div className="form-group">
                 <label>비밀번호 *</label>
@@ -485,9 +508,10 @@ function AdminDashboard() {
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="비밀번호 입력"
+                  placeholder="8자 이상, 영문+숫자 포함"
                   required
                 />
+                <small style={{ color: '#666', fontSize: '12px' }}>8자 이상, 영문+숫자 포함 (특수문자: @$!%*#?&_- 만 가능)</small>
               </div>
               <div className="form-group">
                 <label>카페명 *</label>
