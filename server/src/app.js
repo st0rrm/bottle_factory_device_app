@@ -8,7 +8,14 @@ const behaviorsRoutes = require('./routes/behaviors');
 const app = express();
 
 // Middleware
-app.use(cors());
+// CORS configuration - read allowed origins from environment variable
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
