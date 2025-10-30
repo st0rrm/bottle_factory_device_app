@@ -11,7 +11,8 @@
       "Bash(sqlite3:*)",
       "Bash(where:*)",
       "Bash(copy:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
