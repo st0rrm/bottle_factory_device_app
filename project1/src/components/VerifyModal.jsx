@@ -11,6 +11,9 @@ import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './VerifyModal.css';
 import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
+import { sendVerificationCode, verifyCode } from '../firebase/auth';
+import { createNewUser, getUserTickets, processRental } from '../firebase/firestore';
+import { DEVICE_SHOP_ID } from '../config/device';
 
 export default function VerifyModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -27,12 +30,17 @@ export default function VerifyModal({ onClose }) {
   const [showQuantitySelection, setShowQuantitySelection] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [availableVouchers] = useState(2);
+  const [availableVouchers, setAvailableVouchers] = useState(0);
+  const [userTickets, setUserTickets] = useState([]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [confirmationResult, setConfirmationResult] = useState(null);
   const [smsNotification, setSmsNotification] = useState(true);
   const [timer, setTimer] = useState(180);
   const [attempts, setAttempts] = useState(0);
   const [isError, setIsError] = useState(false);
-  const CORRECT_CODE = '123456';
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const MAX_ATTEMPTS = 5;
 
   useEffect(() => {
@@ -55,32 +63,66 @@ export default function VerifyModal({ onClose }) {
   }, [showVerification, timer]);
 
   useEffect(() => {
-    if (verificationCode.length === 6 && !isError) {
-      const timeoutId = setTimeout(() => {
-        if (verificationCode === CORRECT_CODE) {
-          setShowQuantitySelection(true);
+    if (verificationCode.length === 6 && !isError && confirmationResult) {
+      const timeoutId = setTimeout(async () => {
+        setIsLoading(true);
+
+        // Firebase 인증번호 확인
+        const result = await verifyCode(confirmationResult, verificationCode);
+
+        if (result.success) {
+          console.log('인증 성공:', result.user.uid);
+          setCurrentUser(result.user);
+
+          // 신규 사용자인 경우 자동 회원가입
+          if (result.isNewUser) {
+            console.log('신규 사용자 - 자동 회원가입 진행');
+            const createResult = await createNewUser(result.user);
+            if (createResult.success) {
+              console.log('회원가입 완료:', createResult.nickname);
+            }
+          }
+
+          // 사용자 대여권 조회
+          const ticketsResult = await getUserTickets(result.user.uid);
+          if (ticketsResult.success) {
+            setUserTickets(ticketsResult.tickets);
+            setAvailableVouchers(ticketsResult.tickets.length);
+
+            if (ticketsResult.tickets.length > 0) {
+              // 첫 번째 티켓을 기본 선택
+              setSelectedTicket(ticketsResult.tickets[0]);
+              setShowQuantitySelection(true);
+            } else {
+              // 대여권이 없는 경우
+              setErrorMessage('사용 가능한 대여권이 없습니다.');
+              setIsError(true);
+              setTimeout(() => {
+                handleBackToPhone();
+              }, 2000);
+            }
+          }
         } else {
+          // 인증 실패
           const newAttempts = attempts + 1;
           setAttempts(newAttempts);
           setIsError(true);
+          setErrorMessage(result.error);
 
           if (newAttempts >= MAX_ATTEMPTS) {
             setTimeout(() => {
-              // Reset to phone input screen
-              setShowVerification(false);
-              setPhoneNumber('010');
-              setVerificationCode('');
-              setTimer(180);
-              setAttempts(0);
-              setIsError(false);
+              handleBackToPhone();
             }, 500);
           } else {
             setTimeout(() => {
               setVerificationCode('');
               setIsError(false);
+              setErrorMessage('');
             }, 1000);
           }
         }
+
+        setIsLoading(false);
       }, 300);
 
       return () => clearTimeout(timeoutId);
@@ -111,9 +153,34 @@ export default function VerifyModal({ onClose }) {
     }
   };
 
-  const handleConfirm = () => {
-    setShowVerification(true);
-    setTimer(180);
+  const handleConfirm = async () => {
+    if (phoneNumber.length !== 11) {
+      setErrorMessage('올바른 전화번호를 입력해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    // Firebase SMS 전송
+    const result = await sendVerificationCode(phoneNumber);
+
+    if (result.success) {
+      console.log('SMS 전송 성공');
+      setConfirmationResult(result.confirmationResult);
+      setShowVerification(true);
+      setTimer(180);
+    } else {
+      console.error('SMS 전송 실패:', result.error);
+      setErrorMessage(result.error);
+      setIsError(true);
+      setTimeout(() => {
+        setIsError(false);
+        setErrorMessage('');
+      }, 2000);
+    }
+
+    setIsLoading(false);
   };
 
   const handleBackToPhone = () => {
@@ -145,14 +212,44 @@ export default function VerifyModal({ onClose }) {
     setShowConfirmation(false);
   };
 
-  const handleFinalConfirm = () => {
-    console.log('Rental confirmed:', { quantity, smsNotification });
-    onClose();
+  const handleFinalConfirm = async () => {
+    if (!currentUser || !selectedTicket) {
+      console.error('사용자 또는 티켓 정보가 없습니다.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Firebase에 대여 처리
+    const result = await processRental(currentUser.uid, selectedTicket, DEVICE_SHOP_ID);
+
+    if (result.success) {
+      console.log('대여 완료:', result.rentalId);
+      console.log('Rental confirmed:', {
+        quantity,
+        smsNotification,
+        userId: currentUser.uid,
+        ticketId: selectedTicket.id,
+        shopId: DEVICE_SHOP_ID
+      });
+      onClose();
+    } else {
+      console.error('대여 실패:', result.error);
+      setErrorMessage('대여 처리에 실패했습니다: ' + result.error);
+      setTimeout(() => {
+        setErrorMessage('');
+      }, 2000);
+    }
+
+    setIsLoading(false);
   };
 
   return (
     <div className="verify-modal-overlay">
       <div className="verify-modal-container">
+        {/* reCAPTCHA Container (invisible) */}
+        <div id="recaptcha-container"></div>
+
         {/* Close Button */}
         <button onClick={onClose} className="verify-close-button">
           <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
