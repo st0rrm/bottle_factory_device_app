@@ -1,0 +1,79 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Vercel 환경 변수 설정 가이드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Vercel 대시보드 → 프로젝트 선택 → Settings → Environment Variables
+
+아래 변수들을 하나씩 추가하세요:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_API_BASE_URL
+   Value: https://returnmecup-api-dev.onrender.com/api
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_API_KEY
+   Value: AIzaSyANhU9zSCF3ry8afgOGBXSvP_d-5ZX-4DE
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_AUTH_DOMAIN
+   Value: bottler-project1.firebaseapp.com
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_DATABASE_URL
+   Value: https://bottler-project1-default-rtdb.firebaseio.com
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_PROJECT_ID
+   Value: bottler-project1
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_STORAGE_BUCKET
+   Value: bottler-project1.firebasestorage.app
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_MESSAGING_SENDER_ID
+   Value: 432791337179
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_APP_ID
+   Value: 1:432791337179:web:da9e9a63f447fdf306b4fe
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_FIREBASE_MEASUREMENT_ID
+   Value: G-BMQS794S5K
+   Environment: Production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 Name: VITE_DEVICE_SHOP_ID
+   Value: test-cafe-01
+   Environment: Production
+
+   ⚠️ 참고: Firestore 초기화 스크립트 실행 후 생성된 가게 ID입니다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 모든 변수 추가 후:
+
+1. Vercel에서 자동으로 재배포됩니다 (또는 수동 재배포)
+2. 배포 완료 후 https://returnme-cup-device-app.vercel.app 접속
+3. 정상 작동 확인!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

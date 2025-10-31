@@ -86,15 +86,28 @@ export default function VerifyModal({ onClose }) {
           // 사용자 대여권 조회
           const ticketsResult = await getUserTickets(result.user.uid);
           if (ticketsResult.success) {
-            setUserTickets(ticketsResult.tickets);
-            setAvailableVouchers(ticketsResult.tickets.length);
+            let tickets = ticketsResult.tickets;
 
-            if (ticketsResult.tickets.length > 0) {
+            // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
+            if (tickets.length === 0 && import.meta.env.DEV) {
+              console.log('⚠️ 대여권이 없습니다. 개발 모드: 테스트용 대여권 생성');
+              tickets = [{
+                id: 'test_voucher_dev',
+                type: 'goods',
+                name: '테스트 대여권 (개발 전용)',
+                unlimited: false
+              }];
+            }
+
+            setUserTickets(tickets);
+            setAvailableVouchers(tickets.length);
+
+            if (tickets.length > 0) {
               // 첫 번째 티켓을 기본 선택
-              setSelectedTicket(ticketsResult.tickets[0]);
+              setSelectedTicket(tickets[0]);
               setShowQuantitySelection(true);
             } else {
-              // 대여권이 없는 경우
+              // 대여권이 없는 경우 (프로덕션)
               setErrorMessage('사용 가능한 대여권이 없습니다.');
               setIsError(true);
               setTimeout(() => {

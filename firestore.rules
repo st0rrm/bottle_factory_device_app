@@ -1,0 +1,121 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== Helper Functions =====
+
+    // 인증된 사용자인지 확인
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 본인 데이터인지 확인
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ===== Users Collection =====
+    // 사용자는 자기 정보만 읽기/쓰기
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false; // 삭제 불가
+
+      // users의 서브컬렉션 (collect 등)
+      match /collect/{collectId} {
+        allow read: if isOwner(userId);
+        allow write: if false; // Functions에서만 쓰기
+      }
+    }
+
+    // ===== Shops Collection =====
+    // 가게 정보는 모두 읽기 가능, 쓰기는 불가 (관리자만)
+    match /shops/{shopId} {
+      allow read: if true;
+      allow write: if false;
+
+      // shops의 서브컬렉션 (savings 통계)
+      match /savings/{doc} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // ===== Items Collection =====
+    // 적립 아이템은 모두 읽기 가능
+    match /items/{itemId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ===== Goods Collection =====
+    // 대여권 상품은 모두 읽기 가능
+    match /goods/{goodId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ===== Goods History Collection =====
+    // 사용자가 구매한 대여권
+    match /goods_history/{historyId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false; // Functions에서만 수정
+    }
+
+    // ===== Projects History Collection =====
+    // 프로젝트 대여권
+    match /projects_history/{historyId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ===== Rents Collection =====
+    // 대여/반납 기록
+    match /rents/{rentId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false; // Functions에서만 수정
+    }
+
+    // ===== Collect History Collection =====
+    // 보틀 적립 기록
+    match /collect_history/{collectId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+
+      // collect_history의 서브컬렉션
+      match /collect_items/{itemId} {
+        allow read: if isAuthenticated();
+        allow write: if false;
+      }
+    }
+
+    // ===== Groups Collection =====
+    // 그룹 정보
+    match /groups/{groupId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ===== Settings/Constants =====
+    // 시스템 설정
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ===== Statistics/Savings =====
+    // 전체 통계
+    match /savings/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ===== Default: 모든 다른 요청 거부 =====
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

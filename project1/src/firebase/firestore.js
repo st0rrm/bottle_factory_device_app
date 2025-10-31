@@ -63,6 +63,40 @@ export const createNewUser = async (user) => {
     });
 
     console.log('신규 사용자 생성 완료:', user.uid, nickname);
+
+    // ✨ 신규 사용자에게 무료 대여권 1개 자동 지급
+    try {
+      const goodsQuery = query(
+        collection(db, 'goods'),
+        where('type', '==', 'free')
+      );
+      const goodsSnapshot = await getDocs(goodsQuery);
+
+      if (!goodsSnapshot.empty) {
+        const freeGoodsId = goodsSnapshot.docs[0].id;
+        const freeGoodsName = goodsSnapshot.docs[0].data().name || '무료 대여권';
+
+        // 30일 후 만료
+        const expireDate = new Date();
+        expireDate.setDate(expireDate.getDate() + 30);
+
+        await addDoc(collection(db, 'goods_history'), {
+          uid: user.uid,
+          goods_id: freeGoodsId,
+          status: 'enable',
+          expire: Timestamp.fromDate(expireDate),
+          create: serverTimestamp()
+        });
+
+        console.log(`✅ ${freeGoodsName} 지급 완료 (만료일: ${expireDate.toLocaleDateString('ko-KR')})`);
+      } else {
+        console.warn('⚠️ 무료 대여권 상품을 찾을 수 없습니다. Firestore 초기화 스크립트를 실행하세요.');
+      }
+    } catch (voucherError) {
+      console.error('무료 대여권 지급 실패:', voucherError);
+      // 대여권 지급 실패해도 사용자 생성은 성공으로 처리
+    }
+
     return { success: true, isNew: true, nickname };
 
   } catch (error) {
