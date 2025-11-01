@@ -13,6 +13,8 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@picovoice/porcupine-web": "^3.0.3",
+    "@picovoice/web-voice-processor": "^4.0.9",
     "axios": "^1.13.1",
     "firebase": "^12.5.0",
     "react": "^19.1.1",

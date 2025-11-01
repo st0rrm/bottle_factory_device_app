@@ -3,6 +3,12 @@
     "gh-pages": "^6.3.0"
   },
   "dependencies": {
+    "@picovoice/picovoice-react-native": "^3.0.3",
+    "@picovoice/porcupine-react-native": "^3.0.5",
+    "@picovoice/porcupine-web": "^3.0.3",
+    "@picovoice/react-native-voice-processor": "^1.2.3",
+    "@picovoice/rhino-react-native": "^3.0.5",
+    "@picovoice/web-voice-processor": "^4.0.9",
     "firebase-admin": "^13.5.0"
   }
 }

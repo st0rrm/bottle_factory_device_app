@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
@@ -7,6 +7,7 @@ import helpIcon from '../../assets/images/help.svg';
 import HelpModal from '../../components/HelpModal';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
+import { usePicovoice } from '../../hooks/usePicovoice';
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -19,6 +20,23 @@ function HomeScreen() {
     today: 0,
     weekly: 0
   });
+
+  // Wake word detection callback
+  const handleWakeWordDetected = useCallback((keywordIndex) => {
+    console.log('Wake word detected! Opening help modal...');
+    setShowHelpModal(true);
+  }, []);
+
+  // Wake word detection hook (홈 화면에서만 활성화)
+  const { isListening, error: picoError, hasPermission, requestPermission } = usePicovoice(
+    true, // 홈 화면이 마운트되면 자동으로 활성화
+    handleWakeWordDetected
+  );
+
+  // Wake word 상태 로깅 (개발 중 디버깅용)
+  useEffect(() => {
+    console.log('🎤 Wake word status:', { isListening, hasPermission, error: picoError });
+  }, [isListening, hasPermission, picoError]);
 
   useEffect(() => {
     // localStorage에서 카페 정보 가져오기
@@ -38,6 +56,11 @@ function HomeScreen() {
     // 서버에서 통계 데이터 가져오기
     fetchStats();
 
+    // 마이크 권한 요청 (wake word detection을 위해)
+    if (!hasPermission) {
+      requestPermission();
+    }
+
     // 브라우저 뒤로가기 방지
     const handlePopState = () => {
       // 뒤로가기 시 다시 현재 페이지로
@@ -50,7 +73,7 @@ function HomeScreen() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [navigate]);
+  }, [navigate, hasPermission, requestPermission]);
 
   const fetchStats = async () => {
     try {
