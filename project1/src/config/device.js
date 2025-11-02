@@ -1,24 +1,43 @@
 // 디바이스 설정 파일
-// 각 디바이스마다 환경 변수에서 shopId를 설정합니다
+// 로그인한 카페의 ID를 사용하여 동적으로 shopId를 가져옵니다
 
 /**
- * 현재 디바이스의 가게 ID
- * .env 파일에서 VITE_DEVICE_SHOP_ID로 설정
- *
- * shopId는 Firestore의 shops 컬렉션 문서 ID입니다.
- * 예: "05THWyH9oRw1TH9YtNf4" (플라프리)
+ * 현재 로그인한 카페의 shopId 가져오기
+ * localStorage의 userData에서 cafeId를 읽어옵니다.
  */
-export const DEVICE_SHOP_ID = import.meta.env.VITE_DEVICE_SHOP_ID;
+export const getDeviceShopId = () => {
+  const userData = localStorage.getItem('userData');
+  if (!userData) {
+    console.warn('로그인 정보가 없습니다.');
+    return null;
+  }
+  try {
+    const cafeData = JSON.parse(userData);
+    return cafeData.cafeId;
+  } catch (error) {
+    console.error('카페 정보 파싱 오류:', error);
+    return null;
+  }
+};
 
 /**
  * 디바이스 설정 정보
  */
 export const DEVICE_CONFIG = {
-  shopId: DEVICE_SHOP_ID,
-  shopName: "테스트 카페", // 표시용 (실제로는 Firestore에서 가져옴)
+  getShopId: getDeviceShopId,
+  getShopName: () => {
+    const userData = localStorage.getItem('userData');
+    if (!userData) return "알 수 없음";
+    try {
+      const cafeData = JSON.parse(userData);
+      return cafeData.cafeName || "알 수 없음";
+    } catch {
+      return "알 수 없음";
+    }
+  },
 
-  // QR 코드도 이 shopId를 인코딩해서 사용
-  getQRContent: () => DEVICE_SHOP_ID
+  // QR 코드도 로그인한 카페의 shopId를 인코딩해서 사용
+  getQRContent: () => getDeviceShopId()
 };
 
 export default DEVICE_CONFIG;

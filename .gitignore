@@ -6,6 +6,8 @@ scripts/service-account.json
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
 # 의존성
 node_modules/
