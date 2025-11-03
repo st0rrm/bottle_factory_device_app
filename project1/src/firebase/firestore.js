@@ -76,6 +76,7 @@ export const createNewUser = async (user) => {
         user_id: user.uid,
         status: 'charge',  // 사용 가능 상태
         pgcode: 'bottleclub',  // 무료 대여권 식별자
+        amount: 4000,  // 대여권 가격 (무료 대여권도 4000원의 가치)
         create: serverTimestamp(),
         update: serverTimestamp()
       });
