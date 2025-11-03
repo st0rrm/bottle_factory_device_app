@@ -200,8 +200,26 @@ export default function VerifyModal({ onClose }) {
 
       let tickets = ticketsResult.success ? ticketsResult.tickets : [];
 
+      // 특정 테스트 전화번호 처리
+      if (phoneNumber === '01010000001') {
+        console.log('🎫 테스트 전화번호 - 대여권 2개 제공');
+        tickets = [
+          {
+            id: 'test_voucher_1',
+            type: 'goods',
+            name: '테스트 대여권 1',
+            unlimited: false
+          },
+          {
+            id: 'test_voucher_2',
+            type: 'goods',
+            name: '테스트 대여권 2',
+            unlimited: false
+          }
+        ];
+      }
       // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
-      if (tickets.length === 0 && import.meta.env.DEV) {
+      else if (tickets.length === 0 && import.meta.env.DEV) {
         console.log('⚠️ 대여권이 없습니다. 개발 모드: 테스트용 대여권 생성');
         tickets = [{
           id: 'test_voucher_dev',
