@@ -180,7 +180,7 @@ function HomeScreen() {
       {/* ------------------------------------------------------------- */}
       {showVerifyModal && <VerifyModal onClose={() => setShowVerifyModal(false)} />}
       {showReturnModal && <ReturnModal onClose={() => setShowReturnModal(false)} />}
-      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
+      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />}
     </div>
   );
 }

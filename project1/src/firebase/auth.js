@@ -7,21 +7,41 @@ import {
 import { auth } from './config';
 
 /**
+ * reCAPTCHA 정리
+ */
+export const clearRecaptcha = () => {
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+      console.log('reCAPTCHA 정리 완료');
+    } catch (error) {
+      console.error('reCAPTCHA 정리 실패:', error);
+      // 에러가 발생해도 강제로 null 설정
+      window.recaptchaVerifier = null;
+    }
+  }
+};
+
+/**
  * reCAPTCHA 초기화
  * @param {string} buttonId - reCAPTCHA를 적용할 버튼 ID
  */
 export const initRecaptcha = (buttonId = 'recaptcha-container') => {
-  if (!window.recaptchaVerifier) {
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
-      'size': 'invisible',
-      'callback': (response) => {
-        console.log('reCAPTCHA 검증 완료');
-      },
-      'expired-callback': () => {
-        console.log('reCAPTCHA 만료됨');
-      }
-    });
-  }
+  // 기존 verifier가 있으면 먼저 정리
+  clearRecaptcha();
+
+  // 새로운 verifier 생성
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
+    'size': 'invisible',
+    'callback': (response) => {
+      console.log('reCAPTCHA 검증 완료');
+    },
+    'expired-callback': () => {
+      console.log('reCAPTCHA 만료됨');
+    }
+  });
+
   return window.recaptchaVerifier;
 };
 

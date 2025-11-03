@@ -8,7 +8,7 @@ import step2Icon from '../assets/images/2_recommendation_how.svg';
 import step3Icon from '../assets/images/1_recommendation_how.svg';
 import xIcon from '../assets/images/x_icon.svg';
 
-export default function HelpModal({ onClose }) {
+export default function HelpModal({ onClose, onUseButtonClick }) {
   const [activeTab, setActiveTab] = useState('howToUse'); // 'whatIsIt' 또는 'howToUse'
 
   const whatIsItContent = (
@@ -94,7 +94,12 @@ export default function HelpModal({ onClose }) {
             <button className="later-button" onClick={onClose}>
               나중에
             </button>
-            <button className="use-button" onClick={onClose}>
+            <button className="use-button" onClick={() => {
+              onClose();
+              if (onUseButtonClick) {
+                onUseButtonClick();
+              }
+            }}>
               리턴미컵 사용할래요
             </button>
           </div>

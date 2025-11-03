@@ -11,7 +11,7 @@ import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './VerifyModal.css';
 import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
-import { sendVerificationCode, verifyCode } from '../firebase/auth';
+import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { createNewUser, getUserTickets, processRental } from '../firebase/firestore';
 import { DEVICE_SHOP_ID } from '../config/device';
 
@@ -141,6 +141,13 @@ export default function VerifyModal({ onClose }) {
       return () => clearTimeout(timeoutId);
     }
   }, [verificationCode]);
+
+  // reCAPTCHA cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearRecaptcha();
+    };
+  }, []);
 
   const handleNumberClick = (num) => {
     if (showVerification) {
