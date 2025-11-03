@@ -302,44 +302,56 @@ export default function VerifyModal({ onClose }) {
 
   const handleFinalConfirm = async () => {
     if (!currentUser || !selectedTicket) {
-      console.error('사용자 또는 티켓 정보가 없습니다.');
+      console.error('❌ 사용자 또는 티켓 정보가 없습니다.');
       return;
     }
 
     // 로그인한 카페 정보에서 shopId 가져오기
     const userData = localStorage.getItem('userData');
     if (!userData) {
-      console.error('카페 정보를 찾을 수 없습니다.');
+      console.error('❌ 카페 정보를 찾을 수 없습니다.');
       setErrorMessage('카페 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
       return;
     }
     const cafeData = JSON.parse(userData);
     const shopId = cafeData.cafeId;
 
+    console.log('🔄 대여 처리 시작...', {
+      userId: currentUser.uid,
+      ticketId: selectedTicket.id,
+      shopId: shopId,
+      quantity: quantity
+    });
+
     setIsLoading(true);
 
-    // Firebase에 대여 처리
-    const result = await processRental(currentUser.uid, selectedTicket, shopId);
+    try {
+      // Firebase에 대여 처리
+      const result = await processRental(currentUser.uid, selectedTicket, shopId);
 
-    if (result.success) {
-      console.log('대여 완료:', result.rentalId);
-      console.log('Rental confirmed:', {
-        quantity,
-        smsNotification,
-        userId: currentUser.uid,
-        ticketId: selectedTicket.id,
-        shopId: shopId
-      });
-      onClose();
-    } else {
-      console.error('대여 실패:', result.error);
-      setErrorMessage('대여 처리에 실패했습니다: ' + result.error);
+      if (result.success) {
+        console.log('✅ 대여 완료:', result.rentalId);
+        setIsLoading(false);
+
+        // 모달 닫기 (홈 화면으로 돌아가기)
+        console.log('🏠 홈 화면으로 돌아갑니다...');
+        onClose();
+      } else {
+        console.error('❌ 대여 실패:', result.error);
+        setIsLoading(false);
+        setErrorMessage('대여 처리에 실패했습니다: ' + result.error);
+        setTimeout(() => {
+          setErrorMessage('');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('❌ 대여 처리 중 예외 발생:', error);
+      setIsLoading(false);
+      setErrorMessage('대여 처리 중 오류가 발생했습니다.');
       setTimeout(() => {
         setErrorMessage('');
       }, 2000);
     }
-
-    setIsLoading(false);
   };
 
   return (
