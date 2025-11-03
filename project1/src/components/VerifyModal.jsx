@@ -197,36 +197,37 @@ export default function VerifyModal({ onClose }) {
 
       // 사용자 대여권 조회
       const ticketsResult = await getUserTickets(userResult.user.uid);
-      if (ticketsResult.success) {
-        let tickets = ticketsResult.tickets;
 
-        // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
-        if (tickets.length === 0 && import.meta.env.DEV) {
-          console.log('⚠️ 대여권이 없습니다. 개발 모드: 테스트용 대여권 생성');
-          tickets = [{
-            id: 'test_voucher_dev',
-            type: 'goods',
-            name: '테스트 대여권 (개발 전용)',
-            unlimited: false
-          }];
-        }
+      let tickets = ticketsResult.success ? ticketsResult.tickets : [];
 
-        setUserTickets(tickets);
-        setAvailableVouchers(tickets.length);
+      // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
+      if (tickets.length === 0 && import.meta.env.DEV) {
+        console.log('⚠️ 대여권이 없습니다. 개발 모드: 테스트용 대여권 생성');
+        tickets = [{
+          id: 'test_voucher_dev',
+          type: 'goods',
+          name: '테스트 대여권 (개발 전용)',
+          unlimited: false
+        }];
+      }
 
-        if (tickets.length > 0) {
-          // 첫 번째 티켓을 기본 선택
-          setSelectedTicket(tickets[0]);
-          setShowQuantitySelection(true);
-        } else {
-          // 대여권이 없는 경우 (프로덕션)
-          setErrorMessage('사용 가능한 대여권이 없습니다.');
-          setIsError(true);
-          setTimeout(() => {
-            setIsError(false);
-            setErrorMessage('');
-          }, 2000);
-        }
+      setUserTickets(tickets);
+      setAvailableVouchers(tickets.length);
+
+      if (tickets.length > 0) {
+        // 첫 번째 티켓을 기본 선택
+        setSelectedTicket(tickets[0]);
+        setShowQuantitySelection(true);
+        console.log('✅ 대여권 선택 화면으로 이동');
+      } else {
+        // 대여권이 없는 경우 (프로덕션)
+        console.warn('❌ 사용 가능한 대여권이 없습니다.');
+        setErrorMessage('사용 가능한 대여권이 없습니다.');
+        setIsError(true);
+        setTimeout(() => {
+          setIsError(false);
+          setErrorMessage('');
+        }, 2000);
       }
     } else {
       // 2. 등록되지 않은 사용자 - SMS 인증 진행
