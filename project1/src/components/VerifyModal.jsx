@@ -13,7 +13,6 @@ import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { createNewUser, getUserTickets, processRental } from '../firebase/firestore';
-import { DEVICE_SHOP_ID } from '../config/device';
 
 export default function VerifyModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -238,10 +237,20 @@ export default function VerifyModal({ onClose }) {
       return;
     }
 
+    // 로그인한 카페 정보에서 shopId 가져오기
+    const userData = localStorage.getItem('userData');
+    if (!userData) {
+      console.error('카페 정보를 찾을 수 없습니다.');
+      setErrorMessage('카페 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+      return;
+    }
+    const cafeData = JSON.parse(userData);
+    const shopId = cafeData.cafeId;
+
     setIsLoading(true);
 
     // Firebase에 대여 처리
-    const result = await processRental(currentUser.uid, selectedTicket, DEVICE_SHOP_ID);
+    const result = await processRental(currentUser.uid, selectedTicket, shopId);
 
     if (result.success) {
       console.log('대여 완료:', result.rentalId);
@@ -250,7 +259,7 @@ export default function VerifyModal({ onClose }) {
         smsNotification,
         userId: currentUser.uid,
         ticketId: selectedTicket.id,
-        shopId: DEVICE_SHOP_ID
+        shopId: shopId
       });
       onClose();
     } else {
