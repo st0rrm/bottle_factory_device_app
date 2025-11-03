@@ -328,6 +328,15 @@ export default function VerifyModal({ onClose }) {
     setIsLoading(true);
 
     try {
+      // 테스트 전화번호이거나 테스트 대여권인 경우 바로 성공 처리
+      if (phoneNumber === '01010000001' || selectedTicket.id.startsWith('test_voucher')) {
+        console.log('✅ 테스트 모드 - 대여 처리 건너뛰기');
+        setIsLoading(false);
+        console.log('🏠 홈 화면으로 돌아갑니다...');
+        onClose();
+        return;
+      }
+
       // Firebase에 대여 처리
       const result = await processRental(currentUser.uid, selectedTicket, shopId, shopName);
 
