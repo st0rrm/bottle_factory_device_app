@@ -45,9 +45,15 @@ export const createNewUser = async (user) => {
       }
     };
 
+    // 전화번호 포맷 변환 (+821012345678 → 01012345678)
+    let phoneNumber = user.phoneNumber;
+    if (phoneNumber.startsWith('+82')) {
+      phoneNumber = '0' + phoneNumber.slice(3);
+    }
+
     // 사용자 문서 생성
     await setDoc(userRef, {
-      phone: user.phoneNumber,
+      phone: phoneNumber,
       name: nickname,
       score: 0,
       coin: 0,
@@ -134,15 +140,18 @@ export const getUserData = async (uid) => {
 
 /**
  * 전화번호로 사용자 조회
- * @param {string} phoneNumber - 전화번호 (예: +821012345678 또는 01012345678)
+ * @param {string} phoneNumber - 전화번호 (예: 01012345678)
  * @returns {Promise}
  */
 export const getUserByPhone = async (phoneNumber) => {
   try {
-    // 전화번호 포맷 통일 (+82 형식)
-    const formattedNumber = phoneNumber.startsWith('+82')
-      ? phoneNumber
-      : `+82${phoneNumber.startsWith('0') ? phoneNumber.slice(1) : phoneNumber}`;
+    // 전화번호 포맷 통일 (010 형식 - DB 저장 형식에 맞춤)
+    // +821012345678 → 01012345678
+    // 01012345678 → 01012345678 (그대로 유지)
+    let formattedNumber = phoneNumber;
+    if (phoneNumber.startsWith('+82')) {
+      formattedNumber = '0' + phoneNumber.slice(3);
+    }
 
     console.log('전화번호로 사용자 조회:', formattedNumber);
 
