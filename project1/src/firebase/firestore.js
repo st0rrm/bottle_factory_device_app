@@ -53,7 +53,7 @@ export const createNewUser = async (user) => {
 
     // 사용자 문서 생성
     await setDoc(userRef, {
-      phone: phoneNumber,
+      mobile: phoneNumber,
       name: nickname,
       score: 0,
       coin: 0,
@@ -155,10 +155,10 @@ export const getUserByPhone = async (phoneNumber) => {
 
     console.log('전화번호로 사용자 조회:', formattedNumber);
 
-    // users 컬렉션에서 phone 필드로 검색
+    // users 컬렉션에서 mobile 필드로 검색
     const usersQuery = query(
       collection(db, 'users'),
-      where('phone', '==', formattedNumber)
+      where('mobile', '==', formattedNumber)
     );
     const usersSnapshot = await getDocs(usersQuery);
 

@@ -191,7 +191,7 @@ export default function VerifyModal({ onClose }) {
       // 사용자 정보를 Firebase Auth User 형식으로 변환
       const mockUser = {
         uid: userResult.user.uid,
-        phoneNumber: userResult.user.phone
+        phoneNumber: userResult.user.mobile
       };
       setCurrentUser(mockUser);
 
