@@ -70,34 +70,17 @@ export const createNewUser = async (user) => {
 
     console.log('신규 사용자 생성 완료:', user.uid, nickname);
 
-    // ✨ 신규 사용자에게 무료 대여권 1개 자동 지급
+    // ✨ 신규 사용자에게 무료 대여권 1개 자동 지급 (balances 컬렉션)
     try {
-      const goodsQuery = query(
-        collection(db, 'goods'),
-        where('type', '==', 'free')
-      );
-      const goodsSnapshot = await getDocs(goodsQuery);
+      await addDoc(collection(db, 'balances'), {
+        user_id: user.uid,
+        status: 'charge',  // 사용 가능 상태
+        pgcode: 'bottleclub',  // 무료 대여권 식별자
+        create: serverTimestamp(),
+        update: serverTimestamp()
+      });
 
-      if (!goodsSnapshot.empty) {
-        const freeGoodsId = goodsSnapshot.docs[0].id;
-        const freeGoodsName = goodsSnapshot.docs[0].data().name || '무료 대여권';
-
-        // 30일 후 만료
-        const expireDate = new Date();
-        expireDate.setDate(expireDate.getDate() + 30);
-
-        await addDoc(collection(db, 'goods_history'), {
-          uid: user.uid,
-          goods_id: freeGoodsId,
-          status: 'enable',
-          expire: Timestamp.fromDate(expireDate),
-          create: serverTimestamp()
-        });
-
-        console.log(`✅ ${freeGoodsName} 지급 완료 (만료일: ${expireDate.toLocaleDateString('ko-KR')})`);
-      } else {
-        console.warn('⚠️ 무료 대여권 상품을 찾을 수 없습니다. Firestore 초기화 스크립트를 실행하세요.');
-      }
+      console.log('✅ 무료 대여권 1개 지급 완료 (balances 컬렉션)');
     } catch (voucherError) {
       console.error('무료 대여권 지급 실패:', voucherError);
       // 대여권 지급 실패해도 사용자 생성은 성공으로 처리
@@ -183,7 +166,7 @@ export const getUserByPhone = async (phoneNumber) => {
 };
 
 /**
- * 사용자의 대여권 목록 조회
+ * 사용자의 대여권 목록 조회 (balances 컬렉션 기반)
  * @param {string} uid - 사용자 UID
  * @returns {Promise} 대여권 배열
  */
@@ -191,69 +174,35 @@ export const getUserTickets = async (uid) => {
   try {
     const tickets = [];
 
-    // 1. 그룹 무료 대여권 확인
-    const userResult = await getUserData(uid);
-    if (userResult.success && userResult.data.group?.belong?.length > 0) {
-      const groupId = userResult.data.group.belong[0];
-      const groupRef = doc(db, 'groups', groupId);
-      const groupDoc = await getDoc(groupRef);
-
-      if (groupDoc.exists() && groupDoc.data().freeCoupon === true) {
-        tickets.push({
-          id: `group_${groupId}`,
-          type: 'group',
-          name: `${groupDoc.data().name} 무료 대여권`,
-          groupId: groupId,
-          unlimited: true
-        });
-      }
-    }
-
-    // 2. 개인 구매 대여권 (goods_history)
-    const goodsQuery = query(
-      collection(db, 'goods_history'),
-      where('uid', '==', uid),
-      where('status', '==', 'enable')
+    // balances 컬렉션에서 사용 가능한 대여권 조회
+    // status가 'charge'인 것만 (사용 가능)
+    const balancesQuery = query(
+      collection(db, 'balances'),
+      where('user_id', '==', uid),
+      where('status', '==', 'charge')
     );
-    const goodsSnapshot = await getDocs(goodsQuery);
+    const balancesSnapshot = await getDocs(balancesQuery);
 
-    for (const docSnap of goodsSnapshot.docs) {
+    for (const docSnap of balancesSnapshot.docs) {
       const data = docSnap.data();
 
-      // goods 정보 가져오기
-      const goodsRef = doc(db, 'goods', data.goods_id);
-      const goodsDoc = await getDoc(goodsRef);
-
-      if (goodsDoc.exists()) {
-        tickets.push({
-          id: docSnap.id,
-          type: 'goods',
-          name: goodsDoc.data().name || '구매 대여권',
-          goodsId: data.goods_id,
-          expire: data.expire,
-          unlimited: false
-        });
+      // 대여권 이름 결정
+      let ticketName = '컵 1개 대여권';
+      if (data.pgcode === 'bottleclub') {
+        ticketName = '무료 대여권';
+      } else if (data.group_id) {
+        ticketName = data.pay_info || '그룹 대여권';
       }
-    }
-
-    // 3. 프로젝트 대여권 (projects_history)
-    const projectsQuery = query(
-      collection(db, 'projects_history'),
-      where('uid', '==', uid),
-      where('status', '==', 'enable')
-    );
-    const projectsSnapshot = await getDocs(projectsQuery);
-
-    for (const docSnap of projectsSnapshot.docs) {
-      const data = docSnap.data();
 
       tickets.push({
         id: docSnap.id,
-        type: 'project',
-        name: '프로젝트 대여권',
-        projectId: data.project_id,
-        expire: data.expire,
-        unlimited: false
+        type: 'balance',
+        name: ticketName,
+        pgcode: data.pgcode,
+        group_id: data.group_id,
+        status: data.status,
+        create: data.create,
+        update: data.update
       });
     }
 
@@ -267,42 +216,45 @@ export const getUserTickets = async (uid) => {
 };
 
 /**
- * 대여 처리
+ * 대여 처리 (balances 기반)
  * @param {string} uid - 사용자 UID
- * @param {object} ticket - 선택한 대여권
+ * @param {object} ticket - 선택한 대여권 (balances 문서)
  * @param {string} shopId - 가게 ID (디바이스의 shopId)
+ * @param {string} shopName - 가게 이름
  * @returns {Promise}
  */
-export const processRental = async (uid, ticket, shopId) => {
+export const processRental = async (uid, ticket, shopId, shopName) => {
   try {
-    // rents 컬렉션에 기록 추가
+    // 1. balances 상태를 'charge' → 'rent'로 변경
+    const balanceRef = doc(db, 'balances', ticket.id);
+    await updateDoc(balanceRef, {
+      status: 'rent',
+      update: serverTimestamp()
+    });
+
+    console.log('✅ 대여권 상태 변경: charge → rent');
+
+    // 2. rents 컬렉션에 새 문서 추가
     const rentalData = {
       uid: uid,
       rented_date: serverTimestamp(),
       rented_shop_id: shopId,
+      rented_shop_name: shopName,
       status: 'rent',
-      amount: 1,
-      division: 'self' // 셀프 대여
+      amount: 1,  // 컵 수량
+      balance_id: ticket.id,  // 사용한 대여권 ID
+      division: 'individual'  // 개별 반환처 (같은 가게에서 반납)
     };
 
-    // 대여권 타입별 처리
-    if (ticket.type === 'goods' || ticket.type === 'project') {
-      rentalData.balance_id = ticket.id;
-
-      // 대여권 상태를 'used'로 변경
-      const ticketRef = doc(db, `${ticket.type}s_history`, ticket.id);
-      await updateDoc(ticketRef, {
-        status: 'used'
-      });
-    } else if (ticket.type === 'group') {
-      // 그룹 무료 대여권은 balance_id 없이 처리
-      rentalData.group_id = ticket.groupId;
+    // 그룹 대여권인 경우 group_id 추가
+    if (ticket.group_id) {
+      rentalData.group_id = ticket.group_id;
+      rentalData.division = ticket.group_id;  // 그룹 반환처
     }
 
-    // rents 컬렉션에 추가
     const rentRef = await addDoc(collection(db, 'rents'), rentalData);
 
-    console.log('대여 처리 완료:', rentRef.id);
+    console.log('✅ 대여 기록 생성:', rentRef.id);
     return { success: true, rentalId: rentRef.id };
 
   } catch (error) {
@@ -334,6 +286,108 @@ export const getShopData = async (shopId) => {
 
   } catch (error) {
     console.error('가게 정보 조회 실패:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 사용자의 대여 중인 컵 조회
+ * @param {string} uid - 사용자 UID
+ * @param {string} shopId - 가게 ID (division이 'individual'인 경우 필터링)
+ * @returns {Promise} 대여 중인 컵 배열
+ */
+export const getUserActiveRentals = async (uid, shopId) => {
+  try {
+    // rents 컬렉션에서 status가 'rent'이고 uid가 일치하는 것 조회
+    const rentsQuery = query(
+      collection(db, 'rents'),
+      where('uid', '==', uid),
+      where('status', '==', 'rent')
+    );
+    const rentsSnapshot = await getDocs(rentsQuery);
+
+    const rentals = [];
+    for (const docSnap of rentsSnapshot.docs) {
+      const data = docSnap.data();
+
+      // division이 'individual'인 경우, 같은 가게에서 대여한 것만 반납 가능
+      if (data.division === 'individual' && data.rented_shop_id !== shopId) {
+        continue;  // 다른 가게에서 대여한 컵은 제외
+      }
+
+      rentals.push({
+        id: docSnap.id,
+        ...data
+      });
+    }
+
+    console.log('대여 중인 컵 조회 완료:', rentals.length, '개');
+    return { success: true, rentals };
+
+  } catch (error) {
+    console.error('대여 중인 컵 조회 실패:', error);
+    return { success: false, error: error.message, rentals: [] };
+  }
+};
+
+/**
+ * 반납 처리
+ * @param {string} uid - 사용자 UID
+ * @param {object} rental - 반납할 대여 기록 (rents 문서)
+ * @param {string} shopId - 가게 ID
+ * @param {string} shopName - 가게 이름
+ * @returns {Promise}
+ */
+export const processReturn = async (uid, rental, shopId, shopName) => {
+  try {
+    // 1. rents 문서 업데이트: status 'rent' → 'return'
+    const rentRef = doc(db, 'rents', rental.id);
+    await updateDoc(rentRef, {
+      status: 'return',
+      returned_date: serverTimestamp(),
+      returned_shop_id: shopId,
+      returned_shop_name: shopName
+    });
+
+    console.log('✅ 대여 기록 업데이트: rent → return');
+
+    // 2. balances 문서 복구: status 'rent' → 'charge' (재사용 가능)
+    if (rental.balance_id) {
+      const balanceRef = doc(db, 'balances', rental.balance_id);
+      await updateDoc(balanceRef, {
+        status: 'charge',
+        update: serverTimestamp()
+      });
+
+      console.log('✅ 대여권 복구: rent → charge');
+    }
+
+    // 3. 사용자 점수 적립 (보틀점수)
+    const userRef = doc(db, 'users', uid);
+    const returnScore = 30;  // 컵 1개당 30점 (constants에서 가져와야 함)
+
+    await updateDoc(userRef, {
+      score: (await getDoc(userRef)).data().score + returnScore,
+      coin: (await getDoc(userRef)).data().coin + returnScore * 10,  // 점수 1점 = 코인 10개
+      saving_all: (await getDoc(userRef)).data().saving_all + 1
+    });
+
+    console.log(`✅ 보틀점수 적립: ${returnScore}점`);
+
+    // 4. collect_history에 적립 내역 추가
+    await addDoc(collection(db, 'collect_history'), {
+      score: returnScore,
+      shop_id: shopId,
+      uid: uid,
+      create: serverTimestamp()
+    });
+
+    console.log('✅ 적립 내역 생성');
+
+    return { success: true, score: returnScore };
+
+  } catch (error) {
+    console.error('반납 처리 실패:', error);
     return { success: false, error: error.message };
   }
 };

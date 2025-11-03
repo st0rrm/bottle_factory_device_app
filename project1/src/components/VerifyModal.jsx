@@ -315,11 +315,13 @@ export default function VerifyModal({ onClose }) {
     }
     const cafeData = JSON.parse(userData);
     const shopId = cafeData.cafeId;
+    const shopName = cafeData.cafeName || '카페명 없음';
 
     console.log('🔄 대여 처리 시작...', {
       userId: currentUser.uid,
       ticketId: selectedTicket.id,
       shopId: shopId,
+      shopName: shopName,
       quantity: quantity
     });
 
@@ -327,7 +329,7 @@ export default function VerifyModal({ onClose }) {
 
     try {
       // Firebase에 대여 처리
-      const result = await processRental(currentUser.uid, selectedTicket, shopId);
+      const result = await processRental(currentUser.uid, selectedTicket, shopId, shopName);
 
       if (result.success) {
         console.log('✅ 대여 완료:', result.rentalId);

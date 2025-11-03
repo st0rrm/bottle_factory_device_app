@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PhoneInputView from './PhoneInputView';
 import QRCodeView from './QRCodeView';
+import VerificationCodeView from './VerificationCodeView';
 import ReturnQuantityView from './ReturnQuantityView';
 import ReturnConfirmationView from './ReturnConfirmationView';
 import phoneIcon from '../assets/images/phone_icon_identification.svg';
@@ -10,6 +11,8 @@ import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './ReturnModal.css';
 import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
+import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
+import { getUserByPhone, getUserActiveRentals, processReturn } from '../firebase/firestore';
 
 export default function ReturnModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -20,48 +23,228 @@ export default function ReturnModal({ onClose }) {
     // 탭 클릭 이벤트 추적 (반납 모달)
     trackBehavior('tab_switch', `${tab}_return`);
   };
-  const [step, setStep] = useState('verification');
-  const [returnQuantity, setReturnQuantity] = useState(1);
 
-  const handleQuantityConfirm = (quantity) => {
-    setReturnQuantity(quantity);
-    setStep('confirmation');
+  const [phoneNumber, setPhoneNumber] = useState('010');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [showVerification, setShowVerification] = useState(false);
+  const [showRentalSelection, setShowRentalSelection] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRentals, setUserRentals] = useState([]);
+  const [selectedRental, setSelectedRental] = useState(null);
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [timer, setTimer] = useState(180);
+  const [attempts, setAttempts] = useState(0);
+  const [isError, setIsError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showComplete, setShowComplete] = useState(false);
+  const [returnScore, setReturnScore] = useState(0);
+  const MAX_ATTEMPTS = 5;
+
+  useEffect(() => {
+    if (showVerification && timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (timer === 0) {
+      setIsError(true);
+      setErrorMessage('인증 시간이 만료되었습니다. 다시 시도해주세요.');
+    }
+  }, [showVerification, timer]);
+
+  useEffect(() => {
+    return () => {
+      clearRecaptcha();
+    };
+  }, []);
+
+  const handleNumberClick = (num) => {
+    if (phoneNumber.length < 11) {
+      setPhoneNumber(phoneNumber + num);
+    }
   };
 
-  const handleReturnConfirm = () => {
-    console.log('Return confirmed:', returnQuantity, 'cups');
-    setStep('complete');
-    // Close modal after a short delay
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+  const handleDelete = () => {
+    if (phoneNumber.length > 3) {
+      setPhoneNumber(phoneNumber.slice(0, -1));
+    }
   };
 
-  const handleReturnCancel = () => {
-    setStep('quantity');
+  const handlePhoneConfirm = async () => {
+    if (phoneNumber.length !== 11) {
+      alert('전화번호를 정확히 입력해주세요.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('📞 SMS 인증번호 전송 중...');
+
+      const confirmation = await sendVerificationCode(phoneNumber);
+      setConfirmationResult(confirmation);
+      setShowVerification(true);
+      setTimer(180);
+      setAttempts(0);
+      setIsError(false);
+      setIsLoading(false);
+
+      console.log('✅ SMS 인증번호 전송 완료');
+    } catch (error) {
+      console.error('❌ SMS 전송 실패:', error);
+      alert('인증번호 전송에 실패했습니다. 다시 시도해주세요.');
+      setIsLoading(false);
+    }
   };
 
-  if (step === 'quantity') {
-    return <ReturnQuantityView onClose={onClose} onConfirm={handleQuantityConfirm} />;
-  }
+  const handleCodeChange = (code) => {
+    setVerificationCode(code);
 
-  if (step === 'confirmation') {
-    return (
-      <ReturnConfirmationView
-        quantity={returnQuantity}
-        onClose={onClose}
-        onCancel={handleReturnCancel}
-        onConfirm={handleReturnConfirm}
-      />
-    );
-  }
+    if (code.length === 6) {
+      handleCodeComplete(code);
+    }
+  };
 
-  if (step === 'complete') {
+  const handleCodeComplete = async (code) => {
+    if (attempts >= MAX_ATTEMPTS) {
+      setIsError(true);
+      setErrorMessage('인증 시도 횟수를 초과했습니다. 처음부터 다시 시도해주세요.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('🔐 인증번호 확인 중...');
+
+      const user = await verifyCode(confirmationResult, code);
+      console.log('✅ 인증 성공:', user.uid);
+
+      // 사용자 확인 (users 컬렉션에 있는지 확인)
+      const userResult = await getUserByPhone(phoneNumber);
+
+      if (!userResult.success) {
+        // 기존 앱 미가입자는 반납 불가
+        setIsLoading(false);
+        setIsError(true);
+        setErrorMessage('보틀클럽 앱 회원만 반납 가능합니다. 앱을 다운로드해주세요.');
+        return;
+      }
+
+      setCurrentUser(userResult.user);
+
+      // 대여 중인 컵 조회
+      const userData = localStorage.getItem('userData');
+      if (!userData) {
+        setIsLoading(false);
+        setErrorMessage('카페 정보를 찾을 수 없습니다.');
+        return;
+      }
+      const cafeData = JSON.parse(userData);
+      const shopId = cafeData.cafeId;
+
+      const rentalsResult = await getUserActiveRentals(userResult.user.uid, shopId);
+
+      if (!rentalsResult.success || rentalsResult.rentals.length === 0) {
+        setIsLoading(false);
+        setIsError(true);
+        setErrorMessage('반납할 컵이 없습니다.');
+        return;
+      }
+
+      setUserRentals(rentalsResult.rentals);
+      setIsLoading(false);
+      setShowVerification(false);
+      setShowRentalSelection(true);
+
+    } catch (error) {
+      console.error('❌ 인증 실패:', error);
+      setAttempts(prev => prev + 1);
+      setIsError(true);
+      setErrorMessage(`인증번호가 올바르지 않습니다. (${attempts + 1}/${MAX_ATTEMPTS})`);
+      setVerificationCode('');
+      setIsLoading(false);
+    }
+  };
+
+  const handleRentalSelect = (rental) => {
+    setSelectedRental(rental);
+    setShowRentalSelection(false);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setShowConfirmation(false);
+    setShowRentalSelection(true);
+    setSelectedRental(null);
+  };
+
+  const handleFinalConfirm = async () => {
+    if (!currentUser || !selectedRental) {
+      console.error('❌ 사용자 또는 대여 기록 정보가 없습니다.');
+      return;
+    }
+
+    const userData = localStorage.getItem('userData');
+    if (!userData) {
+      console.error('❌ 카페 정보를 찾을 수 없습니다.');
+      setErrorMessage('카페 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+      return;
+    }
+    const cafeData = JSON.parse(userData);
+    const shopId = cafeData.cafeId;
+    const shopName = cafeData.cafeName || '카페명 없음';
+
+    console.log('🔄 반납 처리 시작...', {
+      userId: currentUser.uid,
+      rentalId: selectedRental.id,
+      shopId: shopId,
+      shopName: shopName
+    });
+
+    setIsLoading(true);
+
+    try {
+      // Firebase에 반납 처리
+      const result = await processReturn(currentUser.uid, selectedRental, shopId, shopName);
+
+      if (result.success) {
+        console.log('✅ 반납 완료:', result.score, '점 적립');
+        setIsLoading(false);
+        setReturnScore(result.score);
+        setShowConfirmation(false);
+        setShowComplete(true);
+
+        // 3초 후 모달 닫기
+        setTimeout(() => {
+          onClose();
+        }, 3000);
+      } else {
+        console.error('❌ 반납 실패:', result.error);
+        setIsLoading(false);
+        setErrorMessage('반납 처리에 실패했습니다: ' + result.error);
+        setTimeout(() => {
+          setErrorMessage('');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('❌ 반납 처리 중 예외 발생:', error);
+      setIsLoading(false);
+      setErrorMessage('반납 처리 중 오류가 발생했습니다.');
+      setTimeout(() => {
+        setErrorMessage('');
+      }, 2000);
+    }
+  };
+
+  // 완료 화면
+  if (showComplete) {
     return (
       <div className="return-complete-overlay">
         <div className="return-complete-container">
           <div className="return-complete-content">
             <div className="return-complete-title">반납이 완료되었습니다!</div>
+            <div className="return-complete-subtitle">{returnScore}점이 적립되었습니다</div>
             <div className="return-complete-subtitle">감사합니다</div>
           </div>
         </div>
@@ -69,17 +252,85 @@ export default function ReturnModal({ onClose }) {
     );
   }
 
+  // 반납 확인 화면
+  if (showConfirmation) {
+    return (
+      <ReturnConfirmationView
+        quantity={1}
+        onClose={onClose}
+        onCancel={handleConfirmCancel}
+        onConfirm={handleFinalConfirm}
+        isLoading={isLoading}
+      />
+    );
+  }
+
+  // 반납할 컵 선택 화면
+  if (showRentalSelection) {
+    return (
+      <div className="return-modal-overlay">
+        <div className="return-modal-container">
+          <button onClick={onClose} className="return-modal-close-button">
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
+          </button>
+
+          <div className="rental-selection-container">
+            <h2 className="rental-selection-title">반납할 컵을 선택해주세요</h2>
+            <div className="rental-list">
+              {userRentals.map((rental) => (
+                <div
+                  key={rental.id}
+                  className="rental-item"
+                  onClick={() => handleRentalSelect(rental)}
+                >
+                  <div className="rental-item-info">
+                    <div className="rental-item-shop">{rental.rented_shop_name || '가게명 없음'}</div>
+                    <div className="rental-item-date">
+                      대여일: {rental.rented_date?.toDate().toLocaleDateString('ko-KR')}
+                    </div>
+                  </div>
+                  <div className="rental-item-arrow">→</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증번호 입력 화면
+  if (showVerification) {
+    return (
+      <div className="return-modal-overlay">
+        <div className="return-modal-container">
+          <button onClick={onClose} className="return-modal-close-button">
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
+          </button>
+
+          <VerificationCodeView
+            code={verificationCode}
+            onCodeChange={handleCodeChange}
+            timer={timer}
+            isError={isError}
+            errorMessage={errorMessage}
+            isLoading={isLoading}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 전화번호 입력 / QR 인증 화면
   return (
     <div className="return-modal-overlay">
       <div className="return-modal-container">
-        {/* Close Button */}
         <button onClick={onClose} className="return-modal-close-button">
           <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
         </button>
 
         {/* Toggle Tabs with Tooltip */}
         <div className="return-tabs-wrapper">
-          {/* Tooltip */}
           <div className="return-tooltip-container">
             <div className="return-tooltip-wrapper">
               <div className="return-tooltip-bubble">보틀클럽 이용자세요?</div>
@@ -87,7 +338,6 @@ export default function ReturnModal({ onClose }) {
             </div>
           </div>
 
-          {/* Toggle Tabs */}
           <div className="return-tabs-container">
             <button
               onClick={() => handleTabChange('phone')}
@@ -105,43 +355,24 @@ export default function ReturnModal({ onClose }) {
         </div>
 
         {activeTab === 'phone' ? (
-          <ReturnPhoneViewWrapper onNext={() => setStep('quantity')} />
+          <PhoneInputView
+            phoneNumber={phoneNumber}
+            onNumberClick={handleNumberClick}
+            onDelete={handleDelete}
+            onConfirm={handlePhoneConfirm}
+            title="리턴미컵 반납을 위해"
+            isLoading={isLoading}
+          />
         ) : (
           <QRCodeView title="리턴미컵 반납을 위해" mode="return" />
+        )}
+
+        {errorMessage && (
+          <div className="error-message-container">
+            <p className="error-message">{errorMessage}</p>
+          </div>
         )}
       </div>
     </div>
   );
 }
-
-function ReturnPhoneViewWrapper({ onNext }) {
-  const [phoneNumber, setPhoneNumber] = useState('010');
-
-  const handleNumberClick = (num) => {
-    if (phoneNumber.length < 11) {
-      setPhoneNumber(phoneNumber + num);
-    }
-  };
-
-  const handleDelete = () => {
-    if (phoneNumber.length > 3) {
-      setPhoneNumber(phoneNumber.slice(0, -1));
-    }
-  };
-
-  const handleConfirm = () => {
-    console.log('Return phone number:', phoneNumber);
-    onNext();
-  };
-
-  return (
-    <PhoneInputView
-      phoneNumber={phoneNumber}
-      onNumberClick={handleNumberClick}
-      onDelete={handleDelete}
-      onConfirm={handleConfirm}
-      title="리턴미컵 반납을 위해"
-    />
-  );
-}
-

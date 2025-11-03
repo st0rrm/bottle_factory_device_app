@@ -1,9 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import maskCupIcon from '../assets/images/mask_cup.svg';
-import applicationQR from '../assets/images/applicatioin_qr.svg';
 import './QRCodeView.css';
+import { getShopData } from '../firebase/firestore';
 
 export default function QRCodeView({ title = '리턴미컵 대여를 위해', mode = 'rental' }) {
+  const [qrValue, setQrValue] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadShopQR = async () => {
+      try {
+        // 로그인한 카페 정보 가져오기
+        const userData = localStorage.getItem('userData');
+        if (!userData) {
+          console.error('카페 정보를 찾을 수 없습니다.');
+          setQrValue('ERROR');
+          setIsLoading(false);
+          return;
+        }
+
+        const cafeData = JSON.parse(userData);
+        const shopId = cafeData.cafeId;
+
+        // Firebase에서 카페 정보 조회
+        const shopResult = await getShopData(shopId);
+
+        if (shopResult.success && shopResult.data.pin) {
+          setQrValue(shopResult.data.pin);
+          console.log('✅ QR 코드 생성 완료:', shopResult.data.pin);
+        } else {
+          console.error('가게 PIN을 찾을 수 없습니다.');
+          setQrValue(shopId); // 대체값으로 shopId 사용
+        }
+      } catch (error) {
+        console.error('QR 코드 로드 실패:', error);
+        setQrValue('ERROR');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadShopQR();
+  }, []);
+
   return (
     <div className="qr-code-view">
       {/* Title */}
@@ -19,7 +59,17 @@ export default function QRCodeView({ title = '리턴미컵 대여를 위해', mo
       <div className="qr-content-wrapper">
         {/* QR Code Scanner Placeholder */}
         <div className="qr-scanner-container">
-          <img src={applicationQR} alt="QR Code" className="qr-scanner-box" />
+          {isLoading ? (
+            <div className="qr-loading">로딩 중...</div>
+          ) : (
+            <QRCodeSVG
+              value={qrValue}
+              size={256}
+              level="H"
+              includeMargin={true}
+              className="qr-scanner-box"
+            />
+          )}
         </div>
 
         {/* Instructions */}
