@@ -133,6 +133,47 @@ export const getUserData = async (uid) => {
 };
 
 /**
+ * 전화번호로 사용자 조회
+ * @param {string} phoneNumber - 전화번호 (예: +821012345678 또는 01012345678)
+ * @returns {Promise}
+ */
+export const getUserByPhone = async (phoneNumber) => {
+  try {
+    // 전화번호 포맷 통일 (+82 형식)
+    const formattedNumber = phoneNumber.startsWith('+82')
+      ? phoneNumber
+      : `+82${phoneNumber.startsWith('0') ? phoneNumber.slice(1) : phoneNumber}`;
+
+    console.log('전화번호로 사용자 조회:', formattedNumber);
+
+    // users 컬렉션에서 phone 필드로 검색
+    const usersQuery = query(
+      collection(db, 'users'),
+      where('phone', '==', formattedNumber)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+
+    if (usersSnapshot.empty) {
+      return { success: false, error: '등록되지 않은 전화번호입니다.' };
+    }
+
+    // 첫 번째 사용자 반환 (전화번호는 unique해야 함)
+    const userDoc = usersSnapshot.docs[0];
+    const userData = {
+      ...userDoc.data(),
+      uid: userDoc.id
+    };
+
+    console.log('사용자 조회 성공:', userData.uid);
+    return { success: true, user: userData };
+
+  } catch (error) {
+    console.error('전화번호로 사용자 조회 실패:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * 사용자의 대여권 목록 조회
  * @param {string} uid - 사용자 UID
  * @returns {Promise} 대여권 배열

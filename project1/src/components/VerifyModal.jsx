@@ -12,7 +12,7 @@ import './VerifyModal.css';
 import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
-import { createNewUser, getUserTickets, processRental } from '../firebase/firestore';
+import { createNewUser, getUserTickets, processRental, getUserByPhone } from '../firebase/firestore';
 
 export default function VerifyModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -181,22 +181,72 @@ export default function VerifyModal({ onClose }) {
     setIsLoading(true);
     setErrorMessage('');
 
-    // Firebase SMS 전송
-    const result = await sendVerificationCode(phoneNumber);
+    // 1. 먼저 Firestore에서 전화번호로 사용자 조회
+    const userResult = await getUserByPhone(phoneNumber);
 
-    if (result.success) {
-      console.log('SMS 전송 성공');
-      setConfirmationResult(result.confirmationResult);
-      setShowVerification(true);
-      setTimer(180);
+    if (userResult.success) {
+      // 등록된 사용자 발견 - SMS 인증 없이 바로 대여권 화면으로
+      console.log('✅ 등록된 사용자 발견 - 인증 없이 진행:', userResult.user.uid);
+
+      // 사용자 정보를 Firebase Auth User 형식으로 변환
+      const mockUser = {
+        uid: userResult.user.uid,
+        phoneNumber: userResult.user.phone
+      };
+      setCurrentUser(mockUser);
+
+      // 사용자 대여권 조회
+      const ticketsResult = await getUserTickets(userResult.user.uid);
+      if (ticketsResult.success) {
+        let tickets = ticketsResult.tickets;
+
+        // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
+        if (tickets.length === 0 && import.meta.env.DEV) {
+          console.log('⚠️ 대여권이 없습니다. 개발 모드: 테스트용 대여권 생성');
+          tickets = [{
+            id: 'test_voucher_dev',
+            type: 'goods',
+            name: '테스트 대여권 (개발 전용)',
+            unlimited: false
+          }];
+        }
+
+        setUserTickets(tickets);
+        setAvailableVouchers(tickets.length);
+
+        if (tickets.length > 0) {
+          // 첫 번째 티켓을 기본 선택
+          setSelectedTicket(tickets[0]);
+          setShowQuantitySelection(true);
+        } else {
+          // 대여권이 없는 경우 (프로덕션)
+          setErrorMessage('사용 가능한 대여권이 없습니다.');
+          setIsError(true);
+          setTimeout(() => {
+            setIsError(false);
+            setErrorMessage('');
+          }, 2000);
+        }
+      }
     } else {
-      console.error('SMS 전송 실패:', result.error);
-      setErrorMessage(result.error);
-      setIsError(true);
-      setTimeout(() => {
-        setIsError(false);
-        setErrorMessage('');
-      }, 2000);
+      // 2. 등록되지 않은 사용자 - SMS 인증 진행
+      console.log('📱 신규 사용자 - SMS 인증 진행');
+      const result = await sendVerificationCode(phoneNumber);
+
+      if (result.success) {
+        console.log('SMS 전송 성공');
+        setConfirmationResult(result.confirmationResult);
+        setShowVerification(true);
+        setTimer(180);
+      } else {
+        console.error('SMS 전송 실패:', result.error);
+        setErrorMessage(result.error);
+        setIsError(true);
+        setTimeout(() => {
+          setIsError(false);
+          setErrorMessage('');
+        }, 2000);
+      }
     }
 
     setIsLoading(false);
