@@ -364,6 +364,7 @@ export default function ReturnModal({ onClose, onOpenRental }) {
             setQuantity={setQuantity}
             maxQuantity={userRentals.length}
             onConfirm={handleQuantityConfirm}
+            onClose={onClose}
           />
         </div>
       </div>
