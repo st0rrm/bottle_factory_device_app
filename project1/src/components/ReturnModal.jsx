@@ -153,6 +153,13 @@ export default function ReturnModal({ onClose, onOpenRental }) {
         setTimeout(() => {
           handleBackToPhone();
         }, 500);
+      } else {
+        // 1초 후 에러 상태 초기화하여 다시 입력 가능하게
+        setTimeout(() => {
+          setVerificationCode('');
+          setIsError(false);
+          setErrorMessage('');
+        }, 1000);
       }
       return;
     }
