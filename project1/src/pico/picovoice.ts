@@ -2,7 +2,7 @@ import { PorcupineWorker, PorcupineDetection } from "@picovoice/porcupine-web";
 import { WebVoiceProcessor } from "@picovoice/web-voice-processor";
 
 // @ts-ignore - Vite env variable
-const ACCESS_KEY = import.meta.env.VITE_PV_ACCESS_KEY as string;
+const ACCESS_KEY = import.meta.env.VITE_PC_ACCESS_KEY as string;
 
 const KEYWORDS = [
   { label: "takeout", publicPath: "/pico/takeout_ko.ppn", sensitivity: 0.6 },
@@ -13,7 +13,7 @@ let isListening = false;
 let porcupine: PorcupineWorker | null = null;
 
 export async function startWakeword(onDetect: (index: number) => void) {
-  if (!ACCESS_KEY) throw new Error("Missing VITE_PV_ACCESS_KEY");
+  if (!ACCESS_KEY) throw new Error("Missing VITE_PC_ACCESS_KEY");
   if (isListening) return; // Already listening
 
   // @ts-ignore - PorcupineWorker API
