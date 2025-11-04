@@ -201,21 +201,22 @@ function HomeScreen() {
       {/* reCAPTCHA 정책 명시 (배지 숨김 시 필수) */}
       <div style={{
         position: 'fixed',
-        bottom: '10px',
+        bottom: '5px',
         left: '50%',
         transform: 'translateX(-50%)',
-        fontSize: '10px',
-        color: '#999',
+        fontSize: '8px',
+        color: 'rgba(200, 200, 200, 0.3)',
         textAlign: 'center',
-        padding: '5px 10px',
-        zIndex: 1
+        padding: '3px 8px',
+        zIndex: 1,
+        opacity: 0.3
       }}>
         This site is protected by reCAPTCHA and the Google{' '}
-        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'underline' }}>
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(200, 200, 200, 0.3)', textDecoration: 'none' }}>
           Privacy Policy
         </a>{' '}
         and{' '}
-        <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'underline' }}>
+        <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(200, 200, 200, 0.3)', textDecoration: 'none' }}>
           Terms of Service
         </a>{' '}
         apply.
