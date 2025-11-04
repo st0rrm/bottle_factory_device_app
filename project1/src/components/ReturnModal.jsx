@@ -134,60 +134,70 @@ export default function ReturnModal({ onClose, onOpenRental }) {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      console.log('🔐 인증번호 확인 중...');
+    setIsLoading(true);
+    console.log('🔐 인증번호 확인 중...');
 
-      const user = await verifyCode(confirmationResult, code);
-      console.log('✅ 인증 성공:', user.uid);
+    // 인증번호 확인
+    const result = await verifyCode(confirmationResult, code);
 
-      // 사용자 확인 (users 컬렉션에 있는지 확인)
-      const userResult = await getUserByPhone(phoneNumber);
-
-      if (!userResult.success) {
-        // 기존 앱 미가입자는 반납 불가 → ReturnImpossible
-        console.log('❌ 미가입자입니다.');
-        setIsLoading(false);
-        setShowNoRentalsType('impossible');
-        return;
-      }
-
-      setCurrentUser(userResult.user);
-
-      // 대여 중인 컵 조회
-      const userData = localStorage.getItem('userData');
-      if (!userData) {
-        setIsLoading(false);
-        setErrorMessage('카페 정보를 찾을 수 없습니다.');
-        return;
-      }
-      const cafeData = JSON.parse(userData);
-      const shopId = cafeData.cafeId;
-
-      const rentalsResult = await getUserActiveRentals(userResult.user.uid, shopId);
-
-      if (!rentalsResult.success || rentalsResult.rentals.length === 0) {
-        // 반납할 컵이 없음 → ReturnUnavailable
-        console.log('❌ 반납할 컵이 없습니다.');
-        setIsLoading(false);
-        setShowNoRentalsType('unavailable');
-        return;
-      }
-
-      setUserRentals(rentalsResult.rentals);
-      setQuantity(1); // 기본값 1개
-      setIsLoading(false);
-      setShowVerification(false);
-      setShowQuantitySelection(true);
-
-    } catch (error) {
-      console.error('❌ 인증 실패:', error);
-      setAttempts(prev => prev + 1);
+    if (!result.success) {
+      // 인증 실패
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
       setIsError(true);
-      setErrorMessage(`인증번호가 올바르지 않습니다. (${attempts + 1}/${MAX_ATTEMPTS})`);
+      setErrorMessage(`인증번호가 올바르지 않습니다. (${newAttempts}/${MAX_ATTEMPTS})`);
       setVerificationCode('');
       setIsLoading(false);
+
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setTimeout(() => {
+          handleBackToPhone();
+        }, 500);
+      }
+      return;
     }
+
+    // 인증 성공
+    console.log('✅ 인증 성공:', result.user.uid);
+
+    // 사용자 확인 (users 컬렉션에 있는지 확인)
+    const userResult = await getUserByPhone(phoneNumber);
+
+    if (!userResult.success) {
+      // 기존 앱 미가입자는 반납 불가 → ReturnImpossible
+      console.log('❌ 미가입자입니다.');
+      setIsLoading(false);
+      setShowNoRentalsType('impossible');
+      return;
+    }
+
+    setCurrentUser(userResult.user);
+
+    // 대여 중인 컵 조회
+    const userData = localStorage.getItem('userData');
+    if (!userData) {
+      setIsLoading(false);
+      setErrorMessage('카페 정보를 찾을 수 없습니다.');
+      return;
+    }
+    const cafeData = JSON.parse(userData);
+    const shopId = cafeData.cafeId;
+
+    const rentalsResult = await getUserActiveRentals(userResult.user.uid, shopId);
+
+    if (!rentalsResult.success || rentalsResult.rentals.length === 0) {
+      // 반납할 컵이 없음 → ReturnUnavailable
+      console.log('❌ 반납할 컵이 없습니다.');
+      setIsLoading(false);
+      setShowNoRentalsType('unavailable');
+      return;
+    }
+
+    setUserRentals(rentalsResult.rentals);
+    setQuantity(1); // 기본값 1개
+    setIsLoading(false);
+    setShowVerification(false);
+    setShowQuantitySelection(true);
   };
 
   const handleQuantityConfirm = () => {
