@@ -358,31 +358,7 @@ export default function ReturnModal({ onClose, onOpenRental }) {
     );
   }
 
-  // 인증번호 입력 화면
-  if (showVerification) {
-    return (
-      <div className="return-modal-overlay">
-        <div className="return-modal-container">
-          <button onClick={onClose} className="return-modal-close-button">
-            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
-          </button>
-
-          <VerificationCodeView
-            verificationCode={verificationCode}
-            onNumberClick={handleCodeNumberClick}
-            onDelete={handleCodeDelete}
-            onBackToPhone={handleBackToPhone}
-            timer={timer}
-            isError={isError}
-            attempts={attempts}
-            maxAttempts={MAX_ATTEMPTS}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // 전화번호 입력 / QR 인증 화면
+  // 전화번호 입력 / 인증번호 입력 / QR 인증 화면
   return (
     <div className="return-modal-overlay">
       <div className="return-modal-container">
@@ -419,14 +395,29 @@ export default function ReturnModal({ onClose, onOpenRental }) {
         </div>
 
         {activeTab === 'phone' ? (
-          <PhoneInputView
-            phoneNumber={phoneNumber}
-            onNumberClick={handleNumberClick}
-            onDelete={handleDelete}
-            onConfirm={handlePhoneConfirm}
-            title="리턴미컵 반납을 위해"
-            isLoading={isLoading}
-          />
+          <>
+            {!showVerification ? (
+              <PhoneInputView
+                phoneNumber={phoneNumber}
+                onNumberClick={handleNumberClick}
+                onDelete={handleDelete}
+                onConfirm={handlePhoneConfirm}
+                title="리턴미컵 반납을 위해"
+                isLoading={isLoading}
+              />
+            ) : (
+              <VerificationCodeView
+                verificationCode={verificationCode}
+                onNumberClick={handleCodeNumberClick}
+                onDelete={handleCodeDelete}
+                onBackToPhone={handleBackToPhone}
+                timer={timer}
+                isError={isError}
+                attempts={attempts}
+                maxAttempts={MAX_ATTEMPTS}
+              />
+            )}
+          </>
         ) : (
           <QRCodeView title="리턴미컵 반납을 위해" mode="return" />
         )}
