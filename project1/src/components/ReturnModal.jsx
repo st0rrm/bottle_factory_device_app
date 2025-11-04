@@ -356,6 +356,9 @@ export default function ReturnModal({ onClose, onOpenRental }) {
   return (
     <div className="return-modal-overlay">
       <div className="return-modal-container">
+        {/* reCAPTCHA Container (invisible) */}
+        <div id="recaptcha-container"></div>
+
         <button onClick={onClose} className="return-modal-close-button">
           <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
         </button>
