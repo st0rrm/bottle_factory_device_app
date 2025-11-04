@@ -77,28 +77,33 @@ export default function ReturnModal({ onClose, onOpenRental }) {
 
   const handlePhoneConfirm = async () => {
     if (phoneNumber.length !== 11) {
-      alert('전화번호를 정확히 입력해주세요.');
+      setErrorMessage('올바른 전화번호를 입력해주세요.');
       return;
     }
 
-    try {
-      setIsLoading(true);
-      console.log('📞 SMS 인증번호 전송 중...');
+    setIsLoading(true);
+    setErrorMessage('');
 
-      const confirmation = await sendVerificationCode(phoneNumber);
-      setConfirmationResult(confirmation);
+    // 모든 사용자에게 SMS 인증 진행 (보안을 위해)
+    console.log('📱 SMS 인증번호 전송 중...');
+    const result = await sendVerificationCode(phoneNumber);
+
+    if (result.success) {
+      console.log('✅ SMS 전송 성공');
+      setConfirmationResult(result.confirmationResult);
       setShowVerification(true);
       setTimer(180);
-      setAttempts(0);
-      setIsError(false);
-      setIsLoading(false);
-
-      console.log('✅ SMS 인증번호 전송 완료');
-    } catch (error) {
-      console.error('❌ SMS 전송 실패:', error);
-      alert('인증번호 전송에 실패했습니다. 다시 시도해주세요.');
-      setIsLoading(false);
+    } else {
+      console.error('❌ SMS 전송 실패:', result.error);
+      setErrorMessage(result.error);
+      setIsError(true);
+      setTimeout(() => {
+        setIsError(false);
+        setErrorMessage('');
+      }, 2000);
     }
+
+    setIsLoading(false);
   };
 
   const handleCodeNumberClick = (num) => {
