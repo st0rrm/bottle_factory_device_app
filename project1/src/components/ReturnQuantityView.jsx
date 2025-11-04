@@ -3,7 +3,7 @@ import returnMeCupImage from '../assets/images/returnmecup.svg';
 import xIcon from '../assets/images/x_icon.svg';
 import './ReturnQuantityView.css';
 
-export default function ReturnQuantityView({ quantity, setQuantity, maxQuantity, onConfirm }) {
+export default function ReturnQuantityView({ quantity, setQuantity, maxQuantity, onConfirm, onClose }) {
   const rentedCups = maxQuantity;
 
   const handleDecrement = () => {
