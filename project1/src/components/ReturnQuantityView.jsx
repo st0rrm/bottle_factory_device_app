@@ -3,9 +3,8 @@ import returnMeCupImage from '../assets/images/returnmecup.svg';
 import xIcon from '../assets/images/x_icon.svg';
 import './ReturnQuantityView.css';
 
-export default function ReturnQuantityView({ onClose, onConfirm }) {
-  const [quantity, setQuantity] = useState(1);
-  const rentedCups = 2; // This would come from user data
+export default function ReturnQuantityView({ quantity, setQuantity, maxQuantity, onConfirm }) {
+  const rentedCups = maxQuantity;
 
   const handleDecrement = () => {
     if (quantity > 1) {
