@@ -428,12 +428,6 @@ export default function ReturnModal({ onClose, onOpenRental }) {
         ) : (
           <QRCodeView title="리턴미컵 반납을 위해" mode="return" />
         )}
-
-        {errorMessage && (
-          <div className="error-message-container">
-            <p className="error-message">{errorMessage}</p>
-          </div>
-        )}
       </div>
     </div>
   );
