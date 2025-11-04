@@ -22,14 +22,17 @@ import { db } from './config';
  */
 export const createNewUser = async (user) => {
   try {
+    console.log('🔍 신규 사용자 생성 시작:', user.uid);
     const userRef = doc(db, 'users', user.uid);
 
     // 이미 문서가 있는지 확인
     const userDoc = await getDoc(userRef);
     if (userDoc.exists()) {
-      console.log('사용자 문서가 이미 존재합니다.');
+      console.log('✅ 사용자 문서가 이미 존재합니다.');
       return { success: true, isNew: false };
     }
+
+    console.log('📝 새 사용자 문서 생성 중...');
 
     // 임의 닉네임 생성 (손님 + 랜덤 4자리)
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -63,8 +66,11 @@ export const createNewUser = async (user) => {
       phoneNumber = '0' + phoneNumber.slice(3);
     }
 
+    console.log('📱 전화번호:', phoneNumber);
+    console.log('👤 닉네임:', nickname);
+
     // 사용자 문서 생성
-    await setDoc(userRef, {
+    const userData = {
       uid: user.uid,
       mobile: phoneNumber,
       name: nickname,
@@ -83,21 +89,37 @@ export const createNewUser = async (user) => {
       adm_nm: "서울특별시 서대문구 연희동",
       create: serverTimestamp(),
       update: serverTimestamp()
-    });
+    };
 
-    console.log('신규 사용자 생성 완료:', user.uid, nickname);
+    console.log('💾 Firestore에 사용자 문서 저장 중...');
+    await setDoc(userRef, userData);
+    console.log('✅ 사용자 문서 저장 완료');
+
+    // 저장 확인
+    console.log('🔍 저장된 문서 확인 중...');
+    const verifyDoc = await getDoc(userRef);
+    if (!verifyDoc.exists()) {
+      console.error('❌ 문서가 생성되지 않았습니다! Firestore Security Rules를 확인하세요.');
+      throw new Error('사용자 문서 생성 실패: 문서가 저장되지 않았습니다.');
+    }
+    console.log('✅ 문서 생성 확인 완료');
 
     // ✨ 신규 사용자에게 무료 대여권 1개 자동 지급 (balances 컬렉션)
     try {
+      console.log('🎫 무료 대여권 지급 시작...');
+
       // tid 생성: 0_bottleclub_free-YYYYMMDDHHMMSS 형식
       const now = new Date();
-      const transactionDate = now.toISOString().slice(0, 19).replace('T', ' '); // "YYYY-MM-DD HH:MM:SS"
-      const tidTimestamp = now.toISOString()
-        .slice(0, 19)
-        .replace(/[-:T\s]/g, ''); // "YYYYMMDDHHMMSS"
+
+      // 한국 시간대(Asia/Seoul)로 포맷팅
+      const kstDateStr = now.toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }); // "YYYY-MM-DD HH:MM:SS" 형식
+      const transactionDate = kstDateStr.replace(',', ''); // 쉼표 제거 (일부 브라우저에서 추가될 수 있음)
+
+      // tid 타임스탬프: YYYYMMDDHHMMSS
+      const tidTimestamp = transactionDate.replace(/[-:\s]/g, '');
       const tid = `0_bottleclub_free-${tidTimestamp}`;
 
-      await addDoc(collection(db, 'balances'), {
+      const voucherData = {
         user_id: user.uid,
         status: 'charge',  // 사용 가능 상태
         pgcode: 'bottleclub',  // 무료 대여권 식별자
@@ -108,18 +130,40 @@ export const createNewUser = async (user) => {
         transaction_date: transactionDate,  // 거래 시간
         create: serverTimestamp(),
         update: serverTimestamp()
-      });
+      };
 
-      console.log('✅ 무료 대여권 1개 지급 완료 (balances 컬렉션):', tid);
+      console.log('💾 Firestore에 대여권 문서 저장 중...');
+      const voucherRef = await addDoc(collection(db, 'balances'), voucherData);
+      console.log('✅ 무료 대여권 1개 지급 완료 (balances 컬렉션):', voucherRef.id, tid);
+
+      // 대여권 저장 확인
+      const verifyVoucher = await getDoc(voucherRef);
+      if (!verifyVoucher.exists()) {
+        console.error('❌ 대여권 문서가 생성되지 않았습니다! Firestore Security Rules를 확인하세요.');
+        throw new Error('대여권 생성 실패: 문서가 저장되지 않았습니다.');
+      }
+      console.log('✅ 대여권 문서 생성 확인 완료');
+
     } catch (voucherError) {
-      console.error('무료 대여권 지급 실패:', voucherError);
+      console.error('❌ 무료 대여권 지급 실패:', voucherError);
+      console.error('에러 상세:', {
+        code: voucherError.code,
+        message: voucherError.message,
+        stack: voucherError.stack
+      });
       // 대여권 지급 실패해도 사용자 생성은 성공으로 처리
     }
 
+    console.log('🎉 신규 사용자 생성 프로세스 완료');
     return { success: true, isNew: true, nickname };
 
   } catch (error) {
-    console.error('사용자 생성 실패:', error);
+    console.error('❌ 사용자 생성 실패:', error);
+    console.error('에러 상세:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
     return { success: false, error: error.message };
   }
 };

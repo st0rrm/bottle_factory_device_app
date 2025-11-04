@@ -14,7 +14,7 @@ import './ReturnModal.css';
 import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
-import { getUserByPhone, getUserActiveRentals, processReturn } from '../firebase/firestore';
+import { getUserActiveRentals, processReturn } from '../firebase/firestore';
 
 export default function ReturnModal({ onClose, onOpenRental }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -172,18 +172,15 @@ export default function ReturnModal({ onClose, onOpenRental }) {
     // 인증 성공
     console.log('✅ 인증 성공:', result.user.uid);
 
-    // 사용자 확인 (users 컬렉션에 있는지 확인)
-    const userResult = await getUserByPhone(phoneNumber);
+    // Firebase Auth 인증으로 이미 사용자 확인 완료
+    // result.user를 직접 사용 (전화번호가 일치하므로 본인 확인됨)
+    const authenticatedUser = {
+      uid: result.user.uid,
+      phoneNumber: result.user.phoneNumber,
+      mobile: phoneNumber
+    };
 
-    if (!userResult.success) {
-      // 기존 앱 미가입자는 반납 불가 → ReturnImpossible
-      console.log('❌ 미가입자입니다.');
-      setIsLoading(false);
-      setShowNoRentalsType('impossible');
-      return;
-    }
-
-    setCurrentUser(userResult.user);
+    setCurrentUser(authenticatedUser);
 
     // 대여 중인 컵 조회
     const userData = localStorage.getItem('userData');
@@ -195,7 +192,7 @@ export default function ReturnModal({ onClose, onOpenRental }) {
     const cafeData = JSON.parse(userData);
     const shopId = cafeData.cafeId;
 
-    const rentalsResult = await getUserActiveRentals(userResult.user.uid, shopId);
+    const rentalsResult = await getUserActiveRentals(authenticatedUser.uid, shopId);
 
     if (!rentalsResult.success || rentalsResult.rentals.length === 0) {
       // 반납할 컵이 없음 → ReturnUnavailable
