@@ -29,7 +29,7 @@ function HomeScreen() {
 
   // Wake word detection hook (홈 화면에서만 활성화)
   const { isListening, error: picoError, hasPermission, requestPermission } = usePicovoice(
-    true, // 홈 화면이 마운트되면 자동으로 활성화
+    false, // 일단 비활성화 (Picovoice 모델 파일 필요)
     handleWakeWordDetected
   );
 
