@@ -1,0 +1,77 @@
+.rental-impossible-content {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vh, 3.5rem);
+  align-items: center;
+  width: 100%;
+  padding: clamp(1rem, 2vh, 2rem) 0;
+}
+
+.rental-impossible-title {
+  color: #44748a;
+  font-family: "Pretendard", Helvetica;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 600;
+  text-align: center;
+}
+
+.rental-impossible-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2rem, 3vh, 3rem);
+  width: 100%;
+}
+
+.rental-impossible-message {
+  color: #000000;
+  font-family: "Pretendard", Helvetica;
+  font-size: clamp(1rem, 2vw, 1.875rem);
+  font-weight: 200;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.rental-impossible-highlight {
+  color: #497fc6;
+  font-weight: 700;
+}
+
+.rental-impossible-qr {
+  width: clamp(100px, 20vw, 160px);
+  height: clamp(100px, 20vw, 160px);
+}
+
+.rental-impossible-instruction {
+  color: #000000;
+  font-family: "Pretendard", Helvetica;
+  font-size: clamp(0.875rem, 1.75vw, 1.875rem);
+  font-weight: 200;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.rental-impossible-buttons {
+  display: flex;
+  width: 100%;
+}
+
+.rental-impossible-btn-back {
+  flex: 1;
+  padding: clamp(0.75rem, 1.5vh, 1.5rem) clamp(1rem, 2vw, 1.625rem);
+  background-color: #e8e8e8;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: "Pretendard", Helvetica;
+  font-size: clamp(1rem, 2vw, 1.875rem);
+  font-weight: 600;
+  color: #222222;
+}
+
+.rental-impossible-btn-back:hover {
+  background-color: #d4d4d4;
+}

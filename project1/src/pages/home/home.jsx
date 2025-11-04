@@ -178,8 +178,24 @@ function HomeScreen() {
       {/* ------------------------------------------------------------- */}
       {/* 3. Modals (항상 최상단에 조건부 렌더링) */}
       {/* ------------------------------------------------------------- */}
-      {showVerifyModal && <VerifyModal onClose={() => setShowVerifyModal(false)} />}
-      {showReturnModal && <ReturnModal onClose={() => setShowReturnModal(false)} />}
+      {showVerifyModal && (
+        <VerifyModal
+          onClose={() => setShowVerifyModal(false)}
+          onOpenReturn={() => {
+            setShowVerifyModal(false);
+            setShowReturnModal(true);
+          }}
+        />
+      )}
+      {showReturnModal && (
+        <ReturnModal
+          onClose={() => setShowReturnModal(false)}
+          onOpenRental={() => {
+            setShowReturnModal(false);
+            setShowVerifyModal(true);
+          }}
+        />
+      )}
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />}
     </div>
   );

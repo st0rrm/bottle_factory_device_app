@@ -4,6 +4,8 @@ import QRCodeView from './QRCodeView';
 import VerificationCodeView from './VerificationCodeView';
 import QuantitySelectionView from './QuantitySelectionView';
 import RentalConfirmationView from './RentalConfirmationView';
+import { RentalUnavailable } from './RentalUnavailable';
+import { RentalImpossible } from './RentalImpossible';
 import phoneIcon from '../assets/images/phone_icon_identification.svg';
 import phoneIconNot from '../assets/images/phone_icon_identification_not.svg';
 import qrIcon from '../assets/images/qr_icon_identification.svg';
@@ -14,7 +16,7 @@ import { trackBehavior } from '../api/behaviors';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { createNewUser, getUserTickets, processRental, getUserByPhone } from '../firebase/firestore';
 
-export default function VerifyModal({ onClose }) {
+export default function VerifyModal({ onClose, onOpenReturn }) {
   const [activeTab, setActiveTab] = useState('phone');
 
   // 탭 전환 추적
@@ -28,6 +30,7 @@ export default function VerifyModal({ onClose }) {
   const [showVerification, setShowVerification] = useState(false);
   const [showQuantitySelection, setShowQuantitySelection] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showNoTicketsType, setShowNoTicketsType] = useState(null); // 'impossible' or 'unavailable'
   const [quantity, setQuantity] = useState(1);
   const [availableVouchers, setAvailableVouchers] = useState(0);
   const [userTickets, setUserTickets] = useState([]);
@@ -86,6 +89,7 @@ export default function VerifyModal({ onClose }) {
           const ticketsResult = await getUserTickets(result.user.uid);
           if (ticketsResult.success) {
             let tickets = ticketsResult.tickets;
+            const { totalCount, availableCount } = ticketsResult;
 
             // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
             if (tickets.length === 0 && import.meta.env.DEV) {
@@ -106,12 +110,16 @@ export default function VerifyModal({ onClose }) {
               setSelectedTicket(tickets[0]);
               setShowQuantitySelection(true);
             } else {
-              // 대여권이 없는 경우 (프로덕션)
-              setErrorMessage('사용 가능한 대여권이 없습니다.');
-              setIsError(true);
-              setTimeout(() => {
-                handleBackToPhone();
-              }, 2000);
+              // 대여권이 없거나 모두 사용중인 경우
+              if (totalCount === 0) {
+                // 보유한 대여권이 아예 없음 → RentalImpossible
+                console.log('❌ 보유한 대여권이 없습니다.');
+                setShowNoTicketsType('impossible');
+              } else {
+                // 대여권은 있지만 모두 사용중 → RentalUnavailable
+                console.log('❌ 사용 가능한 대여권이 없습니다. (모두 사용중)');
+                setShowNoTicketsType('unavailable');
+              }
             }
           }
         } else {
@@ -181,91 +189,23 @@ export default function VerifyModal({ onClose }) {
     setIsLoading(true);
     setErrorMessage('');
 
-    // 1. 먼저 Firestore에서 전화번호로 사용자 조회
-    const userResult = await getUserByPhone(phoneNumber);
+    // 모든 사용자에게 SMS 인증 진행 (보안을 위해)
+    console.log('📱 SMS 인증번호 전송 중...');
+    const result = await sendVerificationCode(phoneNumber);
 
-    if (userResult.success) {
-      // 등록된 사용자 발견 - SMS 인증 없이 바로 대여권 화면으로
-      console.log('✅ 등록된 사용자 발견 - 인증 없이 진행:', userResult.user.uid);
-
-      // 사용자 정보를 Firebase Auth User 형식으로 변환
-      const mockUser = {
-        uid: userResult.user.uid,
-        phoneNumber: userResult.user.mobile
-      };
-      setCurrentUser(mockUser);
-
-      // 사용자 대여권 조회
-      const ticketsResult = await getUserTickets(userResult.user.uid);
-
-      let tickets = ticketsResult.success ? ticketsResult.tickets : [];
-
-      // 특정 테스트 전화번호 처리
-      if (phoneNumber === '01010000001') {
-        console.log('🎫 테스트 전화번호 - 대여권 2개 제공');
-        tickets = [
-          {
-            id: 'test_voucher_1',
-            type: 'goods',
-            name: '테스트 대여권 1',
-            unlimited: false
-          },
-          {
-            id: 'test_voucher_2',
-            type: 'goods',
-            name: '테스트 대여권 2',
-            unlimited: false
-          }
-        ];
-      }
-      // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
-      else if (tickets.length === 0 && import.meta.env.DEV) {
-        console.log('⚠️ 대여권이 없습니다. 개발 모드: 테스트용 대여권 생성');
-        tickets = [{
-          id: 'test_voucher_dev',
-          type: 'goods',
-          name: '테스트 대여권 (개발 전용)',
-          unlimited: false
-        }];
-      }
-
-      setUserTickets(tickets);
-      setAvailableVouchers(tickets.length);
-
-      if (tickets.length > 0) {
-        // 첫 번째 티켓을 기본 선택
-        setSelectedTicket(tickets[0]);
-        setShowQuantitySelection(true);
-        console.log('✅ 대여권 선택 화면으로 이동');
-      } else {
-        // 대여권이 없는 경우 (프로덕션)
-        console.warn('❌ 사용 가능한 대여권이 없습니다.');
-        setErrorMessage('사용 가능한 대여권이 없습니다.');
-        setIsError(true);
-        setTimeout(() => {
-          setIsError(false);
-          setErrorMessage('');
-        }, 2000);
-      }
+    if (result.success) {
+      console.log('✅ SMS 전송 성공');
+      setConfirmationResult(result.confirmationResult);
+      setShowVerification(true);
+      setTimer(180);
     } else {
-      // 2. 등록되지 않은 사용자 - SMS 인증 진행
-      console.log('📱 신규 사용자 - SMS 인증 진행');
-      const result = await sendVerificationCode(phoneNumber);
-
-      if (result.success) {
-        console.log('SMS 전송 성공');
-        setConfirmationResult(result.confirmationResult);
-        setShowVerification(true);
-        setTimer(180);
-      } else {
-        console.error('SMS 전송 실패:', result.error);
-        setErrorMessage(result.error);
-        setIsError(true);
-        setTimeout(() => {
-          setIsError(false);
-          setErrorMessage('');
-        }, 2000);
-      }
+      console.error('❌ SMS 전송 실패:', result.error);
+      setErrorMessage(result.error);
+      setIsError(true);
+      setTimeout(() => {
+        setIsError(false);
+        setErrorMessage('');
+      }, 2000);
     }
 
     setIsLoading(false);
@@ -317,9 +257,12 @@ export default function VerifyModal({ onClose }) {
     const shopId = cafeData.cafeId;
     const shopName = cafeData.cafeName || '카페명 없음';
 
+    // 대여할 개수만큼 대여권 선택 (create 순으로 정렬되어 있음)
+    const selectedTickets = userTickets.slice(0, quantity);
+
     console.log('🔄 대여 처리 시작...', {
       userId: currentUser.uid,
-      ticketId: selectedTicket.id,
+      ticketCount: selectedTickets.length,
       shopId: shopId,
       shopName: shopName,
       quantity: quantity
@@ -329,7 +272,7 @@ export default function VerifyModal({ onClose }) {
 
     try {
       // 테스트 전화번호이거나 테스트 대여권인 경우 바로 성공 처리
-      if (phoneNumber === '01010000001' || selectedTicket.id.startsWith('test_voucher')) {
+      if (phoneNumber === '01010000001' || selectedTickets[0]?.id.startsWith('test_voucher')) {
         console.log('✅ 테스트 모드 - 대여 처리 건너뛰기');
         setIsLoading(false);
         console.log('🏠 홈 화면으로 돌아갑니다...');
@@ -337,11 +280,11 @@ export default function VerifyModal({ onClose }) {
         return;
       }
 
-      // Firebase에 대여 처리
-      const result = await processRental(currentUser.uid, selectedTicket, shopId, shopName);
+      // Firebase에 대여 처리 (개수만큼 대여권 배열 전달)
+      const result = await processRental(currentUser.uid, selectedTickets, shopId, shopName);
 
       if (result.success) {
-        console.log('✅ 대여 완료:', result.rentalId);
+        console.log(`✅ 대여 완료: ${result.count}개 대여권 사용, ${result.count}개 컵 대여`);
         setIsLoading(false);
 
         // 모달 닫기 (홈 화면으로 돌아가기)
@@ -364,6 +307,47 @@ export default function VerifyModal({ onClose }) {
       }, 2000);
     }
   };
+
+  // 대여권이 없는 경우 표시
+  if (showNoTicketsType === 'impossible') {
+    // 보유한 대여권이 아예 없음
+    return (
+      <div className="verify-modal-overlay">
+        <div className="verify-modal-container">
+          {/* Close Button */}
+          <button onClick={onClose} className="verify-close-button">
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
+          </button>
+
+          <RentalImpossible onClose={onClose} />
+        </div>
+      </div>
+    );
+  }
+
+  if (showNoTicketsType === 'unavailable') {
+    // 대여권은 있지만 모두 사용중
+    return (
+      <div className="verify-modal-overlay">
+        <div className="verify-modal-container">
+          {/* Close Button */}
+          <button onClick={onClose} className="verify-close-button">
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
+          </button>
+
+          <RentalUnavailable
+            onCancel={onClose}
+            onOpenReturn={() => {
+              onClose();
+              if (onOpenReturn) {
+                onOpenReturn();
+              }
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="verify-modal-overlay">

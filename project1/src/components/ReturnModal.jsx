@@ -4,6 +4,8 @@ import QRCodeView from './QRCodeView';
 import VerificationCodeView from './VerificationCodeView';
 import ReturnQuantityView from './ReturnQuantityView';
 import ReturnConfirmationView from './ReturnConfirmationView';
+import { ReturnUnavailable } from './ReturnUnavailable';
+import { ReturnImpossible } from './ReturnImpossible';
 import phoneIcon from '../assets/images/phone_icon_identification.svg';
 import phoneIconNot from '../assets/images/phone_icon_identification_not.svg';
 import qrIcon from '../assets/images/qr_icon_identification.svg';
@@ -14,7 +16,7 @@ import { trackBehavior } from '../api/behaviors';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { getUserByPhone, getUserActiveRentals, processReturn } from '../firebase/firestore';
 
-export default function ReturnModal({ onClose }) {
+export default function ReturnModal({ onClose, onOpenRental }) {
   const [activeTab, setActiveTab] = useState('phone');
 
   // 탭 전환 추적
@@ -27,11 +29,12 @@ export default function ReturnModal({ onClose }) {
   const [phoneNumber, setPhoneNumber] = useState('010');
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerification, setShowVerification] = useState(false);
-  const [showRentalSelection, setShowRentalSelection] = useState(false);
+  const [showQuantitySelection, setShowQuantitySelection] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showNoRentalsType, setShowNoRentalsType] = useState(null); // 'impossible' or 'unavailable'
   const [currentUser, setCurrentUser] = useState(null);
   const [userRentals, setUserRentals] = useState([]);
-  const [selectedRental, setSelectedRental] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [timer, setTimer] = useState(180);
   const [attempts, setAttempts] = useState(0);
@@ -124,10 +127,10 @@ export default function ReturnModal({ onClose }) {
       const userResult = await getUserByPhone(phoneNumber);
 
       if (!userResult.success) {
-        // 기존 앱 미가입자는 반납 불가
+        // 기존 앱 미가입자는 반납 불가 → ReturnImpossible
+        console.log('❌ 미가입자입니다.');
         setIsLoading(false);
-        setIsError(true);
-        setErrorMessage('보틀클럽 앱 회원만 반납 가능합니다. 앱을 다운로드해주세요.');
+        setShowNoRentalsType('impossible');
         return;
       }
 
@@ -146,16 +149,18 @@ export default function ReturnModal({ onClose }) {
       const rentalsResult = await getUserActiveRentals(userResult.user.uid, shopId);
 
       if (!rentalsResult.success || rentalsResult.rentals.length === 0) {
+        // 반납할 컵이 없음 → ReturnUnavailable
+        console.log('❌ 반납할 컵이 없습니다.');
         setIsLoading(false);
-        setIsError(true);
-        setErrorMessage('반납할 컵이 없습니다.');
+        setShowNoRentalsType('unavailable');
         return;
       }
 
       setUserRentals(rentalsResult.rentals);
+      setQuantity(1); // 기본값 1개
       setIsLoading(false);
       setShowVerification(false);
-      setShowRentalSelection(true);
+      setShowQuantitySelection(true);
 
     } catch (error) {
       console.error('❌ 인증 실패:', error);
@@ -167,20 +172,18 @@ export default function ReturnModal({ onClose }) {
     }
   };
 
-  const handleRentalSelect = (rental) => {
-    setSelectedRental(rental);
-    setShowRentalSelection(false);
+  const handleQuantityConfirm = () => {
+    setShowQuantitySelection(false);
     setShowConfirmation(true);
   };
 
   const handleConfirmCancel = () => {
     setShowConfirmation(false);
-    setShowRentalSelection(true);
-    setSelectedRental(null);
+    setShowQuantitySelection(true);
   };
 
   const handleFinalConfirm = async () => {
-    if (!currentUser || !selectedRental) {
+    if (!currentUser || !userRentals || userRentals.length === 0) {
       console.error('❌ 사용자 또는 대여 기록 정보가 없습니다.');
       return;
     }
@@ -195,21 +198,25 @@ export default function ReturnModal({ onClose }) {
     const shopId = cafeData.cafeId;
     const shopName = cafeData.cafeName || '카페명 없음';
 
+    // 반납할 개수만큼 rentals 선택 (rented_date 순으로 정렬되어 있음)
+    const selectedRentals = userRentals.slice(0, quantity);
+
     console.log('🔄 반납 처리 시작...', {
       userId: currentUser.uid,
-      rentalId: selectedRental.id,
+      rentalCount: selectedRentals.length,
       shopId: shopId,
-      shopName: shopName
+      shopName: shopName,
+      quantity: quantity
     });
 
     setIsLoading(true);
 
     try {
-      // Firebase에 반납 처리
-      const result = await processReturn(currentUser.uid, selectedRental, shopId, shopName);
+      // Firebase에 반납 처리 (개수만큼 rentals 배열 전달)
+      const result = await processReturn(currentUser.uid, selectedRentals, shopId, shopName);
 
       if (result.success) {
-        console.log('✅ 반납 완료:', result.score, '점 적립');
+        console.log('✅ 반납 완료:', result.score, '점 적립, 컵', result.count, '개');
         setIsLoading(false);
         setReturnScore(result.score);
         setShowConfirmation(false);
@@ -237,6 +244,44 @@ export default function ReturnModal({ onClose }) {
     }
   };
 
+  // 반납 불가 화면 (미가입자)
+  if (showNoRentalsType === 'impossible') {
+    return (
+      <div className="return-modal-overlay">
+        <div className="return-modal-container">
+          <button onClick={onClose} className="return-modal-close-button">
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
+          </button>
+
+          <ReturnImpossible onClose={onClose} />
+        </div>
+      </div>
+    );
+  }
+
+  // 반납할 컵 없음 화면
+  if (showNoRentalsType === 'unavailable') {
+    return (
+      <div className="return-modal-overlay">
+        <div className="return-modal-container">
+          <button onClick={onClose} className="return-modal-close-button">
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
+          </button>
+
+          <ReturnUnavailable
+            onClose={onClose}
+            onOpenRental={() => {
+              onClose();
+              if (onOpenRental) {
+                onOpenRental();
+              }
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   // 완료 화면
   if (showComplete) {
     return (
@@ -256,7 +301,7 @@ export default function ReturnModal({ onClose }) {
   if (showConfirmation) {
     return (
       <ReturnConfirmationView
-        quantity={1}
+        quantity={quantity}
         onClose={onClose}
         onCancel={handleConfirmCancel}
         onConfirm={handleFinalConfirm}
@@ -265,8 +310,8 @@ export default function ReturnModal({ onClose }) {
     );
   }
 
-  // 반납할 컵 선택 화면
-  if (showRentalSelection) {
+  // 반납할 개수 선택 화면
+  if (showQuantitySelection) {
     return (
       <div className="return-modal-overlay">
         <div className="return-modal-container">
@@ -274,26 +319,12 @@ export default function ReturnModal({ onClose }) {
             <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
           </button>
 
-          <div className="rental-selection-container">
-            <h2 className="rental-selection-title">반납할 컵을 선택해주세요</h2>
-            <div className="rental-list">
-              {userRentals.map((rental) => (
-                <div
-                  key={rental.id}
-                  className="rental-item"
-                  onClick={() => handleRentalSelect(rental)}
-                >
-                  <div className="rental-item-info">
-                    <div className="rental-item-shop">{rental.rented_shop_name || '가게명 없음'}</div>
-                    <div className="rental-item-date">
-                      대여일: {rental.rented_date?.toDate().toLocaleDateString('ko-KR')}
-                    </div>
-                  </div>
-                  <div className="rental-item-arrow">→</div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ReturnQuantityView
+            quantity={quantity}
+            setQuantity={setQuantity}
+            maxQuantity={userRentals.length}
+            onConfirm={handleQuantityConfirm}
+          />
         </div>
       </div>
     );
