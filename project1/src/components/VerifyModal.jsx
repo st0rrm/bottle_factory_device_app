@@ -76,13 +76,15 @@ export default function VerifyModal({ onClose, onOpenReturn }) {
           console.log('인증 성공:', result.user.uid);
           setCurrentUser(result.user);
 
-          // 신규 사용자인 경우 자동 회원가입
-          if (result.isNewUser) {
-            console.log('신규 사용자 - 자동 회원가입 진행');
-            const createResult = await createNewUser(result.user);
-            if (createResult.success) {
-              console.log('회원가입 완료:', createResult.nickname);
-            }
+          // 항상 users 컬렉션 확인 후 없으면 생성 (isNewUser에 의존하지 않음)
+          console.log('사용자 문서 확인/생성 중...');
+          const createResult = await createNewUser(result.user);
+          if (createResult.success && createResult.isNew) {
+            console.log('신규 사용자 생성 완료:', createResult.nickname);
+          } else if (createResult.success && !createResult.isNew) {
+            console.log('기존 사용자 확인 완료');
+          } else {
+            console.error('사용자 생성 실패:', createResult.error);
           }
 
           // 사용자 대여권 조회

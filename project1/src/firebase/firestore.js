@@ -102,7 +102,7 @@ export const createNewUser = async (user) => {
         status: 'charge',  // 사용 가능 상태
         pgcode: 'bottleclub',  // 무료 대여권 식별자
         amount: 4000,  // 대여권 가격
-        expired: null,  // 만료 없음
+        expired: 9999999999999,  // 만료 없음 (매우 큰 숫자로 표현)
         pay_info: '보틀클럽',  // 결제 정보
         tid: tid,  // 거래 ID
         transaction_date: transactionDate,  // 거래 시간
