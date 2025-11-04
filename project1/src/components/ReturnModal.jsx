@@ -101,12 +101,30 @@ export default function ReturnModal({ onClose, onOpenRental }) {
     }
   };
 
-  const handleCodeChange = (code) => {
-    setVerificationCode(code);
+  const handleCodeNumberClick = (num) => {
+    if (verificationCode.length < 6 && !isError) {
+      const newCode = verificationCode + num;
+      setVerificationCode(newCode);
 
-    if (code.length === 6) {
-      handleCodeComplete(code);
+      if (newCode.length === 6) {
+        handleCodeComplete(newCode);
+      }
     }
+  };
+
+  const handleCodeDelete = () => {
+    if (verificationCode.length > 0 && !isError) {
+      setVerificationCode(verificationCode.slice(0, -1));
+    }
+  };
+
+  const handleBackToPhone = () => {
+    setShowVerification(false);
+    setVerificationCode('');
+    setTimer(180);
+    setAttempts(0);
+    setIsError(false);
+    setErrorMessage('');
   };
 
   const handleCodeComplete = async (code) => {
@@ -340,12 +358,14 @@ export default function ReturnModal({ onClose, onOpenRental }) {
           </button>
 
           <VerificationCodeView
-            code={verificationCode}
-            onCodeChange={handleCodeChange}
+            verificationCode={verificationCode}
+            onNumberClick={handleCodeNumberClick}
+            onDelete={handleCodeDelete}
+            onBackToPhone={handleBackToPhone}
             timer={timer}
             isError={isError}
-            errorMessage={errorMessage}
-            isLoading={isLoading}
+            attempts={attempts}
+            maxAttempts={MAX_ATTEMPTS}
           />
         </div>
       </div>
