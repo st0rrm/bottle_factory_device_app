@@ -61,3 +61,10 @@ h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
+
+/* Hide reCAPTCHA badge */
+.grecaptcha-badge {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
