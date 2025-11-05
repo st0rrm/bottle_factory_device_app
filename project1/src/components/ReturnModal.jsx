@@ -257,15 +257,10 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
       if (result.success) {
         console.log('✅ 반납 완료:', result.score, '점 적립, 컵', result.count, '개');
         setIsLoading(false);
-        setReturnScore(result.score);
-        setShowConfirmation(false);
-        setShowComplete(true);
 
-        // 3초 후 모달 닫고 성공 스낵바 표시
-        setTimeout(() => {
-          onSuccess?.(); // 성공 스낵바 표시
-          onClose();
-        }, 3000);
+        // 바로 모달 닫고 성공 스낵바 표시
+        onSuccess?.(); // 성공 스낵바 표시
+        onClose();
       } else {
         console.error('❌ 반납 실패:', result.error);
         setIsLoading(false);
