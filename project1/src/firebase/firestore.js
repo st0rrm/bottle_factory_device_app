@@ -411,8 +411,7 @@ export const getShopByName = async (cafeName) => {
     // shops 컬렉션에서 name 필드로 검색
     const shopsQuery = query(
       collection(db, 'shops'),
-      where('name', '==', cafeName),
-      orderBy('create', 'desc')  // 최신 생성일 기준 정렬
+      where('name', '==', cafeName)
     );
     const shopsSnapshot = await getDocs(shopsQuery);
 
@@ -421,14 +420,23 @@ export const getShopByName = async (cafeName) => {
       return { success: false, error: '등록되지 않은 카페입니다.' };
     }
 
-    // 첫 번째 결과 반환 (최신 것)
-    const shopDoc = shopsSnapshot.docs[0];
-    const shopData = {
-      ...shopDoc.data(),
-      id: shopDoc.id
-    };
+    // 여러 결과가 있을 경우 create 필드로 정렬 (클라이언트 사이드)
+    const shops = shopsSnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id
+    }));
 
-    console.log('가게 조회 성공:', shopDoc.id, '- PIN:', shopData.pin);
+    // create 필드가 있으면 최신순으로 정렬, 없으면 첫 번째 것 사용
+    shops.sort((a, b) => {
+      if (!a.create || !b.create) return 0;
+      const aTime = a.create.toMillis ? a.create.toMillis() : 0;
+      const bTime = b.create.toMillis ? b.create.toMillis() : 0;
+      return bTime - aTime;  // 내림차순 (최신 것이 앞)
+    });
+
+    const shopData = shops[0];
+
+    console.log('가게 조회 성공:', shopData.id, '- PIN:', shopData.pin);
     return { success: true, data: shopData };
 
   } catch (error) {
