@@ -111,12 +111,23 @@ export const createNewUser = async (user) => {
       // tid 생성: 0_bottleclub_free-YYYYMMDDHHMMSS 형식
       const now = new Date();
 
-      // 한국 시간대(Asia/Seoul)로 포맷팅
-      const kstDateStr = now.toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }); // "YYYY-MM-DD HH:MM:SS" 형식
-      const transactionDate = kstDateStr.replace(',', ''); // 쉼표 제거 (일부 브라우저에서 추가될 수 있음)
+      // 한국 시간대(KST = UTC+9) 변환
+      const kstOffset = 9 * 60; // 9시간을 분으로
+      const kstTime = new Date(now.getTime() + (kstOffset + now.getTimezoneOffset()) * 60000);
+
+      // 날짜/시간 컴포넌트 추출
+      const year = kstTime.getFullYear();
+      const month = String(kstTime.getMonth() + 1).padStart(2, '0');
+      const day = String(kstTime.getDate()).padStart(2, '0');
+      const hours = String(kstTime.getHours()).padStart(2, '0');
+      const minutes = String(kstTime.getMinutes()).padStart(2, '0');
+      const seconds = String(kstTime.getSeconds()).padStart(2, '0');
+
+      // transaction_date: "YYYY-MM-DD HH:MM:SS" 형식
+      const transactionDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
       // tid 타임스탬프: YYYYMMDDHHMMSS
-      const tidTimestamp = transactionDate.replace(/[-:\s]/g, '');
+      const tidTimestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
       const tid = `0_bottleclub_free-${tidTimestamp}`;
 
       const voucherData = {
