@@ -17,7 +17,7 @@ import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/au
 import { getUserActiveRentals, processReturn } from '../firebase/firestore';
 import { getDeviceShopIdAsync } from '../config/device';
 
-export default function ReturnModal({ onClose, onOpenRental }) {
+export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
   const [activeTab, setActiveTab] = useState('phone');
 
   // 탭 전환 추적
@@ -261,8 +261,9 @@ export default function ReturnModal({ onClose, onOpenRental }) {
         setShowConfirmation(false);
         setShowComplete(true);
 
-        // 3초 후 모달 닫기
+        // 3초 후 모달 닫고 성공 스낵바 표시
         setTimeout(() => {
+          onSuccess?.(); // 성공 스낵바 표시
           onClose();
         }, 3000);
       } else {

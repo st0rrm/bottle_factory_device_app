@@ -5,6 +5,7 @@ import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
 import helpIcon from '../../assets/images/help.svg';
 import HelpModal from '../../components/HelpModal';
+import SuccessSnackbar from '../../components/SuccessSnackbar';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
 import { usePicovoice } from '../../hooks/usePicovoice';
@@ -14,6 +15,8 @@ function HomeScreen() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [cafeInfo, setCafeInfo] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
@@ -104,6 +107,18 @@ function HomeScreen() {
     }
   };
 
+  const handleRentalSuccess = () => {
+    setSnackbarMessage('🌱 대여가 완료되었습니다');
+    setShowSuccessSnackbar(true);
+    fetchStats(); // 통계 업데이트
+  };
+
+  const handleReturnSuccess = () => {
+    setSnackbarMessage('🌱 반납이 완료되었습니다');
+    setShowSuccessSnackbar(true);
+    fetchStats(); // 통계 업데이트
+  };
+
   // 로딩 중이거나 카페 정보가 없으면 빈 화면
   if (!cafeInfo) {
     return <div className="home-container">Loading...</div>;
@@ -185,18 +200,29 @@ function HomeScreen() {
             setShowVerifyModal(false);
             setShowReturnModal(true);
           }}
+          onSuccess={handleRentalSuccess}
         />
       )}
       {showReturnModal && (
         <ReturnModal
           onClose={() => setShowReturnModal(false)}
           onOpenRental={() => {
-            setShowReturnModal(false);
+            setShowVerifyModal(false);
             setShowVerifyModal(true);
           }}
+          onSuccess={handleReturnSuccess}
         />
       )}
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />}
+
+      {/* Success Snackbar */}
+      {showSuccessSnackbar && (
+        <SuccessSnackbar
+          message={snackbarMessage}
+          onClose={() => setShowSuccessSnackbar(false)}
+          duration={3000}
+        />
+      )}
     </div>
   );
 }

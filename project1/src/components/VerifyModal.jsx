@@ -17,7 +17,7 @@ import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/au
 import { createNewUser, getUserTickets, processRental, getUserByPhone } from '../firebase/firestore';
 import { getDeviceShopIdAsync } from '../config/device';
 
-export default function VerifyModal({ onClose, onOpenReturn }) {
+export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
   const [activeTab, setActiveTab] = useState('phone');
 
   // 탭 전환 추적
@@ -292,6 +292,7 @@ export default function VerifyModal({ onClose, onOpenReturn }) {
 
         // 모달 닫기 (홈 화면으로 돌아가기)
         console.log('🏠 홈 화면으로 돌아갑니다...');
+        onSuccess?.(); // 성공 스낵바 표시
         onClose();
       } else {
         console.error('❌ 대여 실패:', result.error);
