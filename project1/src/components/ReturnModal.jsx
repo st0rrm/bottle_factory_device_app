@@ -410,6 +410,7 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
                 onNumberClick={handleNumberClick}
                 onDelete={handleDelete}
                 onConfirm={handlePhoneConfirm}
+                title="리턴미컵 반납을 위해"
               />
             ) : (
               <VerificationCodeView

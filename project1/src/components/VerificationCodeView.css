@@ -107,66 +107,45 @@
 /* Number Pad */
 .number-pad {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: clamp(0.625rem, 1.5vw, 0.625rem);
-  width: 100%;
-  max-width: min(90%, 29.625rem);
-  height: clamp(18rem, 35vh, 22.125rem);
-  margin-bottom: clamp(0.5rem, 1.5vh, 1.25rem);
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.375rem, 1vw + 0.5vh, 1.5rem);
+  margin-bottom: clamp(0.75rem, 2vh, 2rem);
+  max-width: min(90%, 28rem);
   margin-left: auto;
   margin-right: auto;
+  width: 100%;
 }
 
 .number-button {
-  height: 100%;
-  width: 100%;
-  font-size: clamp(2.5rem, 6vw + 2vh, 5rem);
+  aspect-ratio: 1;
+  background-color: #ffffff;
+  border-radius: clamp(0.5rem, 1vw, 1rem);
+  font-size: clamp(1.25rem, 3vw + 1.5vh, 2.25rem);
   font-weight: var(--pretendard-semibold);
   color: #8798a1;
-  background-color: #FFFFFF;
   border: none;
-  border-radius: clamp(0.625rem, 1.5vw, 0.625rem);
   cursor: pointer;
   transition: background-color 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
-  letter-spacing: -0.02em;
 }
 
 .number-button:hover {
-  background-color: #e8e8e8;
+  background-color: #e2e2e2;
 }
 
 .number-button-spacer {
-  height: 100%;
-  width: 100%;
-  background-color: transparent;
-  border-radius: clamp(0.625rem, 1.5vw, 0.625rem);
+  aspect-ratio: 1;
 }
 
 .delete-button {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #c7d2d7;
-  background-color: #ffffff;
-  border: none;
-  border-radius: clamp(0.625rem, 1.5vw, 0.625rem);
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.delete-button:hover {
-  background-color: #e8e8e8;
+  padding: 0;
 }
 
 .delete-icon {
-  width: clamp(1.25rem, 3vw + 1.5vh, 2.5rem);
-  height: clamp(1.25rem, 3vw + 1.5vh, 2.5rem);
+  width: clamp(1.25rem, 3vw + 1vh, 2rem);
+  height: clamp(1.25rem, 3vw + 1vh, 2rem);
 }
 
 /* Bottom Actions */
