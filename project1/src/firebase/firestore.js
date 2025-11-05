@@ -409,9 +409,11 @@ export const getShopByName = async (cafeName) => {
     console.log('카페명으로 가게 조회:', cafeName);
 
     // shops 컬렉션에서 name 필드로 검색
+    // Firebase 복합 인덱스 필요: name(==) + create(desc)
     const shopsQuery = query(
       collection(db, 'shops'),
-      where('name', '==', cafeName)
+      where('name', '==', cafeName),
+      orderBy('create', 'desc')  // 최신 생성일 기준 정렬 (서버 사이드)
     );
     const shopsSnapshot = await getDocs(shopsQuery);
 
@@ -420,23 +422,14 @@ export const getShopByName = async (cafeName) => {
       return { success: false, error: '등록되지 않은 카페입니다.' };
     }
 
-    // 여러 결과가 있을 경우 create 필드로 정렬 (클라이언트 사이드)
-    const shops = shopsSnapshot.docs.map(doc => ({
-      ...doc.data(),
-      id: doc.id
-    }));
+    // 첫 번째 결과 반환 (이미 정렬되어 있으므로 최신 것)
+    const shopDoc = shopsSnapshot.docs[0];
+    const shopData = {
+      ...shopDoc.data(),
+      id: shopDoc.id
+    };
 
-    // create 필드가 있으면 최신순으로 정렬, 없으면 첫 번째 것 사용
-    shops.sort((a, b) => {
-      if (!a.create || !b.create) return 0;
-      const aTime = a.create.toMillis ? a.create.toMillis() : 0;
-      const bTime = b.create.toMillis ? b.create.toMillis() : 0;
-      return bTime - aTime;  // 내림차순 (최신 것이 앞)
-    });
-
-    const shopData = shops[0];
-
-    console.log('가게 조회 성공:', shopData.id, '- PIN:', shopData.pin);
+    console.log('가게 조회 성공:', shopDoc.id, '- PIN:', shopData.pin);
     return { success: true, data: shopData };
 
   } catch (error) {
