@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import maskCupIcon from '../assets/images/mask_cup.svg';
 import './QRCodeView.css';
-import { getShopData } from '../firebase/firestore';
+import { getShopByName } from '../firebase/firestore';
 
 export default function QRCodeView({ title = '리턴미컵 대여를 위해', mode = 'rental' }) {
   const [qrValue, setQrValue] = useState('');
@@ -21,17 +21,17 @@ export default function QRCodeView({ title = '리턴미컵 대여를 위해', mo
         }
 
         const cafeData = JSON.parse(userData);
-        const shopId = cafeData.cafeId;
+        const cafeName = cafeData.cafeName;
 
-        // Firebase에서 카페 정보 조회
-        const shopResult = await getShopData(shopId);
+        // Firebase에서 카페명으로 가게 정보 조회
+        const shopResult = await getShopByName(cafeName);
 
         if (shopResult.success && shopResult.data.pin) {
           setQrValue(shopResult.data.pin);
-          console.log('✅ QR 코드 생성 완료:', shopResult.data.pin);
+          console.log('✅ QR 코드 생성 완료 (카페명:', cafeName, ', PIN:', shopResult.data.pin, ')');
         } else {
-          console.error('가게 PIN을 찾을 수 없습니다.');
-          setQrValue(shopId); // 대체값으로 shopId 사용
+          console.error('가게 PIN을 찾을 수 없습니다. 카페명:', cafeName);
+          setQrValue('ERROR');
         }
       } catch (error) {
         console.error('QR 코드 로드 실패:', error);
@@ -61,6 +61,17 @@ export default function QRCodeView({ title = '리턴미컵 대여를 위해', mo
         <div className="qr-scanner-container">
           {isLoading ? (
             <div className="qr-loading">로딩 중...</div>
+          ) : qrValue === 'ERROR' ? (
+            <div className="qr-error">
+              <div className="qr-error-icon">⚠️</div>
+              <div className="qr-error-message">
+                QR 코드를 생성할 수 없습니다
+                <br />
+                <span className="qr-error-detail">
+                  Firebase에 등록된 카페 정보를 찾을 수 없습니다
+                </span>
+              </div>
+            </div>
           ) : (
             <QRCodeSVG
               value={qrValue}

@@ -15,6 +15,7 @@ import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { createNewUser, getUserTickets, processRental, getUserByPhone } from '../firebase/firestore';
+import { getDeviceShopIdAsync } from '../config/device';
 
 export default function VerifyModal({ onClose, onOpenReturn }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -248,16 +249,16 @@ export default function VerifyModal({ onClose, onOpenReturn }) {
       return;
     }
 
-    // 로그인한 카페 정보에서 shopId 가져오기
-    const userData = localStorage.getItem('userData');
-    if (!userData) {
-      console.error('❌ 카페 정보를 찾을 수 없습니다.');
-      setErrorMessage('카페 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+    // Firebase에서 카페명으로 shopId 가져오기
+    const shopInfo = await getDeviceShopIdAsync();
+    if (!shopInfo.shopId) {
+      console.error('❌ Firebase에서 가게 정보를 찾을 수 없습니다.');
+      setErrorMessage('가게 정보를 찾을 수 없습니다. 다시 시도해주세요.');
       return;
     }
-    const cafeData = JSON.parse(userData);
-    const shopId = cafeData.cafeId;
-    const shopName = cafeData.cafeName || '카페명 없음';
+
+    const shopId = shopInfo.shopId;
+    const shopName = shopInfo.shopName || '카페명 없음';
 
     // 대여할 개수만큼 대여권 선택 (create 순으로 정렬되어 있음)
     const selectedTickets = userTickets.slice(0, quantity);

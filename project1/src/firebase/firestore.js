@@ -400,6 +400,44 @@ export const getShopData = async (shopId) => {
 };
 
 /**
+ * 카페명으로 가게 정보 조회
+ * @param {string} cafeName - 카페 이름
+ * @returns {Promise}
+ */
+export const getShopByName = async (cafeName) => {
+  try {
+    console.log('카페명으로 가게 조회:', cafeName);
+
+    // shops 컬렉션에서 name 필드로 검색
+    const shopsQuery = query(
+      collection(db, 'shops'),
+      where('name', '==', cafeName),
+      orderBy('create', 'desc')  // 최신 생성일 기준 정렬
+    );
+    const shopsSnapshot = await getDocs(shopsQuery);
+
+    if (shopsSnapshot.empty) {
+      console.warn('카페명과 일치하는 가게를 찾을 수 없습니다:', cafeName);
+      return { success: false, error: '등록되지 않은 카페입니다.' };
+    }
+
+    // 첫 번째 결과 반환 (최신 것)
+    const shopDoc = shopsSnapshot.docs[0];
+    const shopData = {
+      ...shopDoc.data(),
+      id: shopDoc.id
+    };
+
+    console.log('가게 조회 성공:', shopDoc.id, '- PIN:', shopData.pin);
+    return { success: true, data: shopData };
+
+  } catch (error) {
+    console.error('카페명으로 가게 조회 실패:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * 사용자의 대여 중인 컵 조회
  * @param {string} uid - 사용자 UID
  * @param {string} shopId - 가게 ID (division이 'individual'인 경우 필터링)

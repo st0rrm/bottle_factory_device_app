@@ -15,6 +15,7 @@ import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { getUserActiveRentals, processReturn } from '../firebase/firestore';
+import { getDeviceShopIdAsync } from '../config/device';
 
 export default function ReturnModal({ onClose, onOpenRental }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -182,15 +183,15 @@ export default function ReturnModal({ onClose, onOpenRental }) {
 
     setCurrentUser(authenticatedUser);
 
-    // 대여 중인 컵 조회
-    const userData = localStorage.getItem('userData');
-    if (!userData) {
+    // Firebase에서 카페명으로 shopId 가져오기
+    const shopInfo = await getDeviceShopIdAsync();
+    if (!shopInfo.shopId) {
       setIsLoading(false);
-      setErrorMessage('카페 정보를 찾을 수 없습니다.');
+      setErrorMessage('가게 정보를 찾을 수 없습니다. 다시 시도해주세요.');
       return;
     }
-    const cafeData = JSON.parse(userData);
-    const shopId = cafeData.cafeId;
+
+    const shopId = shopInfo.shopId;
 
     const rentalsResult = await getUserActiveRentals(authenticatedUser.uid, shopId);
 
@@ -225,15 +226,16 @@ export default function ReturnModal({ onClose, onOpenRental }) {
       return;
     }
 
-    const userData = localStorage.getItem('userData');
-    if (!userData) {
-      console.error('❌ 카페 정보를 찾을 수 없습니다.');
-      setErrorMessage('카페 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+    // Firebase에서 카페명으로 shopId 가져오기
+    const shopInfo = await getDeviceShopIdAsync();
+    if (!shopInfo.shopId) {
+      console.error('❌ Firebase에서 가게 정보를 찾을 수 없습니다.');
+      setErrorMessage('가게 정보를 찾을 수 없습니다. 다시 시도해주세요.');
       return;
     }
-    const cafeData = JSON.parse(userData);
-    const shopId = cafeData.cafeId;
-    const shopName = cafeData.cafeName || '카페명 없음';
+
+    const shopId = shopInfo.shopId;
+    const shopName = shopInfo.shopName || '카페명 없음';
 
     // 반납할 개수만큼 rentals 선택 (rented_date 순으로 정렬되어 있음)
     const selectedRentals = userRentals.slice(0, quantity);
