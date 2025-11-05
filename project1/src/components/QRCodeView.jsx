@@ -26,11 +26,12 @@ export default function QRCodeView({ title = '리턴미컵 대여를 위해', mo
         // Firebase에서 카페명으로 가게 정보 조회
         const shopResult = await getShopByName(cafeName);
 
-        if (shopResult.success && shopResult.data.pin) {
-          setQrValue(shopResult.data.pin);
-          console.log('✅ QR 코드 생성 완료 (카페명:', cafeName, ', PIN:', shopResult.data.pin, ')');
+        if (shopResult.success && shopResult.data.id) {
+          // QR 코드 값은 shops 문서 ID (앱에서 shops/{id}로 조회)
+          setQrValue(shopResult.data.id);
+          console.log('✅ QR 코드 생성 완료 (카페명:', cafeName, ', Shop ID:', shopResult.data.id, ')');
         } else {
-          console.error('가게 PIN을 찾을 수 없습니다. 카페명:', cafeName);
+          console.error('가게 정보를 찾을 수 없습니다. 카페명:', cafeName);
           setQrValue('ERROR');
         }
       } catch (error) {
