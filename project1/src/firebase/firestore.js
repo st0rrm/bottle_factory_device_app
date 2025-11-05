@@ -266,12 +266,11 @@ export const getUserTickets = async (uid) => {
     const totalCount = allBalancesSnapshot.size;
 
     // 2. 사용 가능한 대여권 조회
-    // status가 'charge'인 것만 (사용 가능), transaction_date 오래된 순으로 정렬 (FIFO)
+    // status가 'charge'인 것만 (사용 가능)
     const balancesQuery = query(
       collection(db, 'balances'),
       where('user_id', '==', uid),
-      where('status', '==', 'charge'),
-      orderBy('transaction_date', 'asc')
+      where('status', '==', 'charge')
     );
     const balancesSnapshot = await getDocs(balancesQuery);
 
@@ -296,6 +295,12 @@ export const getUserTickets = async (uid) => {
         transaction_date: data.transaction_date
       });
     }
+
+    // 클라이언트 사이드에서 transaction_date로 정렬 (FIFO - 오래된 것부터)
+    tickets.sort((a, b) => {
+      if (!a.transaction_date || !b.transaction_date) return 0;
+      return a.transaction_date.localeCompare(b.transaction_date);
+    });
 
     console.log('대여권 조회 완료:', tickets.length, '개 사용가능 /', totalCount, '개 전체');
     return {
