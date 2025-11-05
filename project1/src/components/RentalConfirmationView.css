@@ -228,11 +228,13 @@
 .action-buttons {
   display: flex;
   gap: clamp(0.375rem, 1vw, 1rem);
+  width: 100%;
 }
 
 .cancel-button,
 .confirm-button {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   padding: clamp(0.625rem, 1.5vh, 1.25rem);
   border-radius: clamp(0.75rem, 1.5vw, 1rem);
   font-size: clamp(0.875rem, 2vw + 1vh, 1.5rem);
