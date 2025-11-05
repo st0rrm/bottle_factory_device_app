@@ -138,9 +138,7 @@ export const createNewUser = async (user) => {
         expired: 9999999999999,  // 만료 없음 (매우 큰 숫자로 표현)
         pay_info: '보틀클럽',  // 결제 정보
         tid: tid,  // 거래 ID
-        transaction_date: transactionDate,  // 거래 시간
-        create: serverTimestamp(),
-        update: serverTimestamp()
+        transaction_date: transactionDate  // 거래 시간
       };
 
       console.log('💾 Firestore에 대여권 문서 저장 중...');
@@ -268,12 +266,12 @@ export const getUserTickets = async (uid) => {
     const totalCount = allBalancesSnapshot.size;
 
     // 2. 사용 가능한 대여권 조회
-    // status가 'charge'인 것만 (사용 가능), create 날짜 오래된 순으로 정렬 (FIFO)
+    // status가 'charge'인 것만 (사용 가능), transaction_date 오래된 순으로 정렬 (FIFO)
     const balancesQuery = query(
       collection(db, 'balances'),
       where('user_id', '==', uid),
       where('status', '==', 'charge'),
-      orderBy('create', 'asc')
+      orderBy('transaction_date', 'asc')
     );
     const balancesSnapshot = await getDocs(balancesQuery);
 
@@ -295,8 +293,7 @@ export const getUserTickets = async (uid) => {
         pgcode: data.pgcode,
         group_id: data.group_id,
         status: data.status,
-        create: data.create,
-        update: data.update
+        transaction_date: data.transaction_date
       });
     }
 
