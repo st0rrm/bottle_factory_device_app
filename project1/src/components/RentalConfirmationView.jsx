@@ -15,6 +15,8 @@ export default function RentalConfirmationView({
   const returnDate = new Date(today);
   returnDate.setDate(returnDate.getDate() + 14);
 
+  const rewardPoints = quantity * 30; // 30 bottles per cup
+
   const formatDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -70,7 +72,7 @@ export default function RentalConfirmationView({
               <path d="M18.09 10.37A6 6 0 1 1 10.34 18" strokeWidth="2" />
               <circle cx="16" cy="16" r="6" strokeWidth="2" />
             </svg>
-            <span className="reward-value">20보틀</span>
+            <span className="reward-value">{rewardPoints}보틀</span>
           </div>
         </div>
       </div>
