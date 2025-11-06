@@ -16,6 +16,83 @@ import {
 import { db } from './config';
 
 /**
+ * 카카오 주소 API로 주소 데이터 가져오기
+ * @param {string} addressQuery - 검색할 주소 (예: "서울 서대문구 연희동")
+ * @returns {Promise<object|null>} 주소 데이터 또는 null
+ */
+const fetchAddressFromKakao = async (addressQuery) => {
+  try {
+    const apiKey = import.meta.env.VITE_KAKAO_API_KEY;
+    const apiUrl = import.meta.env.VITE_KAKAO_ADDRESS_URL;
+
+    if (!apiKey || !apiUrl) {
+      console.warn('⚠️ 카카오 API 설정이 없습니다. 기본값을 사용합니다.');
+      return null;
+    }
+
+    const url = `${apiUrl}?query=${encodeURIComponent(addressQuery)}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `KakaoAK ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      console.error('❌ 카카오 API 요청 실패:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!data.documents || data.documents.length === 0) {
+      console.warn('⚠️ 주소 검색 결과가 없습니다:', addressQuery);
+      return null;
+    }
+
+    // 첫 번째 결과 반환 (가장 관련성이 높은 결과)
+    const addressData = data.documents[0];
+
+    // address_type에 따라 주소 정보 선택
+    const selectedAddress = addressData.address_type === 'ROAD'
+      ? addressData.road_address
+      : addressData.address;
+
+    // h_code 또는 b_code 추출
+    const code = selectedAddress?.h_code || selectedAddress?.b_code;
+
+    return {
+      address: {
+        address_name: selectedAddress.address_name,
+        b_code: selectedAddress.b_code || "",
+        h_code: selectedAddress.h_code || "",
+        main_address_no: selectedAddress.main_address_no || "",
+        mountain_yn: selectedAddress.mountain_yn || "N",
+        region_1depth_name: selectedAddress.region_1depth_name,
+        region_2depth_name: selectedAddress.region_2depth_name,
+        region_3depth_name: selectedAddress.region_3depth_name || selectedAddress.region_3depth_h_name,
+        sub_address_no: selectedAddress.sub_address_no || "",
+        x: addressData.x,
+        y: addressData.y
+      },
+      address_name: addressData.address_name,
+      address_type: addressData.address_type,
+      road_address: addressData.road_address || null,
+      x: addressData.x,
+      y: addressData.y,
+      adm_cd2: code || "",
+      sido: code ? code.substring(0, 2) : "",
+      sgg: code ? code.substring(0, 5) : "",
+      dp_nm: selectedAddress.region_3depth_name || selectedAddress.region_3depth_h_name || "",
+      adm_nm: selectedAddress.address_name || ""
+    };
+
+  } catch (error) {
+    console.error('❌ 카카오 주소 API 호출 실패:', error);
+    return null;
+  }
+};
+
+/**
  * 신규 사용자 자동 생성
  * @param {object} user - Firebase Auth User 객체
  * @returns {Promise}
@@ -34,12 +111,32 @@ export const createNewUser = async (user) => {
 
     console.log('📝 새 사용자 문서 생성 중...');
 
-    // 임의 닉네임 생성 (손님 + 랜덤 4자리)
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const nickname = `손님${randomNum}`;
+    // 전화번호 포맷 변환 (+821012345678 → 01012345678)
+    let phoneNumber = user.phoneNumber;
+    if (phoneNumber.startsWith('+82')) {
+      phoneNumber = '0' + phoneNumber.slice(3);
+    }
 
-    // 기본 거주지 설정 (연희동) - 실제 DB 구조에 맞춤
-    const defaultAddress = {
+    // 닉네임 생성 (휴대폰 뒤 7자리)
+    // 예: 01012345678 → 2345678
+    const nickname = phoneNumber.slice(-7);
+
+    console.log('📱 전화번호:', phoneNumber);
+    console.log('👤 닉네임:', nickname);
+
+    // 기본 거주지 설정 (연희동) - 카카오 API로 실제 데이터 가져오기
+    console.log('🗺️ 카카오 API로 연희동 주소 데이터 가져오는 중...');
+    const kakaoAddressData = await fetchAddressFromKakao("서울 서대문구 연희동");
+
+    // 카카오 API 실패 시 fallback 기본값
+    const defaultAddress = kakaoAddressData ? {
+      address: kakaoAddressData.address,
+      address_name: kakaoAddressData.address_name,
+      address_type: kakaoAddressData.address_type,
+      road_address: kakaoAddressData.road_address,
+      x: kakaoAddressData.x,
+      y: kakaoAddressData.y
+    } : {
       address: {
         address_name: "서울 서대문구 연희동",
         b_code: "",
@@ -60,14 +157,13 @@ export const createNewUser = async (user) => {
       y: "37.570937"
     };
 
-    // 전화번호 포맷 변환 (+821012345678 → 01012345678)
-    let phoneNumber = user.phoneNumber;
-    if (phoneNumber.startsWith('+82')) {
-      phoneNumber = '0' + phoneNumber.slice(3);
-    }
+    const adm_cd2 = kakaoAddressData?.adm_cd2 || "1144010700";
+    const sido = kakaoAddressData?.sido || "11";
+    const sgg = kakaoAddressData?.sgg || "11440";
+    const dp_nm = kakaoAddressData?.dp_nm || "연희동";
+    const adm_nm = kakaoAddressData?.adm_nm || "서울특별시 서대문구 연희동";
 
-    console.log('📱 전화번호:', phoneNumber);
-    console.log('👤 닉네임:', nickname);
+    console.log('✅ 주소 데이터:', { adm_cd2, sido, sgg, dp_nm, adm_nm });
 
     // 사용자 문서 생성
     const userData = {
@@ -82,11 +178,11 @@ export const createNewUser = async (user) => {
       chargePolicy: true,
       terms: true,
       address: defaultAddress,
-      adm_cd2: "1144010700",
-      sido: "11",
-      sgg: "11440",
-      dp_nm: "연희동",
-      adm_nm: "서울특별시 서대문구 연희동",
+      adm_cd2: adm_cd2,
+      sido: sido,
+      sgg: sgg,
+      dp_nm: dp_nm,
+      adm_nm: adm_nm,
       create: serverTimestamp(),
       update: serverTimestamp()
     };
