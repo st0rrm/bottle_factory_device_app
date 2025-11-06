@@ -5,8 +5,8 @@ import { WebVoiceProcessor } from "@picovoice/web-voice-processor";
 const ACCESS_KEY = import.meta.env.VITE_PC_ACCESS_KEY as string;
 
 const KEYWORDS = [
-  { label: "takeout", publicPath: "./takeout_ko.ppn", sensitivity: 0.6 },
-  { label: "pojang", publicPath: "./pojang_ko.ppn", sensitivity: 0.6 },
+  { label: "takeout", publicPath: "/pico/takeout_ko.ppn", sensitivity: 0.6 },
+  { label: "pojang", publicPath: "/pico/pojang_ko.ppn", sensitivity: 0.6 },
 ];
 
 let isListening = false;
