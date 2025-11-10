@@ -24,7 +24,6 @@
   padding: 0; /* 불필요한 padding 제거 */
   box-shadow: none; /* 그림자 제거 */
   
-  position: absolute;
   top: 334px;
   left: 78px;
   display: flex;

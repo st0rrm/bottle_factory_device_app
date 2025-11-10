@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // API 베이스 URL (환경 변수에서 가져오기)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+// 개발환경: /api = Vite 프록시 사용 (/api -> https://returnmecup-api-dev.onrender.com/api)
+// 프로덕션: 전체 URL 사용
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Axios 인스턴스 생성
 const apiClient = axios.create({
