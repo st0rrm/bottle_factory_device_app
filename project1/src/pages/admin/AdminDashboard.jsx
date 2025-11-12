@@ -24,6 +24,9 @@ function AdminDashboard() {
   const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
   const [statsDays, setStatsDays] = useState(7); // 일별 통계 기간
   const [selectedCafeFilter, setSelectedCafeFilter] = useState('all'); // 일별 통계 카페 필터
+  const [dateMode, setDateMode] = useState('preset'); // 'preset' or 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const navigate = useNavigate();
 
   // 폼 데이터
@@ -92,7 +95,14 @@ function AdminDashboard() {
 
   const loadDailyStats = async () => {
     try {
-      const daily = await getAllCafesDailyStats(statsDays);
+      let daily;
+      if (dateMode === 'custom' && startDate && endDate) {
+        // 사용자 정의 날짜 범위로 조회
+        daily = await getAllCafesDailyStats(7, startDate, endDate);
+      } else {
+        // 기본 기간(days)으로 조회
+        daily = await getAllCafesDailyStats(statsDays);
+      }
       setDailyStats(daily);
     } catch (error) {
       console.error('일별 통계 불러오기 실패:', error);
@@ -112,12 +122,12 @@ function AdminDashboard() {
     setShowStatsView(false);
   };
 
-  // statsDays가 변경되면 일별 통계 다시 불러오기
+  // statsDays, dateMode, startDate, endDate가 변경되면 일별 통계 다시 불러오기
   useEffect(() => {
     if (showDailyView) {
       loadDailyStats();
     }
-  }, [statsDays]);
+  }, [statsDays, dateMode, startDate, endDate]);
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -422,24 +432,51 @@ function AdminDashboard() {
             {/* 기간 선택 버튼 */}
             <div className="period-selector">
               <button
-                className={statsDays === 7 ? 'period-btn active' : 'period-btn'}
-                onClick={() => setStatsDays(7)}
+                className={dateMode === 'preset' && statsDays === 7 ? 'period-btn active' : 'period-btn'}
+                onClick={() => { setDateMode('preset'); setStatsDays(7); }}
               >
                 7일
               </button>
               <button
-                className={statsDays === 14 ? 'period-btn active' : 'period-btn'}
-                onClick={() => setStatsDays(14)}
+                className={dateMode === 'preset' && statsDays === 14 ? 'period-btn active' : 'period-btn'}
+                onClick={() => { setDateMode('preset'); setStatsDays(14); }}
               >
                 14일
               </button>
               <button
-                className={statsDays === 30 ? 'period-btn active' : 'period-btn'}
-                onClick={() => setStatsDays(30)}
+                className={dateMode === 'preset' && statsDays === 30 ? 'period-btn active' : 'period-btn'}
+                onClick={() => { setDateMode('preset'); setStatsDays(30); }}
               >
                 30일
               </button>
+              <button
+                className={dateMode === 'custom' ? 'period-btn active' : 'period-btn'}
+                onClick={() => setDateMode('custom')}
+              >
+                사용자 지정
+              </button>
             </div>
+
+            {/* 사용자 지정 날짜 선택 */}
+            {dateMode === 'custom' && (
+              <div className="date-range-selector">
+                <input
+                  type="date"
+                  className="date-input"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  placeholder="시작일"
+                />
+                <span className="date-separator">~</span>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  placeholder="종료일"
+                />
+              </div>
+            )}
           </div>
         )}
 

@@ -180,10 +180,35 @@ class UserBehavior {
   }
 
   // 모든 카페의 일별 통계 조회 (관리자용)
-  static async getAllCafesDailyStats(days = 7) {
+  static async getAllCafesDailyStats(days = 7, startDate = null, endDate = null) {
     try {
-      const result = await pool.query(
-        `SELECT
+      let query, params;
+
+      // startDate와 endDate가 제공되면 날짜 범위로 조회, 아니면 기존처럼 days 사용
+      if (startDate && endDate) {
+        query = `SELECT
+          c.id,
+          c.cafe_id,
+          c.cafe_name,
+          DATE(ub.created_at) as date,
+          COUNT(*) FILTER (WHERE ub.action_type = 'modal_open') as modal_opens,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail LIKE '%qr%') as qr_tab_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail LIKE '%phone%') as phone_tab_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'qr_borrow') as qr_borrow_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'qr_return') as qr_return_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'phone_borrow') as phone_borrow_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'phone_return') as phone_return_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'verification_attempt') as verification_attempts,
+          COUNT(*) as total_actions
+         FROM cafes c
+         LEFT JOIN user_behaviors ub ON c.id = ub.cafe_id
+           AND DATE(ub.created_at) >= $1::date
+           AND DATE(ub.created_at) <= $2::date
+         GROUP BY c.id, c.cafe_id, c.cafe_name, DATE(ub.created_at)
+         ORDER BY c.cafe_name, DATE(ub.created_at) DESC`;
+        params = [startDate, endDate];
+      } else {
+        query = `SELECT
           c.id,
           c.cafe_id,
           c.cafe_name,
@@ -201,9 +226,11 @@ class UserBehavior {
          LEFT JOIN user_behaviors ub ON c.id = ub.cafe_id
            AND ub.created_at >= CURRENT_DATE - INTERVAL '1 day' * $1
          GROUP BY c.id, c.cafe_id, c.cafe_name, DATE(ub.created_at)
-         ORDER BY c.cafe_name, DATE(ub.created_at) DESC`,
-        [days]
-      );
+         ORDER BY c.cafe_name, DATE(ub.created_at) DESC`;
+        params = [days];
+      }
+
+      const result = await pool.query(query, params);
 
       return result.rows.map(row => ({
         id: row.id,

@@ -118,7 +118,10 @@ router.get('/cafe/:cafeId/daily-stats', authenticateAdmin, async (req, res) => {
 router.get('/all-cafes-daily', authenticateAdmin, async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7;
-    const stats = await UserBehavior.getAllCafesDailyStats(days);
+    const startDate = req.query.startDate || null;
+    const endDate = req.query.endDate || null;
+
+    const stats = await UserBehavior.getAllCafesDailyStats(days, startDate, endDate);
     res.json(stats);
   } catch (err) {
     console.error('All cafes daily stats error:', err);
