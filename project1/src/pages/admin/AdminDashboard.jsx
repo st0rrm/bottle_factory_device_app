@@ -23,6 +23,7 @@ function AdminDashboard() {
   const [sortBy, setSortBy] = useState('cafe_name'); // cafe_name, total_transactions, today_count, weekly_count
   const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
   const [statsDays, setStatsDays] = useState(7); // 일별 통계 기간
+  const [selectedCafeFilter, setSelectedCafeFilter] = useState('all'); // 일별 통계 카페 필터
   const navigate = useNavigate();
 
   // 폼 데이터
@@ -401,9 +402,24 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* 일별 통계 기간 선택 */}
+        {/* 일별 통계 기간 선택 및 카페 필터 */}
         {showDailyView && (
           <div className="filter-bar">
+            {/* 카페 필터 드롭다운 */}
+            <select
+              className="cafe-filter-select"
+              value={selectedCafeFilter}
+              onChange={(e) => setSelectedCafeFilter(e.target.value)}
+            >
+              <option value="all">전체 카페</option>
+              {cafes.map((cafe) => (
+                <option key={cafe.id} value={cafe.cafe_id}>
+                  {cafe.cafe_name}
+                </option>
+              ))}
+            </select>
+
+            {/* 기간 선택 버튼 */}
             <div className="period-selector">
               <button
                 className={statsDays === 7 ? 'period-btn active' : 'period-btn'}
@@ -447,14 +463,23 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {dailyStats.length === 0 ? (
-                  <tr>
-                    <td colSpan="11" style={{ textAlign: 'center' }}>
-                      통계 데이터가 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  dailyStats.map((stat, index) => (
+                {(() => {
+                  // 카페 필터 적용
+                  const filteredStats = selectedCafeFilter === 'all'
+                    ? dailyStats
+                    : dailyStats.filter(stat => stat.cafe_id === selectedCafeFilter);
+
+                  if (filteredStats.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan="11" style={{ textAlign: 'center' }}>
+                          통계 데이터가 없습니다.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return filteredStats.map((stat, index) => (
                     <tr key={index}>
                       <td>{stat.cafe_name}</td>
                       <td>{stat.date ? new Date(stat.date).toLocaleDateString('ko-KR') : '-'}</td>
@@ -468,8 +493,8 @@ function AdminDashboard() {
                       <td>{stat.verification_attempts}</td>
                       <td><strong>{stat.total_actions}</strong></td>
                     </tr>
-                  ))
-                )}
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
