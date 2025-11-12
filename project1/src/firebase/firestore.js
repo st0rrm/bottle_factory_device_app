@@ -665,6 +665,39 @@ export const processReturn = async (uid, rentals, shopId, shopName) => {
 
     console.log('✅ 적립 내역 생성');
 
+    // 5. 백엔드 API 호출하여 서브컬렉션 및 savings 컬렉션 업데이트
+    try {
+      const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 리턴미컵 아이템 ID
+
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${apiUrl}/users/return-cup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: uid,
+          shopId: shopId,
+          items: {
+            [RETURNMECUP_ITEM_ID]: returnCount  // 리턴미컵 반납 개수
+          },
+          score: scorePerCup  // 컵당 점수
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('⚠️ 백엔드 API 호출 실패:', errorData);
+        // 백엔드 API 실패해도 반납 자체는 성공으로 처리 (Firebase 업데이트는 완료됨)
+      } else {
+        const apiResult = await response.json();
+        console.log('✅ 백엔드 API 호출 성공 - 서브컬렉션 및 savings 업데이트 완료:', apiResult);
+      }
+    } catch (apiError) {
+      console.error('⚠️ 백엔드 API 호출 중 에러:', apiError);
+      // 백엔드 API 실패해도 반납 자체는 성공으로 처리
+    }
+
     return { success: true, score: totalScore, count: returnCount };
 
   } catch (error) {
