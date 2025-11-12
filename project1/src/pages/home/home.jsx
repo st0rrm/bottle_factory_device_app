@@ -6,6 +6,7 @@ import ReturnModal from '../../components/ReturnModal';
 import helpIcon from '../../assets/images/help.svg';
 import HelpModal from '../../components/HelpModal';
 import SuccessSnackbar from '../../components/SuccessSnackbar';
+import TreeContainer from '../../components/TreeContainer';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
 import { usePicovoice } from '../../hooks/usePicovoice';
@@ -23,6 +24,40 @@ function HomeScreen() {
     today: 0,
     weekly: 0
   });
+  const [treeType, setTreeType] = useState('init'); // 'init' | 'grow'
+  const [treeScore, setTreeScore] = useState(0); // 나무 성장용 점수
+
+  // action-bar 높이에 따라 tree-section 하단 여백 동적 조정
+  useEffect(() => {
+    const updateTreeSectionPadding = () => {
+      const actionBar = document.querySelector('.action-bar');
+      const treeSection = document.querySelector('.tree-section');
+
+      if (actionBar && treeSection) {
+        const actionBarHeight = actionBar.offsetHeight;
+        console.log('🔧 action-bar 높이:', actionBarHeight);
+
+        // paddingBottom 적용
+        treeSection.style.paddingBottom = `${actionBarHeight}px`;
+
+        console.log('✅ tree-section paddingBottom 설정:', treeSection.style.paddingBottom);
+        console.log('📏 tree-section computed paddingBottom:', window.getComputedStyle(treeSection).paddingBottom);
+      } else {
+        console.warn('⚠️ action-bar 또는 tree-section을 찾을 수 없습니다');
+      }
+    };
+
+    // 약간의 지연 후 초기 설정 (DOM이 완전히 렌더링된 후)
+    const timer = setTimeout(updateTreeSectionPadding, 100);
+
+    // 윈도우 리사이즈 시 재계산
+    window.addEventListener('resize', updateTreeSectionPadding);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateTreeSectionPadding);
+    };
+  }, [cafeInfo]); // cafeInfo가 로드된 후 실행
 
   // Wake word detection callback
   const handleWakeWordDetected = useCallback((keywordIndex) => {
@@ -110,13 +145,37 @@ function HomeScreen() {
   const handleRentalSuccess = () => {
     setSnackbarMessage('🌱 대여가 완료되었습니다');
     setShowSuccessSnackbar(true);
-    fetchStats(); // 통계 업데이트
+
+    // 나무 성장 (bottleclub Main.tsx:151-158 참고)
+    setTreeType('grow');
+    setTreeScore(30); // 적립 1회 = 30점
+
+    // 통계 업데이트
+    fetchStats();
+
+    // 성장 애니메이션 후 초기화
+    setTimeout(() => {
+      setTreeType('init');
+      setTreeScore(0);
+    }, 3000);
   };
 
   const handleReturnSuccess = () => {
     setSnackbarMessage('🌱 반납이 완료되었습니다');
     setShowSuccessSnackbar(true);
-    fetchStats(); // 통계 업데이트
+
+    // 나무 성장
+    setTreeType('grow');
+    setTreeScore(30);
+
+    // 통계 업데이트
+    fetchStats();
+
+    // 성장 애니메이션 후 초기화
+    setTimeout(() => {
+      setTreeType('init');
+      setTreeScore(0);
+    }, 3000);
   };
 
   // 로딩 중이거나 카페 정보가 없으면 빈 화면
@@ -145,9 +204,16 @@ function HomeScreen() {
         </p>
       </div>
 
-      {/* Tree Illustration Section - Placeholder for background image */}
+      {/* Tree Illustration Section */}
       <div className="tree-section">
-        {/* Background image will be added here */}
+        <TreeContainer
+          type={treeType}
+          score={treeScore}
+          cafeId={cafeInfo?.cafeId || 'demo_cafe'}
+          totalScore={stats.total * 30}
+          totalCount={stats.total}
+          cafeInfo={cafeInfo}
+        />
       </div>
 
       {/* ------------------------------------------------------------- */}

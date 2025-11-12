@@ -4,7 +4,7 @@
   max-width: 100%;
   height: 100vh;
   height: 100dvh; /* Use dynamic viewport height for mobile browsers */
-  background-color: #e2e2e2;
+  background-color: transparent;
   display: flex;
   flex-direction: column;
   font-family: 'Pretendard', sans-serif;
@@ -18,8 +18,19 @@
   width: 100%;
   max-width: 100%;
   padding: clamp(1rem, 3vh, 2.5rem) clamp(1.5rem, 5vw, 3rem);
-  flex-shrink: 0;
   box-sizing: border-box;
+  background-color: transparent; /* 투명 배경 */
+  position: absolute; /* tree-section 위에 떠있도록 */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10; /* 나무 위에 표시 */
+  pointer-events: none; /* 배경 클릭이 tree-section으로 전달되도록 */
+}
+
+/* header-section 내부 요소들은 클릭 가능하도록 */
+.header-section > * {
+  pointer-events: auto;
 }
 
 .header-top {
@@ -83,16 +94,20 @@
   font-weight: var(--pretendard-semibold);
 }
 
-/* Tree Section - Placeholder for background image */
+/* Tree Section */
 .tree-section {
   flex: 1;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: clamp(150px, 25vh, 400px);
+  min-height: 100%; /* header 영역까지 확장 */
   overflow: hidden;
-  background-color: #e2e2e2;
+  background-color: transparent; /* 투명 배경 */
+  padding-bottom: 0; /* JS로 동적 설정: action-bar 높이만큼 */
+  box-sizing: border-box;
+  /* header-section이 absolute이므로 tree-section이 전체 높이 차지 */
+  margin-top: 0;
 }
 
 /* Action Bar */

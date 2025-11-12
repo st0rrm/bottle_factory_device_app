@@ -24,7 +24,8 @@ export async function startWakeword(onDetect: (index: number) => void) {
       console.log("Porcupine detection:", detection);
       onDetect(detection.index);
     },
-    { publicPath: "/pico/porcupine_worker.js" }
+    { publicPath: "/pico/porcupine_params_ko.pv" }, // 한국어 모델 파일 지정
+    {}
   );
 
   // @ts-ignore - WebVoiceProcessor API

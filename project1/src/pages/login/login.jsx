@@ -12,6 +12,21 @@ function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // 개발 모드 빠른 로그인 (백엔드 없이 테스트용)
+  const handleDevLogin = () => {
+    const mockCafeData = {
+      cafeId: 'demo_cafe',
+      cafeName: '데모 카페',
+      id: 1
+    };
+
+    localStorage.setItem('authToken', 'dev-token-12345');
+    localStorage.setItem('userType', 'cafe');
+    localStorage.setItem('userData', JSON.stringify(mockCafeData));
+
+    navigate(`/home/${mockCafeData.cafeId}`, { replace: true });
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -90,6 +105,20 @@ function LoginScreen() {
 
           <button type="submit" className="login-button" disabled={isLoading}>
             {isLoading ? '로그인 중...' : '로그인'}
+          </button>
+
+          {/* 개발 모드 빠른 로그인 버튼 */}
+          <button
+            type="button"
+            className="login-button"
+            onClick={handleDevLogin}
+            style={{
+              marginTop: '10px',
+              backgroundColor: '#6c757d',
+              opacity: 0.8
+            }}
+          >
+            개발 모드 (백엔드 없이 테스트)
           </button>
         </form>
 

@@ -10,8 +10,10 @@ export default defineConfig({
   },
   server: {
     headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin'
+      // COOP/COEP 헤더는 Picovoice SharedArrayBuffer를 위해 필요하지만
+      // iframe 임베딩을 차단하므로 주석 처리
+      // 'Cross-Origin-Embedder-Policy': 'require-corp',
+      // 'Cross-Origin-Opener-Policy': 'same-origin'
     },
     proxy: {
       '/api': {
