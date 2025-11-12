@@ -19,6 +19,56 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
   // 환경변수에서 Tree URL 가져오기
   const treeUrl = import.meta.env.VITE_TREE_URL || 'https://bottleclub-tree.web.app/';
 
+  // 디버깅용: window에 전역 함수 등록
+  useEffect(() => {
+    window.__sendTreeInit = (customCafeId, customTotal, customCount) => {
+      const debugMessage = {
+        type: 'init',
+        uid: customCafeId || cafeId || 'test-cafe',
+        total: customTotal !== undefined ? customTotal : totalScore,
+        force: true,
+        count: customCount !== undefined ? customCount : totalCount,
+        score: 0
+      };
+
+      if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.postMessage(JSON.stringify(debugMessage), '*');
+        console.log('🐛 Debug: init 메시지 전송됨', debugMessage);
+        return debugMessage;
+      } else {
+        console.error('🐛 Debug: iframe contentWindow를 찾을 수 없음');
+        return null;
+      }
+    };
+
+    window.__sendTreeGrow = (customScore) => {
+      const debugMessage = {
+        type: 'grow',
+        uid: cafeId || 'test-cafe',
+        total: totalScore,
+        force: true,
+        count: totalCount,
+        score: customScore || score || 10
+      };
+
+      if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.postMessage(JSON.stringify(debugMessage), '*');
+        console.log('🐛 Debug: grow 메시지 전송됨', debugMessage);
+        return debugMessage;
+      } else {
+        console.error('🐛 Debug: iframe contentWindow를 찾을 수 없음');
+        return null;
+      }
+    };
+
+    console.log('🐛 디버깅 함수 등록됨: window.__sendTreeInit(cafeId, total, count), window.__sendTreeGrow(score)');
+
+    return () => {
+      delete window.__sendTreeInit;
+      delete window.__sendTreeGrow;
+    };
+  }, [cafeId, totalScore, totalCount, score]);
+
   // iframe 로드 후 3초 뒤 자동으로 ready 상태로 전환
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -61,6 +111,7 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
     console.log('TreeContainer: 📤 init 메시지 전송 시작');
 
     const timers = [];
+    let resourceDetected = false;
 
     // init 메시지 전송 함수
     const sendMessage = () => {
@@ -74,20 +125,62 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
       }
     };
 
-    // 단순하고 확실한 재시도 전략:
-    // 처음 3초 동안만 재시도, 그 이후는 완전히 멈춤
-    // bottleclub-tree가 init을 받으면 나무 생성 시작, 배경까지 완전히 로드됨
-    timers.push(setTimeout(() => sendMessage(), 0));      // 즉시
-    timers.push(setTimeout(() => sendMessage(), 1000));   // 1초 후
-    timers.push(setTimeout(() => sendMessage(), 2000));   // 2초 후
-    timers.push(setTimeout(() => sendMessage(), 3000));   // 3초 후 (최종)
+    // Performance API로 bottleclub-tree 리소스 로딩 감지
+    const checkResourceLoading = () => {
+      const resources = performance.getEntriesByType('resource');
+      const treeResources = resources.filter(entry => {
+        const url = entry.name;
+        return url.includes('bottleclub-tree') &&
+               (url.includes('branch') || url.includes('leaf') || url.includes('flower'));
+      });
 
-    setTimeout(() => {
-      console.log('TreeContainer: ⏹️ init 전송 완료');
-    }, 3100);
+      if (treeResources.length > 0 && !resourceDetected) {
+        resourceDetected = true;
+        console.log('TreeContainer: 🌳 나무 리소스 로딩 감지됨');
+      }
+
+      return resourceDetected;
+    };
+
+    // init 메시지 전송 시퀀스 (3회, 1초 간격)
+    const startInitSequence = () => {
+      console.log('TreeContainer: 🚀 init 전송 시퀀스 시작');
+      timers.push(setTimeout(() => sendMessage(), 0));      // 즉시
+      timers.push(setTimeout(() => sendMessage(), 1000));   // 1초 후
+      timers.push(setTimeout(() => sendMessage(), 2000));   // 2초 후
+
+      setTimeout(() => {
+        console.log('TreeContainer: ⏹️ init 전송 완료');
+      }, 2100);
+    };
+
+    // 개선된 전략:
+    // 1. 리소스 로딩 감지 시: 3초 대기 후 init 메시지 전달
+    // 2. 타임아웃(30초) 내 리소스 미감지 시: 바로 init 메시지 전달
+    let checkCount = 0;
+    const maxChecks = 300; // 100ms마다 체크, 최대 30초
+    const resourceCheckInterval = setInterval(() => {
+      checkCount++;
+
+      if (checkResourceLoading()) {
+        clearInterval(resourceCheckInterval);
+        console.log('TreeContainer: ✅ 리소스 감지됨 - 3초 후 메시지 전송');
+        // 리소스 감지 후 3초 대기
+        timers.push(setTimeout(() => {
+          startInitSequence();
+        }, 3000));
+      } else if (checkCount >= maxChecks) {
+        clearInterval(resourceCheckInterval);
+        console.log('TreeContainer: ⏱️ 30초 타임아웃 - 즉시 메시지 전송');
+        startInitSequence();
+      }
+    }, 100);
+
+    timers.push(resourceCheckInterval);
 
     return () => {
       timers.forEach(timer => clearTimeout(timer));
+      clearInterval(resourceCheckInterval);
     };
   }, [isReady, cafeId, type, totalScore, totalCount]);
 
