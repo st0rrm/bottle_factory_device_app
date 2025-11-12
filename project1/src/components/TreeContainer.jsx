@@ -37,31 +37,22 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
   // iframe에서 메시지 수신 (bottleclub-tree → project1)
   useEffect(() => {
     const handleMessage = (event) => {
-      console.log('TreeContainer: 📨 원본 메시지 수신', {
-        origin: event.origin,
-        dataType: typeof event.data,
-        data: event.data
-      });
-
       // 보안: bottleclub-tree 도메인 또는 localhost에서 온 메시지만 처리
       if (!event.origin.includes('bottleclub-tree') &&
           !event.origin.includes('bottlefactory') &&
           !event.origin.includes('localhost') &&
           !event.origin.includes('firebaseapp.com') &&
           !event.origin.includes('web.app')) {
-        console.log('TreeContainer: ⚠️ Origin 불일치, 무시');
         return;
       }
 
       // event.data가 문자열이 아니면 무시
       if (typeof event.data !== 'string') {
-        console.log('TreeContainer: ⚠️ Non-string data, 무시');
         return;
       }
 
       try {
         const data = JSON.parse(event.data);
-        console.log('TreeContainer: ✅ JSON 파싱 성공', data);
         const { type, message } = data;
 
         if (type === 'COMMAND' && message === 'hello') {
@@ -71,7 +62,6 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
         }
       } catch (error) {
         // JSON 파싱 실패는 무시 (다른 postMessage일 수 있음)
-        console.log('TreeContainer: ⚠️ JSON 파싱 실패');
       }
     };
 
@@ -140,15 +130,11 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
   // 초기화: isReady가 true가 되면 실행 (bottleclub Main.tsx:217-246 참고)
   useEffect(() => {
     if (isReady && cafeId && type === 'init') {
-      // localStorage에서 force 플래그 확인
-      const treeKey = `tree_${cafeId}`;
-      const value = localStorage.getItem(treeKey);
-
       const message = {
         type: 'init',
         uid: cafeId,
         total: totalScore,
-        force: value !== 'already', // 첫 실행 여부
+        force: true, // 항상 강제 초기화 (IndexedDB 로드 실패 방지)
         count: totalCount,
         score: 0
       };
@@ -193,9 +179,6 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
         sendInitMessage(3);
       }, 1500));
 
-      // 실행 이후 데이터 생성
-      localStorage.setItem(treeKey, 'already');
-
       return () => {
         timers.forEach(timer => clearTimeout(timer));
       };
@@ -239,22 +222,6 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
         sandbox="allow-scripts allow-same-origin allow-forms"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; storage-access"
       />
-      {!isReady && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          color: '#666',
-          fontSize: '14px',
-          textAlign: 'center',
-          background: 'rgba(255, 255, 255, 0.9)',
-          padding: '10px 20px',
-          borderRadius: '8px'
-        }}>
-          🌱 나무를 불러오는 중...
-        </div>
-      )}
     </div>
   );
 }

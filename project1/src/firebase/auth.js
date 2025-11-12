@@ -48,9 +48,10 @@ export const initRecaptcha = (buttonId = 'recaptcha-container') => {
 /**
  * 전화번호로 SMS 인증번호 요청
  * @param {string} phoneNumber - 전화번호 (예: +821012345678)
+ * @param {string} containerId - reCAPTCHA 컨테이너 ID (기본값: 'recaptcha-container-verify')
  * @returns {Promise} confirmationResult
  */
-export const sendVerificationCode = async (phoneNumber) => {
+export const sendVerificationCode = async (phoneNumber, containerId = 'recaptcha-container-verify') => {
   try {
     // 전화번호 포맷 (+82로 시작)
     const formattedNumber = phoneNumber.startsWith('+82')
@@ -60,7 +61,7 @@ export const sendVerificationCode = async (phoneNumber) => {
     console.log('SMS 전송 중:', formattedNumber);
 
     // reCAPTCHA 초기화
-    const appVerifier = initRecaptcha();
+    const appVerifier = initRecaptcha(containerId);
 
     // SMS 전송
     const confirmationResult = await signInWithPhoneNumber(

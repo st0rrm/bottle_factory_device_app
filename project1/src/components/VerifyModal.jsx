@@ -357,7 +357,7 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
     <div className="verify-modal-overlay">
       <div className="verify-modal-container">
         {/* reCAPTCHA Container (invisible) */}
-        <div id="recaptcha-container"></div>
+        <div id="recaptcha-container-verify"></div>
 
         {/* Close Button */}
         <button onClick={onClose} className="verify-close-button">

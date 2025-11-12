@@ -87,7 +87,7 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
 
     // 모든 사용자에게 SMS 인증 진행 (보안을 위해)
     console.log('📱 SMS 인증번호 전송 중...');
-    const result = await sendVerificationCode(phoneNumber);
+    const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-return');
 
     if (result.success) {
       console.log('✅ SMS 전송 성공');
@@ -371,7 +371,7 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
     <div className="return-modal-overlay">
       <div className="return-modal-container">
         {/* reCAPTCHA Container (invisible) */}
-        <div id="recaptcha-container"></div>
+        <div id="recaptcha-container-return"></div>
 
         <button onClick={onClose} className="return-modal-close-button">
           <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
