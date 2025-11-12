@@ -84,4 +84,46 @@ router.get('/cafe/:cafeId/recent', authenticateAdmin, async (req, res) => {
   }
 });
 
+// 현재 카페의 일별 통계 조회 (카페 전용)
+router.get('/my-daily-stats', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'cafe') {
+      return res.status(403).json({ error: 'Cafe access required' });
+    }
+
+    const days = parseInt(req.query.days) || 7;
+    const stats = await UserBehavior.getDailyStats(req.user.id, days);
+    res.json(stats);
+  } catch (err) {
+    console.error('Daily stats error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 특정 카페의 일별 통계 조회 (관리자 전용)
+router.get('/cafe/:cafeId/daily-stats', authenticateAdmin, async (req, res) => {
+  try {
+    const cafeId = req.params.cafeId;
+    const days = parseInt(req.query.days) || 7;
+
+    const stats = await UserBehavior.getDailyStats(cafeId, days);
+    res.json(stats);
+  } catch (err) {
+    console.error('Cafe daily stats error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 모든 카페의 일별 통계 조회 (관리자 전용)
+router.get('/all-cafes-daily', authenticateAdmin, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 7;
+    const stats = await UserBehavior.getAllCafesDailyStats(days);
+    res.json(stats);
+  } catch (err) {
+    console.error('All cafes daily stats error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

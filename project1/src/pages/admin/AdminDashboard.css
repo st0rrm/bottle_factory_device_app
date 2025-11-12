@@ -409,6 +409,37 @@
   background-color: #357ABD;
 }
 
+/* Period Selector for Daily Stats */
+.period-selector {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.period-btn {
+  background-color: #f3f4f6;
+  border: 2px solid #d1d5db;
+  color: #6b7280;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.period-btn:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.period-btn.active {
+  background-color: #4A90E2;
+  color: white;
+  border-color: #4A90E2;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .dashboard-content {

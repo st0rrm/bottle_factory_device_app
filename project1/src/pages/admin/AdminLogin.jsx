@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import './AdminLogin.css';
 import xIcon from '../../assets/images/x_icon.svg';
-import { adminLogin } from '../../api/auth';
+import { adminLogin, cafeLogin } from '../../api/auth';
+import { useNavigate } from 'react-router-dom';
 
 function AdminLogin({ onClose, onLoginSuccess }) {
+  const navigate = useNavigate();
   const [adminId, setAdminId] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -19,17 +21,39 @@ function AdminLogin({ onClose, onLoginSuccess }) {
     setErrorMessage('');
 
     try {
-      const data = await adminLogin(adminId, password);
+      // 먼저 관리자 로그인 시도
+      try {
+        const data = await adminLogin(adminId, password);
 
-      // 토큰과 사용자 정보 저장
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userType', 'admin');
-      localStorage.setItem('userData', JSON.stringify(data.admin));
+        // 토큰과 사용자 정보 저장
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userType', 'admin');
+        localStorage.setItem('userData', JSON.stringify(data.admin));
 
-      // 로그인 성공
-      onLoginSuccess(data.admin);
+        // 로그인 성공 - AdminDashboard로
+        onLoginSuccess(data.admin);
+        return;
+      } catch (adminError) {
+        // 관리자 로그인 실패 시 카페 로그인 시도
+        try {
+          const data = await cafeLogin(adminId, password);
+
+          // 토큰과 사용자 정보 저장
+          localStorage.setItem('authToken', data.token);
+          localStorage.setItem('userType', 'cafe_stats'); // 통계 보기용 카페 로그인
+          localStorage.setItem('userData', JSON.stringify(data.cafe));
+
+          // 카페 통계 페이지로 이동
+          onClose();
+          navigate('/cafe-stats');
+          return;
+        } catch (cafeError) {
+          // 둘 다 실패
+          throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
+        }
+      }
     } catch (error) {
-      setErrorMessage(error.error || '로그인 중 오류가 발생했습니다.');
+      setErrorMessage(error.message || error.error || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +76,7 @@ function AdminLogin({ onClose, onLoginSuccess }) {
         <div className="admin-login-content">
           {/* Title */}
           <h2 className="admin-login-title">리턴미컵 관리 시스템</h2>
-          <p className="admin-login-subtitle">관리자 로그인</p>
+          <p className="admin-login-subtitle">관리자 또는 카페 ID로 로그인</p>
 
           {/* Login Form */}
           <div className="admin-login-form">

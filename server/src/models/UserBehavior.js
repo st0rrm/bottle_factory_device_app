@@ -138,6 +138,92 @@ class UserBehavior {
       throw err;
     }
   }
+
+  // 일별 통계 조회 (카페별)
+  static async getDailyStats(cafeId, days = 7) {
+    try {
+      const result = await pool.query(
+        `SELECT
+          DATE(created_at) as date,
+          COUNT(*) FILTER (WHERE action_type = 'modal_open') as modal_opens,
+          COUNT(*) FILTER (WHERE action_type = 'tab_switch' AND action_detail LIKE '%qr%') as qr_tab_clicks,
+          COUNT(*) FILTER (WHERE action_type = 'tab_switch' AND action_detail LIKE '%phone%') as phone_tab_clicks,
+          COUNT(*) FILTER (WHERE action_type = 'tab_switch' AND action_detail = 'qr_borrow') as qr_borrow_clicks,
+          COUNT(*) FILTER (WHERE action_type = 'tab_switch' AND action_detail = 'qr_return') as qr_return_clicks,
+          COUNT(*) FILTER (WHERE action_type = 'tab_switch' AND action_detail = 'phone_borrow') as phone_borrow_clicks,
+          COUNT(*) FILTER (WHERE action_type = 'tab_switch' AND action_detail = 'phone_return') as phone_return_clicks,
+          COUNT(*) FILTER (WHERE action_type = 'verification_attempt') as verification_attempts,
+          COUNT(*) as total_actions
+         FROM user_behaviors
+         WHERE cafe_id = $1
+         AND created_at >= CURRENT_DATE - INTERVAL '1 day' * $2
+         GROUP BY DATE(created_at)
+         ORDER BY DATE(created_at) DESC`,
+        [cafeId, days]
+      );
+
+      return result.rows.map(row => ({
+        date: row.date,
+        modal_opens: parseInt(row.modal_opens) || 0,
+        qr_tab_clicks: parseInt(row.qr_tab_clicks) || 0,
+        phone_tab_clicks: parseInt(row.phone_tab_clicks) || 0,
+        qr_borrow_clicks: parseInt(row.qr_borrow_clicks) || 0,
+        qr_return_clicks: parseInt(row.qr_return_clicks) || 0,
+        phone_borrow_clicks: parseInt(row.phone_borrow_clicks) || 0,
+        phone_return_clicks: parseInt(row.phone_return_clicks) || 0,
+        verification_attempts: parseInt(row.verification_attempts) || 0,
+        total_actions: parseInt(row.total_actions) || 0
+      }));
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  // 모든 카페의 일별 통계 조회 (관리자용)
+  static async getAllCafesDailyStats(days = 7) {
+    try {
+      const result = await pool.query(
+        `SELECT
+          c.id,
+          c.cafe_id,
+          c.cafe_name,
+          DATE(ub.created_at) as date,
+          COUNT(*) FILTER (WHERE ub.action_type = 'modal_open') as modal_opens,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail LIKE '%qr%') as qr_tab_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail LIKE '%phone%') as phone_tab_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'qr_borrow') as qr_borrow_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'qr_return') as qr_return_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'phone_borrow') as phone_borrow_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'phone_return') as phone_return_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'verification_attempt') as verification_attempts,
+          COUNT(*) as total_actions
+         FROM cafes c
+         LEFT JOIN user_behaviors ub ON c.id = ub.cafe_id
+           AND ub.created_at >= CURRENT_DATE - INTERVAL '1 day' * $1
+         GROUP BY c.id, c.cafe_id, c.cafe_name, DATE(ub.created_at)
+         ORDER BY c.cafe_name, DATE(ub.created_at) DESC`,
+        [days]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id,
+        cafe_id: row.cafe_id,
+        cafe_name: row.cafe_name,
+        date: row.date,
+        modal_opens: parseInt(row.modal_opens) || 0,
+        qr_tab_clicks: parseInt(row.qr_tab_clicks) || 0,
+        phone_tab_clicks: parseInt(row.phone_tab_clicks) || 0,
+        qr_borrow_clicks: parseInt(row.qr_borrow_clicks) || 0,
+        qr_return_clicks: parseInt(row.qr_return_clicks) || 0,
+        phone_borrow_clicks: parseInt(row.phone_borrow_clicks) || 0,
+        phone_return_clicks: parseInt(row.phone_return_clicks) || 0,
+        verification_attempts: parseInt(row.verification_attempts) || 0,
+        total_actions: parseInt(row.total_actions) || 0
+      }));
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 module.exports = UserBehavior;

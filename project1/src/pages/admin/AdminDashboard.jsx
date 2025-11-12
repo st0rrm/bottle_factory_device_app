@@ -4,22 +4,25 @@ import './AdminDashboard.css';
 import { getCafes, createCafe, updateCafe, updateCafePassword, deleteCafe } from '../../api/cafe';
 import { logout } from '../../api/auth';
 import { getAllCafesStats } from '../../api/statistics';
-import { getAllCafesBehaviorStats } from '../../api/behaviors';
+import { getAllCafesBehaviorStats, getAllCafesDailyStats } from '../../api/behaviors';
 import * as XLSX from 'xlsx';
 
 function AdminDashboard() {
   const [cafes, setCafes] = useState([]);
   const [cafesStats, setCafesStats] = useState([]);
   const [behaviorStats, setBehaviorStats] = useState([]);
+  const [dailyStats, setDailyStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCafe, setSelectedCafe] = useState(null);
   const [adminInfo, setAdminInfo] = useState(null);
   const [showStatsView, setShowStatsView] = useState(false);
+  const [showDailyView, setShowDailyView] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('cafe_name'); // cafe_name, total_transactions, today_count, weekly_count
   const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
+  const [statsDays, setStatsDays] = useState(7); // 일별 통계 기간
   const navigate = useNavigate();
 
   // 폼 데이터
@@ -86,10 +89,34 @@ function AdminDashboard() {
     }
   };
 
+  const loadDailyStats = async () => {
+    try {
+      const daily = await getAllCafesDailyStats(statsDays);
+      setDailyStats(daily);
+    } catch (error) {
+      console.error('일별 통계 불러오기 실패:', error);
+      alert('일별 통계를 불러오는데 실패했습니다.');
+    }
+  };
+
   const handleShowStats = () => {
     loadStats();
     setShowStatsView(true);
+    setShowDailyView(false);
   };
+
+  const handleShowDailyStats = () => {
+    loadDailyStats();
+    setShowDailyView(true);
+    setShowStatsView(false);
+  };
+
+  // statsDays가 변경되면 일별 통계 다시 불러오기
+  useEffect(() => {
+    if (showDailyView) {
+      loadDailyStats();
+    }
+  }, [statsDays]);
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -298,11 +325,13 @@ function AdminDashboard() {
       {/* Main Content */}
       <main className="dashboard-content">
         <div className="content-header">
-          <h2 className="section-title">{showStatsView ? '카페 통계' : '카페 관리'}</h2>
+          <h2 className="section-title">
+            {showDailyView ? '일별 통계' : showStatsView ? '카페 통계' : '카페 관리'}
+          </h2>
           <div className="header-buttons">
             <button
-              className={showStatsView ? 'view-button' : 'view-button active'}
-              onClick={() => setShowStatsView(false)}
+              className={!showStatsView && !showDailyView ? 'view-button active' : 'view-button'}
+              onClick={() => { setShowStatsView(false); setShowDailyView(false); }}
             >
               카페 관리
             </button>
@@ -313,9 +342,15 @@ function AdminDashboard() {
               통계 보기
             </button>
             <button
+              className={showDailyView ? 'view-button active' : 'view-button'}
+              onClick={handleShowDailyStats}
+            >
+              일별 통계
+            </button>
+            <button
               className="create-button"
               onClick={openCreateModal}
-              style={{ visibility: showStatsView ? 'hidden' : 'visible' }}
+              style={{ visibility: showStatsView || showDailyView ? 'hidden' : 'visible' }}
             >
               + 카페 추가
             </button>
@@ -323,49 +358,122 @@ function AdminDashboard() {
         </div>
 
         {/* 검색 및 필터 바 */}
-        <div className="filter-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="카페명 또는 ID로 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <div className="filter-controls">
-            <select
-              className="sort-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="cafe_name">카페명</option>
-              <option value="cafe_id">카페 ID</option>
-              {showStatsView && (
-                <>
-                  <option value="total_transactions">총 거래</option>
-                  <option value="today_count">오늘 거래</option>
-                  <option value="weekly_count">주간 거래</option>
-                  <option value="qr_tab_clicks">QR 탭</option>
-                  <option value="phone_tab_clicks">전화 탭</option>
-                </>
-              )}
-              {!showStatsView && <option value="created_at">생성일</option>}
-            </select>
-            <button
-              className="sort-order-button"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            >
-              {sortOrder === 'asc' ? '↑ 오름차순' : '↓ 내림차순'}
-            </button>
-            {showStatsView && (
-              <button className="export-button" onClick={handleExportToExcel}>
-                📊 엑셀 다운로드
+        {!showDailyView && (
+          <div className="filter-bar">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="카페명 또는 ID로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="filter-controls">
+              <select
+                className="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="cafe_name">카페명</option>
+                <option value="cafe_id">카페 ID</option>
+                {showStatsView && (
+                  <>
+                    <option value="total_transactions">총 거래</option>
+                    <option value="today_count">오늘 거래</option>
+                    <option value="weekly_count">주간 거래</option>
+                    <option value="qr_tab_clicks">QR 탭</option>
+                    <option value="phone_tab_clicks">전화 탭</option>
+                  </>
+                )}
+                {!showStatsView && <option value="created_at">생성일</option>}
+              </select>
+              <button
+                className="sort-order-button"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              >
+                {sortOrder === 'asc' ? '↑ 오름차순' : '↓ 내림차순'}
               </button>
-            )}
+              {showStatsView && (
+                <button className="export-button" onClick={handleExportToExcel}>
+                  📊 엑셀 다운로드
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Stats View */}
-        {showStatsView ? (
+        {/* 일별 통계 기간 선택 */}
+        {showDailyView && (
+          <div className="filter-bar">
+            <div className="period-selector">
+              <button
+                className={statsDays === 7 ? 'period-btn active' : 'period-btn'}
+                onClick={() => setStatsDays(7)}
+              >
+                7일
+              </button>
+              <button
+                className={statsDays === 14 ? 'period-btn active' : 'period-btn'}
+                onClick={() => setStatsDays(14)}
+              >
+                14일
+              </button>
+              <button
+                className={statsDays === 30 ? 'period-btn active' : 'period-btn'}
+                onClick={() => setStatsDays(30)}
+              >
+                30일
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Daily Stats View */}
+        {showDailyView ? (
+          <div className="cafe-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>카페명</th>
+                  <th>날짜</th>
+                  <th>모달 열림</th>
+                  <th>QR 탭</th>
+                  <th>QR 대여</th>
+                  <th>QR 반납</th>
+                  <th>전화 탭</th>
+                  <th>전화 대여</th>
+                  <th>전화 반납</th>
+                  <th>인증 시도</th>
+                  <th>총 액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyStats.length === 0 ? (
+                  <tr>
+                    <td colSpan="11" style={{ textAlign: 'center' }}>
+                      통계 데이터가 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  dailyStats.map((stat, index) => (
+                    <tr key={index}>
+                      <td>{stat.cafe_name}</td>
+                      <td>{stat.date ? new Date(stat.date).toLocaleDateString('ko-KR') : '-'}</td>
+                      <td>{stat.modal_opens}</td>
+                      <td>{stat.qr_tab_clicks}</td>
+                      <td>{stat.qr_borrow_clicks}</td>
+                      <td>{stat.qr_return_clicks}</td>
+                      <td>{stat.phone_tab_clicks}</td>
+                      <td>{stat.phone_borrow_clicks}</td>
+                      <td>{stat.phone_return_clicks}</td>
+                      <td>{stat.verification_attempts}</td>
+                      <td><strong>{stat.total_actions}</strong></td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : showStatsView ? (
           <div className="cafe-table">
             <table>
               <thead>
