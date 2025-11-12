@@ -97,18 +97,24 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
 
   // 초기화: isReady가 true가 되면 init 메시지 전송
   useEffect(() => {
-    if (!isReady || !cafeId || type !== 'init') return;
+    console.log('TreeContainer: useEffect 트리거됨', { isReady, cafeId, type, totalScore, totalCount });
 
+    if (!isReady || !cafeId || type !== 'init') {
+      console.log('TreeContainer: ❌ 조건 미충족', { isReady, cafeId, type });
+      return;
+    }
+
+    // 콘솔 테스트와 동일한 순서로 메시지 구성
     const message = {
       type: 'init',
       uid: cafeId,
       total: totalScore,
-      force: true,
-      count: totalCount,
-      score: 0
+      count: totalCount+1,
+      score: 0,
+      force: true
     };
 
-    console.log('TreeContainer: 📤 init 메시지 전송 시작');
+    console.log('TreeContainer: 📤 init 메시지 전송 시작', message);
 
     const timers = [];
     let resourceDetected = false;
@@ -130,29 +136,18 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
       }
     };
 
-    // init 메시지 전송 시퀀스 (3회, 1초 간격)
-    const startInitSequence = () => {
-      console.log('TreeContainer: 🚀 init 전송 시퀀스 시작');
-      timers.push(setTimeout(() => sendMessage(), 0));      // 즉시
-      timers.push(setTimeout(() => sendMessage(), 1000));   // 1초 후
-      timers.push(setTimeout(() => sendMessage(), 2000));   // 2초 후
+    // 여러 시점에 메시지 전송 시도
+    // bottleclub-tree가 언제 준비될지 불확실하므로 다양한 시점에 시도
+    console.log('TreeContainer: 🚀 다중 시점 init 전송 시작');
 
-      setTimeout(() => {
-        console.log('TreeContainer: ⏹️ init 전송 완료');
-      }, 2100);
-    };
+    const sendTimes = [0, 1000, 2000]; // 0초, 1초, 2초, 3초, 5초, 7초, 10초
 
-    // 단순하고 확실한 전략:
-    // iframe 로드 후 충분한 시간(6초) 대기 후 init 메시지 전송
-    // - iframe load 이벤트 후 3초 isReady 대기 (기존 로직)
-    // - isReady 후 추가 3초 대기 (bottleclub-tree 초기화 시간)
-    // - 총 6초 후 init 메시지 3회 전송
-    console.log('TreeContainer: ⏳ 6초 대기 후 init 전송 예정');
-    const initTimer = setTimeout(() => {
-      startInitSequence();
-    }, 6000);
-
-    timers.push(initTimer);
+    sendTimes.forEach(delay => {
+      timers.push(setTimeout(() => {
+        sendMessage();
+        console.log(`TreeContainer: 📨 ${delay}ms 시점 전송`);
+      }, delay));
+    });
 
     return () => {
       timers.forEach(timer => clearTimeout(timer));
