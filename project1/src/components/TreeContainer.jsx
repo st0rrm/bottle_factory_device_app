@@ -115,31 +115,19 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
 
     // init 메시지 전송 함수
     const sendMessage = () => {
-      if (iframeRef.current?.contentWindow) {
+      // querySelector로 직접 선택 (더 안정적)
+      const iframe = document.querySelector('.tree-iframe');
+
+      if (iframe?.contentWindow) {
         try {
-          iframeRef.current.contentWindow.postMessage(JSON.stringify(message), '*');
+          iframe.contentWindow.postMessage(JSON.stringify(message), '*');
           console.log('TreeContainer: 📨 init 전송');
         } catch (error) {
           console.error('TreeContainer: ❌ 전송 실패', error);
         }
+      } else {
+        console.warn('TreeContainer: ⚠️ iframe을 찾을 수 없음');
       }
-    };
-
-    // Performance API로 bottleclub-tree 리소스 로딩 감지
-    const checkResourceLoading = () => {
-      const resources = performance.getEntriesByType('resource');
-      const treeResources = resources.filter(entry => {
-        const url = entry.name;
-        return url.includes('bottleclub-tree') &&
-               (url.includes('branch') || url.includes('leaf') || url.includes('flower'));
-      });
-
-      if (treeResources.length > 0 && !resourceDetected) {
-        resourceDetected = true;
-        console.log('TreeContainer: 🌳 나무 리소스 로딩 감지됨');
-      }
-
-      return resourceDetected;
     };
 
     // init 메시지 전송 시퀀스 (3회, 1초 간격)
@@ -154,33 +142,20 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
       }, 2100);
     };
 
-    // 개선된 전략:
-    // 1. 리소스 로딩 감지 시: 3초 대기 후 init 메시지 전달
-    // 2. 타임아웃(30초) 내 리소스 미감지 시: 바로 init 메시지 전달
-    let checkCount = 0;
-    const maxChecks = 300; // 100ms마다 체크, 최대 30초
-    const resourceCheckInterval = setInterval(() => {
-      checkCount++;
+    // 단순하고 확실한 전략:
+    // iframe 로드 후 충분한 시간(6초) 대기 후 init 메시지 전송
+    // - iframe load 이벤트 후 3초 isReady 대기 (기존 로직)
+    // - isReady 후 추가 3초 대기 (bottleclub-tree 초기화 시간)
+    // - 총 6초 후 init 메시지 3회 전송
+    console.log('TreeContainer: ⏳ 6초 대기 후 init 전송 예정');
+    const initTimer = setTimeout(() => {
+      startInitSequence();
+    }, 6000);
 
-      if (checkResourceLoading()) {
-        clearInterval(resourceCheckInterval);
-        console.log('TreeContainer: ✅ 리소스 감지됨 - 3초 후 메시지 전송');
-        // 리소스 감지 후 3초 대기
-        timers.push(setTimeout(() => {
-          startInitSequence();
-        }, 3000));
-      } else if (checkCount >= maxChecks) {
-        clearInterval(resourceCheckInterval);
-        console.log('TreeContainer: ⏱️ 30초 타임아웃 - 즉시 메시지 전송');
-        startInitSequence();
-      }
-    }, 100);
-
-    timers.push(resourceCheckInterval);
+    timers.push(initTimer);
 
     return () => {
       timers.forEach(timer => clearTimeout(timer));
-      clearInterval(resourceCheckInterval);
     };
   }, [isReady, cafeId, type, totalScore, totalCount]);
 
@@ -203,12 +178,17 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
 
     console.log('TreeContainer: 📤 grow 메시지 전송', message);
 
-    if (iframeRef.current?.contentWindow) {
+    // querySelector로 직접 선택 (더 안정적)
+    const iframe = document.querySelector('.tree-iframe');
+
+    if (iframe?.contentWindow) {
       try {
-        iframeRef.current.contentWindow.postMessage(JSON.stringify(message), '*');
+        iframe.contentWindow.postMessage(JSON.stringify(message), '*');
       } catch (error) {
         console.error('TreeContainer: ❌ grow 전송 실패', error);
       }
+    } else {
+      console.warn('TreeContainer: ⚠️ iframe을 찾을 수 없음 (grow)');
     }
   }, [isReady, cafeId, type, score, totalScore, totalCount]);
 
