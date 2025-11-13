@@ -421,7 +421,6 @@
 .period-btn {
   background-color: white;
   border: 2px solid #e5e7eb;
-  color: #6b7280;
   padding: 0.75rem 1.25rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -435,19 +434,18 @@
 .period-btn:hover {
   background-color: #f9fafb;
   border-color: #d1d5db;
-  color: #374151;
 }
 
 .period-btn.active {
   background-color: #4A90E2;
   color: white;
-  border-color: #4A90E2;
+  border-color: #2c5282;
   box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
 }
 
 .period-btn.active:hover {
   background-color: #357ABD;
-  border-color: #357ABD;
+  border-color: #1e3a5f;
 }
 
 /* Cafe Filter Select for Daily Stats */
