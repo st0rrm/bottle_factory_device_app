@@ -18,7 +18,7 @@ function CafeStats() {
     const userType = localStorage.getItem('userType');
     const authToken = localStorage.getItem('authToken');
 
-    if (!userData || !authToken || userType !== 'cafe') {
+    if (!userData || !authToken || (userType !== 'cafe' && userType !== 'cafe_stats')) {
       navigate('/login', { replace: true });
       return;
     }
