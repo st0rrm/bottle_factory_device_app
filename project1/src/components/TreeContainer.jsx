@@ -109,7 +109,7 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
       type: 'init',
       uid: cafeId,
       total: totalScore,
-      count: totalCount+1,
+      count: totalCount,
       score: 0,
       force: true
     };
