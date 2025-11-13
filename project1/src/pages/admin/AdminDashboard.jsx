@@ -97,8 +97,16 @@ function AdminDashboard() {
     try {
       let daily;
       if (dateMode === 'custom' && startDate && endDate) {
+        // 날짜 유효성 검증: 종료일이 시작일보다 이른지 확인
+        if (new Date(endDate) < new Date(startDate)) {
+          alert('종료일은 시작일보다 이후여야 합니다.');
+          return;
+        }
         // 사용자 정의 날짜 범위로 조회
         daily = await getAllCafesDailyStats(7, startDate, endDate);
+      } else if (dateMode === 'custom') {
+        // 사용자 지정 모드인데 날짜가 모두 선택되지 않은 경우
+        return;
       } else {
         // 기본 기간(days)으로 조회
         daily = await getAllCafesDailyStats(statsDays);
@@ -465,6 +473,7 @@ function AdminDashboard() {
                   className="date-input"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate || undefined}
                   placeholder="시작일"
                 />
                 <span className="date-separator">~</span>
@@ -473,6 +482,7 @@ function AdminDashboard() {
                   className="date-input"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || undefined}
                   placeholder="종료일"
                 />
               </div>
