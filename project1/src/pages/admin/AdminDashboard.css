@@ -412,38 +412,42 @@
 /* Period Selector for Daily Stats */
 .period-selector {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .period-btn {
-  background-color: #f3f4f6;
-  border: 2px solid #d1d5db;
-  color: #374151;
-  padding: 0.75rem 1.5rem;
+  background-color: white;
+  border: 2px solid #e5e7eb;
+  color: #6b7280;
+  padding: 0.75rem 1.25rem;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 70px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .period-btn:hover {
-  background-color: #e5e7eb;
-  border-color: #9ca3af;
-  color: #1f2937;
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
 }
 
 .period-btn.active {
   background-color: #4A90E2;
   color: white;
   border-color: #4A90E2;
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
 }
 
 .period-btn.active:hover {
   background-color: #357ABD;
+  border-color: #357ABD;
 }
 
 /* Cafe Filter Select for Daily Stats */

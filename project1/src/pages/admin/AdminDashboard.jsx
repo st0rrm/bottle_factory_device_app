@@ -435,19 +435,19 @@ function AdminDashboard() {
                 className={dateMode === 'preset' && statsDays === 7 ? 'period-btn active' : 'period-btn'}
                 onClick={() => { setDateMode('preset'); setStatsDays(7); }}
               >
-                7일
+                최근 일주일
               </button>
               <button
                 className={dateMode === 'preset' && statsDays === 14 ? 'period-btn active' : 'period-btn'}
                 onClick={() => { setDateMode('preset'); setStatsDays(14); }}
               >
-                14일
+                최근 2주
               </button>
               <button
                 className={dateMode === 'preset' && statsDays === 30 ? 'period-btn active' : 'period-btn'}
                 onClick={() => { setDateMode('preset'); setStatsDays(30); }}
               >
-                30일
+                최근 한 달
               </button>
               <button
                 className={dateMode === 'custom' ? 'period-btn active' : 'period-btn'}
