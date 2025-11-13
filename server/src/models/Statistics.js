@@ -62,9 +62,9 @@ class Statistics {
     try {
       const result = await pool.query(
         `SELECT
-          COUNT(*) as total,
-          COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE) as today,
-          COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '7 days') as weekly
+          COALESCE(SUM(quantity * 30) FILTER (WHERE transaction_type = 'borrow'), 0) as total,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND DATE(created_at) = CURRENT_DATE), 0) as today,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly
         FROM transactions
         WHERE cafe_id = $1`,
         [cafeId]

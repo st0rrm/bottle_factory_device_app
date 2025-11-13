@@ -13,6 +13,7 @@ import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './VerifyModal.css';
 import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
+import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { createNewUser, getUserTickets, processRental, getUserByPhone } from '../firebase/firestore';
 import { getDeviceShopIdAsync } from '../config/device';
@@ -285,8 +286,18 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
       // 테스트 전화번호이거나 테스트 대여권인 경우 바로 성공 처리
       if (phoneNumber === '01010000001' || selectedTickets[0]?.id.startsWith('test_voucher')) {
         console.log('✅ 테스트 모드 - 대여 처리 건너뛰기');
+
+        // PostgreSQL에 거래 기록만 추가 (테스트용)
+        try {
+          await addTransaction('borrow', phoneNumber, quantity);
+          console.log(`📊 테스트 거래 기록 완료: ${quantity}개 대여`);
+        } catch (error) {
+          console.error('테스트 거래 기록 실패:', error);
+        }
+
         setIsLoading(false);
         console.log('🏠 홈 화면으로 돌아갑니다...');
+        onSuccess?.(); // 성공 스낵바 표시
         onClose();
         return;
       }
@@ -296,6 +307,16 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
 
       if (result.success) {
         console.log(`✅ 대여 완료: ${result.count}개 대여권 사용, ${result.count}개 컵 대여`);
+
+        // PostgreSQL에 거래 기록 추가 (카페 통계 업데이트)
+        try {
+          await addTransaction('borrow', phoneNumber, quantity);
+          console.log(`📊 거래 기록 완료: ${quantity}개 대여`);
+        } catch (error) {
+          console.error('거래 기록 실패 (통계는 업데이트되지 않음):', error);
+          // 거래 기록 실패해도 대여는 완료되었으므로 계속 진행
+        }
+
         setIsLoading(false);
 
         // 모달 닫기 (홈 화면으로 돌아가기)
