@@ -21,9 +21,14 @@ function AdminLogin({ onClose, onLoginSuccess }) {
     setErrorMessage('');
 
     try {
+      console.log('로그인 시도:', adminId);
+
       // 먼저 관리자 로그인 시도
       try {
+        console.log('관리자 로그인 시도 중...');
         const data = await adminLogin(adminId, password);
+
+        console.log('관리자 로그인 성공:', data);
 
         // 토큰과 사용자 정보 저장
         localStorage.setItem('authToken', data.token);
@@ -34,8 +39,11 @@ function AdminLogin({ onClose, onLoginSuccess }) {
         onLoginSuccess(data.admin);
         return;
       } catch (adminError) {
+        console.log('관리자 로그인 실패, 카페 로그인 시도:', adminError);
+
         // 관리자 로그인 실패 시 카페 로그인 시도
         try {
+          console.log('카페 로그인 시도 중...');
           const data = await cafeLogin(adminId, password);
 
           console.log('카페 로그인 성공:', data);
@@ -62,6 +70,7 @@ function AdminLogin({ onClose, onLoginSuccess }) {
         }
       }
     } catch (error) {
+      console.error('최종 로그인 실패:', error);
       setErrorMessage(error.message || error.error || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
