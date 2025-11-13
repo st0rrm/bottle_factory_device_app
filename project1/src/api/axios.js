@@ -37,7 +37,9 @@ apiClient.interceptors.response.use(
       console.error('API Error:', error.response.data);
 
       // 401 Unauthorized: 토큰 만료 또는 인증 실패
-      if (error.response.status === 401) {
+      // BUT: 로그인 엔드포인트에서는 자동 리디렉션 하지 않음 (로그인 폼에서 처리)
+      const isLoginEndpoint = error.config.url?.includes('/login');
+      if (error.response.status === 401 && !isLoginEndpoint) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userType');
         localStorage.removeItem('userData');
