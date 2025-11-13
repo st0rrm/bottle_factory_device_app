@@ -498,7 +498,8 @@ function AdminDashboard() {
                 <tr>
                   <th>카페명</th>
                   <th>날짜</th>
-                  <th>모달 열림</th>
+                  <th>대여 모달</th>
+                  <th>반납 모달</th>
                   <th>QR 탭</th>
                   <th>QR 대여</th>
                   <th>QR 반납</th>
@@ -519,7 +520,7 @@ function AdminDashboard() {
                   if (filteredStats.length === 0) {
                     return (
                       <tr>
-                        <td colSpan="11" style={{ textAlign: 'center' }}>
+                        <td colSpan="12" style={{ textAlign: 'center' }}>
                           통계 데이터가 없습니다.
                         </td>
                       </tr>
@@ -530,7 +531,8 @@ function AdminDashboard() {
                     <tr key={index}>
                       <td>{stat.cafe_name}</td>
                       <td>{stat.date ? new Date(stat.date).toLocaleDateString('ko-KR') : '-'}</td>
-                      <td>{stat.modal_opens}</td>
+                      <td>{stat.borrow_modal_opens}</td>
+                      <td>{stat.return_modal_opens}</td>
                       <td>{stat.qr_tab_clicks}</td>
                       <td>{stat.qr_borrow_clicks}</td>
                       <td>{stat.qr_return_clicks}</td>

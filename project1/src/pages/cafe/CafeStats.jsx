@@ -132,7 +132,8 @@ function CafeStats() {
               <thead>
                 <tr>
                   <th>날짜</th>
-                  <th>모달 열림</th>
+                  <th>대여 모달</th>
+                  <th>반납 모달</th>
                   <th>QR 탭</th>
                   <th>QR 대여</th>
                   <th>QR 반납</th>
@@ -147,7 +148,8 @@ function CafeStats() {
                 {dailyStats.map((stat, index) => (
                   <tr key={index}>
                     <td>{formatDate(stat.date)}</td>
-                    <td>{stat.modal_opens}</td>
+                    <td>{stat.borrow_modal_opens}</td>
+                    <td>{stat.return_modal_opens}</td>
                     <td>{stat.qr_tab_clicks}</td>
                     <td>{stat.qr_borrow_clicks}</td>
                     <td>{stat.qr_return_clicks}</td>
