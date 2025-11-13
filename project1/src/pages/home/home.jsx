@@ -4,6 +4,7 @@ import './home.css';
 import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
 import helpIcon from '../../assets/images/help.svg';
+import hillImage from '../../assets/images/front_hills_new 1.png'
 import HelpModal from '../../components/HelpModal';
 import SuccessSnackbar from '../../components/SuccessSnackbar';
 import TreeContainer from '../../components/TreeContainer';
@@ -189,9 +190,9 @@ function HomeScreen() {
       <div className="header-section">
         <div className="header-top">
           <h1 className="cafe-name">{cafeInfo.cafeName}</h1>
-          <button className="logout-btn" onClick={handleLogout}>
+          {/* <button className="logout-btn" onClick={handleLogout}>
             로그아웃
-          </button>
+          </button> */}
         </div>
         <div className="total-count">
           <svg className="droplet-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -199,9 +200,9 @@ function HomeScreen() {
           </svg>
           <span className="count-number">{stats.total}</span>
         </div>
-        <p className="sub-stats">
+        {/* <p className="sub-stats">
           오늘 <span className="stat-value">{stats.today}</span>회 | 주간 <span className="stat-value">{stats.weekly}</span>회
-        </p>
+        </p> */}
       </div>
 
       {/* Tree Illustration Section */}
@@ -215,6 +216,10 @@ function HomeScreen() {
           cafeInfo={cafeInfo}
         />
       </div>
+
+      {/* <div className="hill-section">
+        <img src={hillImage} alt="hill" className="hill-image" />
+      </div> */}
 
       {/* ------------------------------------------------------------- */}
       {/* 2. Bottom Action Bar (모달 개방 여부와 관계없이 항상 렌더링) */}
@@ -246,6 +251,11 @@ function HomeScreen() {
           {/* Return Button */}
           <button className="action-button return-button" onClick={handleReturnCupAction}>
             반납
+          </button>
+
+          {/* Return Button */}
+          <button className="action-button do-button" onClick={handleReturnCupAction}>
+            실천
           </button>
 
           {/* Help Section */}
