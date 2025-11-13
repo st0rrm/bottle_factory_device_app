@@ -26,6 +26,11 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
     // 탭 클릭 이벤트 추적 (대여 모달)
     trackBehavior('tab_switch', `${tab}_borrow`);
   };
+
+  // 모달 열림 추적 (컴포넌트 마운트 시 1회만)
+  useEffect(() => {
+    trackBehavior('modal_open', 'borrow');
+  }, []);
   const [phoneNumber, setPhoneNumber] = useState('010');
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerification, setShowVerification] = useState(false);
@@ -191,6 +196,9 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
 
     setIsLoading(true);
     setErrorMessage('');
+
+    // 인증 시도 추적
+    trackBehavior('verification_attempt', `phone_borrow_${phoneNumber.slice(-4)}`);
 
     // 모든 사용자에게 SMS 인증 진행 (보안을 위해)
     console.log('📱 SMS 인증번호 전송 중...');
