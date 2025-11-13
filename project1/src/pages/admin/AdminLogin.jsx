@@ -38,17 +38,26 @@ function AdminLogin({ onClose, onLoginSuccess }) {
         try {
           const data = await cafeLogin(adminId, password);
 
+          console.log('카페 로그인 성공:', data);
+
           // 토큰과 사용자 정보 저장
           localStorage.setItem('authToken', data.token);
           localStorage.setItem('userType', 'cafe_stats'); // 통계 보기용 카페 로그인
           localStorage.setItem('userData', JSON.stringify(data.cafe));
 
-          // 카페 통계 페이지로 이동
+          console.log('localStorage 저장 완료:', {
+            authToken: localStorage.getItem('authToken'),
+            userType: localStorage.getItem('userType'),
+            userData: localStorage.getItem('userData')
+          });
+
+          // 카페 통계 페이지로 이동 (먼저 navigate, 그 다음 모달 닫기)
+          navigate('/cafe-stats', { replace: true });
           onClose();
-          navigate('/cafe-stats');
           return;
         } catch (cafeError) {
           // 둘 다 실패
+          console.error('카페 로그인 실패:', cafeError);
           throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
         }
       }

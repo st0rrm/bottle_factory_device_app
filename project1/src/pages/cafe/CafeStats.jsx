@@ -18,11 +18,19 @@ function CafeStats() {
     const userType = localStorage.getItem('userType');
     const authToken = localStorage.getItem('authToken');
 
+    console.log('CafeStats 인증 체크:', {
+      userData: userData ? 'exists' : 'missing',
+      userType,
+      authToken: authToken ? 'exists' : 'missing'
+    });
+
     if (!userData || !authToken || (userType !== 'cafe' && userType !== 'cafe_stats')) {
+      console.log('인증 실패 - 로그인 페이지로 리디렉션');
       navigate('/login', { replace: true });
       return;
     }
 
+    console.log('인증 성공 - 통계 로드 시작');
     const cafe = JSON.parse(userData);
     setCafeInfo(cafe);
 
