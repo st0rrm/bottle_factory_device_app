@@ -209,7 +209,7 @@ function HomeScreen() {
           <svg className="droplet-icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
           </svg>
-          <span className="score-number">{stats.totalScore}</span>
+          <span className="score-number">{stats.totalScore || 0}</span>
         </div>
         {/* <p className="sub-stats">
           오늘 <span className="stat-value">{stats.today}</span>회 | 주간 <span className="stat-value">{stats.weekly}</span>회

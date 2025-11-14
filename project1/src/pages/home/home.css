@@ -110,9 +110,11 @@
 }
 
 .score-number {
-  font-size: 96pt;
+  font-size: clamp(4rem, 12vw, 8rem);
   font-weight: var(--pretendard-bold);
   color: #497fc6;
+  line-height: 1;
+  display: block;
 }
 
 .sub-stats {
