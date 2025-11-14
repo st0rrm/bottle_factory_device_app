@@ -1,0 +1,200 @@
+.settings-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.settings-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.settings-modal h2 {
+  margin: 0 0 24px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.settings-section {
+  margin: 24px 0;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-of-type {
+  border-bottom: none;
+}
+
+.settings-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #555;
+}
+
+.background-grid {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f9f9f9;
+}
+
+.background-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.background-grid::-webkit-scrollbar-track {
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.background-grid::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.background-grid::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+.background-option {
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  width: 180px;
+}
+
+.background-option:hover {
+  border-color: #ddd;
+}
+
+.background-option.selected {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.background-option img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  display: block;
+  border-radius: 6px 6px 0 0; /* 상단 모서리만 둥글게 */
+}
+
+.background-option span {
+  display: block;
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+  color: #000;
+  background: #f9f9f9;
+  border-radius: 0 0 6px 6px; /* 하단 모서리만 둥글게 */
+}
+
+.logout-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.logout-btn:hover {
+  background: #d32f2f;
+}
+
+.close-btn {
+  width: 100%;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 16px;
+  transition: background 0.2s;
+}
+
+.close-btn:hover {
+  background: #45a049;
+}
+
+/* Toggle Option */
+.toggle-option {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 12px;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 24px;
+  transition: background 0.3s;
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+  background: #4CAF50;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.toggle-checkbox:checked + .toggle-slider::after {
+  transform: translateX(24px);
+}
+
+.toggle-text {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
+import SettingsModal from '../../components/SettingsModal';
 import helpIcon from '../../assets/images/help.svg';
 import hillImage from '../../assets/images/front_hills_new 1.png'
 import HelpModal from '../../components/HelpModal';
@@ -11,12 +12,15 @@ import TreeContainer from '../../components/TreeContainer';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
 import { usePicovoice } from '../../hooks/usePicovoice';
+import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
 
 function HomeScreen() {
   const navigate = useNavigate();
+  const { currentBackground, showObjects } = useBackground();
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [cafeInfo, setCafeInfo] = useState(null);
@@ -179,6 +183,12 @@ function HomeScreen() {
     }, 3000);
   };
 
+  // Debug: Log when background changes (must be before conditional return)
+  useEffect(() => {
+    console.log('🎨 Background changed:', currentBackground.id, currentBackground.backgroundImage);
+    console.log('🌥️ Show objects:', showObjects);
+  }, [currentBackground, showObjects]);
+
   // 로딩 중이거나 카페 정보가 없으면 빈 화면
   if (!cafeInfo) {
     return <div className="home-container">Loading...</div>;
@@ -205,6 +215,15 @@ function HomeScreen() {
         </p> */}
       </div>
 
+      {/* Settings Button - 우측 상단 */}
+      <button
+        className="settings-button"
+        onClick={() => setShowSettingsModal(true)}
+        aria-label="설정"
+      >
+        ⚙️
+      </button>
+
       {/* Tree Illustration Section */}
       <div className="tree-section">
         <TreeContainer
@@ -214,6 +233,8 @@ function HomeScreen() {
           totalScore={stats.total * 30}
           totalCount={stats.total}
           cafeInfo={cafeInfo}
+          backgroundImage={currentBackground.backgroundImage}
+          objectImage={showObjects ? OBJECTS_IMAGE : null}
         />
       </div>
 
@@ -290,6 +311,12 @@ function HomeScreen() {
         />
       )}
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />}
+      {showSettingsModal && (
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+        />
+      )}
 
       {/* Success Snackbar */}
       {showSuccessSnackbar && (

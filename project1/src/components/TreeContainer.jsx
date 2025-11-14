@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import './TreeContainer.css';
 
 /**
- * TreeContainer - bottleclub-tree 웹앱을 iframe으로 임베드하여 나무 애니메이션 표시
+ * TreeContainer - 배경 이미지 + 투명 나무 iframe 레이어링
  *
  * @param {Object} props
  * @param {string} props.type - 'init' | 'grow' (초기화 또는 성장)
@@ -10,14 +10,30 @@ import './TreeContainer.css';
  * @param {string} props.cafeId - 카페 고유 ID (uid로 사용)
  * @param {number} props.totalScore - 총 점수
  * @param {number} props.totalCount - 총 적립 횟수
+ * @param {string} props.backgroundImage - 배경 이미지 경로 (선택)
+ * @param {string} props.objectImage - 오브젝트 이미지 경로 (선택)
  */
-function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, totalCount = 0 }) {
+function TreeContainer({
+  type = 'init',
+  score = 0,
+  cafeId,
+  totalScore = 0,
+  totalCount = 0,
+  backgroundImage,
+  objectImage
+}) {
   const iframeRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const countRef = useRef(-1); // grow 메시지 중복 실행 방지용
 
-  // 환경변수에서 Tree URL 가져오기
+  // 환경변수에서 Tree URL 가져오기 + noBackground 파라미터 추가
   const treeUrl = import.meta.env.VITE_TREE_URL || 'https://bottleclub-tree.web.app/';
+  const treeUrlWithParams = `${treeUrl}?noBackground=true`;
+
+  // Debug: Log when background props change
+  useEffect(() => {
+    console.log('🖼️ TreeContainer received new props:', { backgroundImage, objectImage });
+  }, [backgroundImage, objectImage]);
 
 
   // iframe 로드 후 3초 뒤 자동으로 ready 상태로 전환
@@ -115,9 +131,24 @@ function TreeContainer({ type = 'init', score = 0, cafeId, totalScore = 0, total
 
   return (
     <div className="tree-container">
+      {/* 배경 레이어 1: 메인 배경 이미지 */}
+      <div
+        className="tree-background"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      />
+
+      {/* 배경 레이어 2: 오브젝트 이미지 (선택) */}
+      {objectImage && (
+        <div
+          className="tree-objects"
+          style={{ backgroundImage: `url(${objectImage})` }}
+        />
+      )}
+
+      {/* 전경: 투명 배경의 나무 iframe */}
       <iframe
         ref={iframeRef}
-        src={treeUrl}
+        src={treeUrlWithParams}
         title="보틀 나무"
         className="tree-iframe"
         sandbox="allow-scripts allow-same-origin allow-forms"

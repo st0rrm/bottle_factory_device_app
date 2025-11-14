@@ -11,9 +11,9 @@ export const getMyStats = async () => {
     if (token === 'dev-token-12345') {
       console.log('개발 모드: 목 통계 데이터 사용');
       return {
-        total: 45,   // 총 적립 45회 (나무 성장 테스트용 - 3단계)
-        today: 8,    // 오늘 8회
-        weekly: 23   // 주간 23회
+        total: 3,   // 총 적립 45회 (나무 성장 테스트용 - 3단계)
+        today: 1,    // 오늘 8회
+        weekly: 1   // 주간 23회
       };
     }
     throw error.response?.data || { error: '통계를 가져오는 중 오류가 발생했습니다.' };

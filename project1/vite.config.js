@@ -10,10 +10,10 @@ export default defineConfig({
   },
   server: {
     headers: {
-      // COOP/COEP 헤더는 Picovoice SharedArrayBuffer를 위해 필요하지만
-      // iframe 임베딩을 차단하므로 주석 처리
-      // 'Cross-Origin-Embedder-Policy': 'require-corp',
-      // 'Cross-Origin-Opener-Policy': 'same-origin'
+      // COOP/COEP 헤더 활성화 (Picovoice SharedArrayBuffer + iframe 임베딩 지원)
+      // bottleclub-tree도 COOP 헤더를 설정해야 iframe 로드 가능
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin'
     },
     proxy: {
       '/api': {
