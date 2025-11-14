@@ -94,7 +94,7 @@
   transform: scale(0.95);
 }
 
-.total-count {
+.total-score {
   display: flex;
   align-items: center;
   gap: clamp(0.5rem, 1.5vw, 1rem);
@@ -109,7 +109,7 @@
   flex-shrink: 0;
 }
 
-.count-number {
+.score-number {
   font-size: 96pt;
   font-weight: var(--pretendard-bold);
   color: #497fc6;

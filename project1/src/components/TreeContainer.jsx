@@ -6,10 +6,10 @@ import './TreeContainer.css';
  *
  * @param {Object} props
  * @param {string} props.type - 'init' | 'grow' (초기화 또는 성장)
- * @param {number} props.score - 새로 획득한 점수 (grow일 때 사용)
+ * @param {number} props.score - 새로 획득한 점수 (grow일 때 사용, 30점 단위)
  * @param {string} props.cafeId - 카페 고유 ID (uid로 사용)
- * @param {number} props.totalScore - 총 점수
- * @param {number} props.totalCount - 총 적립 횟수
+ * @param {number} props.totalScore - 총 보틀 점수 (꽃/열매 보상 레벨 결정)
+ * @param {number} props.totalCount - 총 적립 횟수 (나무 가지 개수 결정)
  * @param {string} props.backgroundImage - 배경 이미지 경로 (선택)
  * @param {string} props.objectImage - 오브젝트 이미지 경로 (선택)
  */

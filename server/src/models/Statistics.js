@@ -62,7 +62,8 @@ class Statistics {
     try {
       const result = await pool.query(
         `SELECT
-          COALESCE(SUM(quantity * 30) FILTER (WHERE transaction_type = 'borrow'), 0) as total,
+          COALESCE(SUM(quantity * 30) FILTER (WHERE transaction_type = 'borrow'), 0) as total_score,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow'), 0) as total_count,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND DATE(created_at) = CURRENT_DATE), 0) as today,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly
         FROM transactions
@@ -71,7 +72,8 @@ class Statistics {
       );
 
       return {
-        total: parseInt(result.rows[0].total) || 0,
+        totalScore: parseInt(result.rows[0].total_score) || 0,
+        totalCount: parseInt(result.rows[0].total_count) || 0,
         today: parseInt(result.rows[0].today) || 0,
         weekly: parseInt(result.rows[0].weekly) || 0
       };
