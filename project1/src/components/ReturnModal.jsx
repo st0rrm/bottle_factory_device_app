@@ -13,6 +13,7 @@ import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
 import './ReturnModal.css';
 import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
+import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { getUserActiveRentals, processReturn } from '../firebase/firestore';
 import { getDeviceShopIdAsync } from '../config/device';
@@ -264,6 +265,16 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
 
       if (result.success) {
         console.log('✅ 반납 완료:', result.score, '점 적립, 컵', result.count, '개');
+
+        // PostgreSQL에 거래 기록 추가 (카페 통계 업데이트)
+        try {
+          await addTransaction('return', phoneNumber, quantity);
+          console.log(`📊 거래 기록 완료: ${quantity}개 반납`);
+        } catch (error) {
+          console.error('거래 기록 실패 (통계는 업데이트되지 않음):', error);
+          // 거래 기록 실패해도 반납은 완료되었으므로 계속 진행
+        }
+
         setIsLoading(false);
 
         // 바로 모달 닫고 성공 스낵바 표시

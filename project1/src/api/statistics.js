@@ -4,6 +4,11 @@ import apiClient from './axios';
 export const getMyStats = async () => {
   try {
     const response = await apiClient.get('/statistics/my-stats');
+    console.log('📊 API 통계 데이터 받음:', response.data);
+    console.log('  - totalScore:', response.data.totalScore);
+    console.log('  - totalCount:', response.data.totalCount);
+    console.log('  - today:', response.data.today);
+    console.log('  - weekly:', response.data.weekly);
     return response.data;
   } catch (error) {
     // 개발 모드: 백엔드가 없을 때 목(mock) 데이터 반환
