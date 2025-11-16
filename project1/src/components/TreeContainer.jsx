@@ -74,31 +74,15 @@ function TreeContainer({
       force: true
     };
 
-    const timers = [];
+    const iframe = document.querySelector('.tree-iframe');
 
-    // init 메시지 전송 함수
-    const sendMessage = () => {
-      const iframe = document.querySelector('.tree-iframe');
-
-      if (iframe?.contentWindow) {
-        try {
-          iframe.contentWindow.postMessage(JSON.stringify(message), '*');
-        } catch (error) {
-          console.error('TreeContainer: init 전송 실패', error);
-        }
+    if (iframe?.contentWindow) {
+      try {
+        iframe.contentWindow.postMessage(JSON.stringify(message), '*');
+      } catch (error) {
+        console.error('TreeContainer: init 전송 실패', error);
       }
-    };
-
-    // 여러 시점에 메시지 전송 시도 (bottleclub-tree 준비 시간 고려)
-    const sendTimes = [0, 1000, 2000];
-
-    sendTimes.forEach(delay => {
-      timers.push(setTimeout(sendMessage, delay));
-    });
-
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
+    }
   }, [isReady, cafeId, type, totalScore, totalCount]);
 
   // 성장: type이 'grow'일 때 grow 메시지 전송
