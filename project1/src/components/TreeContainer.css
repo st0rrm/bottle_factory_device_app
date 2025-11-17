@@ -50,7 +50,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(-50%, -65%) scale(1);
   z-index: 4;                    /* 가장 위에 나무 */
   pointer-events: auto;          /* iframe 상호작용 허용 */
 }
