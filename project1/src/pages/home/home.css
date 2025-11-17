@@ -144,11 +144,11 @@
 
 .hill-section {
   position : fixed;
-  bottom: 150px;
+  bottom: 200px;
   width: 100%;
   max-width: 100%;
   z-index: 3;
-  max-height: 190px;
+  height: 90px;
   justify-content: center;
 }
 
