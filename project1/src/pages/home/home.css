@@ -140,7 +140,6 @@
   box-sizing: border-box;
   /* header-section이 absolute이므로 tree-section이 전체 높이 차지 */
   margin-top: 0;
-  z-index: 4;
 }
 
 .hill-section {
