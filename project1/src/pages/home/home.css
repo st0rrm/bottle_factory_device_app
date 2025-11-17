@@ -40,7 +40,7 @@
 }
 
 .cafe-name {
-  font-size: 32pt;
+  font-size: 32px;
   font-weight: var(--pretendard-light);
   color: #A2A2A2;
   letter-spacing: 0;
@@ -144,10 +144,10 @@
 
 .hill-section {
   position : fixed;
-  bottom: 270px;
+  bottom: 200px;
   width: 100%;
   max-width: 100%;
-  z-index: 2;
+  z-index: 3;
   max-height: 190px;
   justify-content: center;
 }
@@ -165,17 +165,25 @@
   width: 100%;
   max-width: 100%;
   background-color: #478a81;
-  padding: clamp(1.5rem, 3vh, 3rem) clamp(1rem, 3vw, 2rem) clamp(0.75rem, 2vh, 2rem);
+  display: grid;
+  padding: 10px 40px 50px;
   flex-shrink: 0;
   box-sizing: border-box;
   z-index: 3;
+  gap: 10px;
 }
 
 .action-bar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
+}
+
+.cup-info{
+  display: flex;
+  align-items: left;
+  gap: 20px;
+  flex-shrink: 0;
 }
 
 .brand-info {
@@ -183,45 +191,68 @@
   align-items: center;
   gap: clamp(0.375rem, 1vw, 0.625rem);
   color: white;
+  background-color: #28568F;
   flex-shrink: 0;
-}
-
-.clock-icon {
-  width: clamp(1.25rem, 2.5vw, 1.75rem);
-  height: clamp(1.25rem, 2.5vw, 1.75rem);
-  flex-shrink: 0;
+  border-radius: 8px;
+  width: 109px;
+  height: 39px;
+  padding: 5px 13px;
 }
 
 .brand-name {
-  font-size: clamp(0.875rem, 2vw, 1.25rem);
-  font-weight: var(--pretendard-semibold);
+  font-size: 24px;
+  font-weight: var(--pretendard-medium);
+  white-space: nowrap;
+
+}
+
+
+/* Help Section */
+.help-section {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  cursor: pointer;
+  background-color: #F8F8F8;
+  border-radius: 9999px;
+  padding: 8px 5px 11px 5px;
+  color: #4381CF;
+  border: 2px;
+  border-color: #4381CF;
+  width: 112px;
+  height: 39px;
+}
+
+.question-mark{
+  display: flex;
+  width: clamp(6rem, 12vw + 4vh, 10rem);
+  height: clamp(6rem, 12vw + 4vh, 10rem);
+  object-fit: contain;
+}
+
+.help-text {
+  display: flex;
+  font-size: 24px;
+  font-weight: var(--pretendard-bold);
   white-space: nowrap;
 }
 
-.divider-line {
-  flex: 1;
-  min-width: 1rem;
-  margin: 0 clamp(0.5rem, 2vw, 1rem);
-  border-top: 2px dashed rgba(255, 255, 255, 0.3);
-}
-
-.reward-info {
+.do-section{
   display: flex;
+  width: 198px;
+  height: 39px;
+  padding: 5px 13px;
+  background-color: #146E3F;
+  color: #F8F8F8;
   align-items: center;
-  gap: clamp(0.25rem, 0.5vw, 0.5rem);
-  color: white;
-  flex-shrink: 0;
+  border-radius: 8px;
 }
 
-.droplet-icon-small {
-  width: clamp(1.25rem, 2.5vw, 1.75rem);
-  height: clamp(1.25rem, 2.5vw, 1.75rem);
-  flex-shrink: 0;
-}
-
-.reward-value {
-  font-size: clamp(1rem, 2vw, 1.5rem);
-  font-weight: var(--pretendard-bold);
+.do-text{
+  font-size: 24px;
+  font-weight: var(--pretendard-medium);
+  white-space: nowrap;
 }
 
 /* Button Group */
@@ -229,18 +260,16 @@
   display: flex;
   align-items: flex-end;
   gap: 15px;
-  margin-top: clamp(-1rem, -2vh, -0.5rem);
 }
 
 .action-button {
   flex: 1;
   min-width: 0; /* Prevent flex items from overflowing */
   color: white;
-  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
   font-weight: var(--pretendard-bold);
-  padding: clamp(0.6rem, 1.5vh, 1.2rem) clamp(1.5rem, 3vw, 3rem);
-  aspect-ratio: 2.5 / 1;
-  border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
+  font-size: 42px;
+  padding: 31px 91px;
+  border-radius: 10px;
   border-width: 5px;
   border-style: solid;
   cursor: pointer;
@@ -251,7 +280,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  max-height: 125px;
+  height: 120px;
 }
 
 .rent-button {
@@ -295,132 +324,3 @@
 .do-button:active {
   transform: scale(0.98);
 }
-
-/* Help Section */
-.help-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(0.25rem, 0.5vh, 0.5rem);
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.help-image {
-  width: clamp(6rem, 12vw + 4vh, 10rem);
-  height: clamp(6rem, 12vw + 4vh, 10rem);
-  object-fit: contain;
-}
-
-.bird-container {
-  position: relative;
-  width: clamp(4rem, 7vw, 6rem);
-  height: clamp(4rem, 7vw, 6rem);
-  background-color: #6e88a9;
-  border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-}
-
-.bird-container:hover {
-  transform: scale(1.05);
-}
-
-.bird-container:active {
-  transform: scale(0.95);
-}
-
-.bird {
-  position: relative;
-  transform: scale(0.9);
-}
-
-.bird-body {
-  width: 3.5rem;
-  height: 4rem;
-  background-color: #f8f8f8;
-  border-radius: 50%;
-}
-
-.bird-head {
-  position: absolute;
-  top: -0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3rem;
-  height: 3rem;
-  background-color: #6e88a9;
-  border-radius: 50%;
-}
-
-.bird-beak {
-  position: absolute;
-  top: 0.5rem;
-  left: -0.5rem;
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-right: 10px solid #deb044;
-}
-
-.bird-eye {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  width: 0.375rem;
-  height: 0.25rem;
-  background-color: #000000;
-  border-radius: 50%;
-}
-
-.bird-cheek {
-  position: absolute;
-  top: 1.25rem;
-  left: 0.5rem;
-  width: 0.625rem;
-  height: 0.375rem;
-  background-color: #deb044;
-  border-radius: 50%;
-  opacity: 0.4;
-}
-
-.speech-bubble {
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  background-color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #6e88a9;
-  font-size: 0.875rem;
-  font-weight: var(--pretendard-bold);
-}
-
-.help-text {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.2rem, 0.5vw, 0.375rem);
-  color: white;
-  font-size: clamp(0.625rem, 1.5vw, 0.875rem);
-  white-space: nowrap;
-}
-
-.help-icon {
-  width: clamp(0.625rem, 1.5vw, 1rem);
-  height: clamp(0.625rem, 1.5vw, 1rem);
-  flex-shrink: 0;
-}
-
-/* All responsive sizing is now handled by clamp() in the base styles above.
-   No media queries needed - elements scale smoothly with viewport size. */
-

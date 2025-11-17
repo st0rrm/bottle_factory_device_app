@@ -239,52 +239,63 @@ function HomeScreen() {
         />
       </div>
 
-      {/* <div className="hill-section">
+      <div className="hill-section">
         <img src={hillImage} alt="hill" className="hill-image" />
-      </div> */}
+      </div>
 
       {/* ------------------------------------------------------------- */}
       {/* 2. Bottom Action Bar (모달 개방 여부와 관계없이 항상 렌더링) */}
       {/* ------------------------------------------------------------- */}
-      <div className="action-bar">
-        <div className="action-bar-header">
-          <div className="brand-info">
-            <svg className="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-            <span className="brand-name">리턴미컵</span>
+      <div className="action-section">
+        <div className="action-bar">
+          <div className="action-bar-header">
+            <div className="cup-info">
+              <div className="brand-info">
+                <span className="brand-name">리턴미컵</span>
+              </div>
+              <div className="help-section" onClick={handleHelpAction}>
+                <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="11.5" cy="11.5" r="11.5" fill="#438ECF"/> 
+                  <text 
+                    x="50%" 
+                    y="70%" 
+                    text-anchor="middle" 
+                    font-family="Arial, sans-serif" 
+                    font-size="16" 
+                    fill="white" 
+                    font-weight="bold">
+                    ?
+                  </text>
+                </svg>
+                <span className="help-text">도움말</span>
+              </div>
+            </div>
+            
+            <div className="do-section">
+              <span className="do-text">기타 제로웨이스트</span>
+            </div>
           </div>
-          <div className="divider-line"></div>
-          <div className="reward-info">
-            <svg className="droplet-icon-small" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-            </svg>
-            <span className="reward-value">+1</span>
-          </div>
-        </div>
 
-        <div className="button-group">
-          {/* Rent Button */}
-          <button className="action-button rent-button" onClick={handleBorrowCupAction}>
-            대여
-          </button>
+          <div className="button-group">
+            {/* Rent Button */}
+            <button className="action-button rent-button" onClick={handleBorrowCupAction}>
+              대여
+            </button>
 
-          {/* Return Button */}
-          <button className="action-button return-button" onClick={handleReturnCupAction}>
-            반납
-          </button>
-
-          {/* Return Button */}
-          <button className="action-button do-button" onClick={handleReturnCupAction}>
+            {/* Return Button */}
+            <button className="action-button return-button" onClick={handleReturnCupAction}>
+              반납
+            </button>
+            <button className="action-button do-button" onClick={handleReturnCupAction}>
             실천
-          </button>
+            </button>
+          </div>
+          {/* Return Button */}
+          
 
           {/* Help Section */}
           {/* 도움말 버튼은 Action Bar 외부에 있었으나, 이제 Action Bar 내부에 포함됩니다. */}
-          <div className="help-section" onClick={handleHelpAction}>
-            <img src={helpIcon} alt="Help" className="help-image" />
-          </div>
+
         </div>
       </div>
 
