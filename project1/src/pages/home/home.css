@@ -117,14 +117,43 @@
   display: block;
 }
 
-.sub-stats {
-  font-size: clamp(1rem, 2vw, 1.75rem);
-  color: #8798a1;
+.flow-container {
+  overflow: hidden;
+  /* 필요하면 width 조정 가능 */
+  width: 100%;
+  /* 가운데 정렬 같은 거 하고 싶으면 */
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  color: #6288A9;
+  height: 39px;
+  background-color: #FFFFFFB3;
+  border-radius: 40px;
+
 }
 
-.stat-value {
-  font-weight: var(--pretendard-semibold);
+.flow-text {
+  font-size: 24px;       /* 원하는 크기 */
+  line-height: 1.4;
+  margin: 5px;
+  align-items: flex-start;
+  font-weight: var(--pretendard-regular);
+  white-space: nowrap;   /* 한 줄로만 */
+  animation: slideFadeIn 0.5s ease;
 }
+
+/* 아래는 "아래에서 위로 올라오면서 나타나는" 느낌 */
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 /* Tree Section */
 .tree-section {
@@ -295,6 +324,9 @@
 
 .rent-button:active {
   transform: scale(0.98);
+  color: #396FB2;
+  border-color: #396FB2;
+  background-color: #BEC0CB;
 }
 
 .return-button {
@@ -309,6 +341,9 @@
 
 .return-button:active {
   transform: scale(0.98);
+  color: #396FB2;
+  border-color: #396FB2;
+  background-color: #BEC0CB;
 }
 
 .do-button {

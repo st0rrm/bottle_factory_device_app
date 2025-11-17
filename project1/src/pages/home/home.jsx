@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
@@ -18,6 +18,7 @@ import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
 function HomeScreen() {
   const navigate = useNavigate();
   const { currentBackground, showObjects } = useBackground();
+
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -25,72 +26,110 @@ function HomeScreen() {
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [cafeInfo, setCafeInfo] = useState(null);
+
   const [stats, setStats] = useState({
     totalScore: 0,
     totalCount: 0,
     today: 0,
     weekly: 0
   });
-  const [treeType, setTreeType] = useState('init'); // 'init' | 'grow'
-  const [treeScore, setTreeScore] = useState(0); // 나무 성장용 점수
 
-  // action-bar 높이에 따라 tree-section 하단 여백 동적 조정
+  const [treeType, setTreeType] = useState('init');
+  const [treeScore, setTreeScore] = useState(0);
+  const messages = [
+  ' 환경을 위하는 아름다운 당신! 😊 ',
+  ' 당신의 참여가 동네를 푸르게 만들어요 🤝 ',
+  ' 함께한 손길이 숲을 키우고 있어요 🕊️ ',
+  ' 일회용컵 대신 리턴미컵! 나무에게 물을 주세요🌲 ',
+  ' 지속가능한 습관, 우리 함께해요 🌏 ',
+  ' 리턴미컵으로 테이크아웃하면 나무가 자라요! 🪴 ',
+  ' 일상에서 불필요한 쓰레기를 줄일 수 있다면? 🤔 '
+];
+
+const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  // --------------------------------------------------------------------
+  // FLOW TEXT SECTION: REF + EFFECT
+  // --------------------------------------------------------------------
+  const flowContainerRef = useRef(null);
+  const flowInnerRef = useRef(null);
+
+  useEffect(() => {
+    const container = flowContainerRef.current;
+    const inner = flowInnerRef.current;
+    if (!container || !inner) return;
+
+    const items = [...inner.querySelectorAll('.item')];
+
+    let index = 0;
+    let offset = 0;
+
+    function next() {
+      offset += items[index].offsetHeight;
+      inner.style.transform = `translateY(${-offset}px)`;
+
+      index++;
+      if (index >= items.length) {
+        index = 0;
+        offset = 0;
+
+        setTimeout(() => {
+          inner.style.transition = "none";
+          inner.style.transform = "translateY(0)";
+          void inner.offsetHeight; // reflow 강제
+          inner.style.transition = "transform 0.8s ease";
+        }, 900);
+      }
+    }
+
+    const interval = setInterval(next, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % messages.length);
+    }, 5000); // 5초마다 변경
+
+    return () => clearInterval(interval);
+  }, [messages.length]);
+  // --------------------------------------------------------------------
+
+
+  // action-bar bottom padding dynamic adjustment
   useEffect(() => {
     const updateTreeSectionPadding = () => {
       const actionBar = document.querySelector('.action-bar');
       const treeSection = document.querySelector('.tree-section');
 
       if (actionBar && treeSection) {
-        const actionBarHeight = actionBar.offsetHeight;
-        console.log('🔧 action-bar 높이:', actionBarHeight);
-
-        // paddingBottom 적용
-        treeSection.style.paddingBottom = `${actionBarHeight}px`;
-
-        console.log('✅ tree-section paddingBottom 설정:', treeSection.style.paddingBottom);
-        console.log('📏 tree-section computed paddingBottom:', window.getComputedStyle(treeSection).paddingBottom);
-      } else {
-        console.warn('⚠️ action-bar 또는 tree-section을 찾을 수 없습니다');
+        treeSection.style.paddingBottom = `${actionBar.offsetHeight}px`;
       }
     };
 
-    // 약간의 지연 후 초기 설정 (DOM이 완전히 렌더링된 후)
     const timer = setTimeout(updateTreeSectionPadding, 100);
-
-    // 윈도우 리사이즈 시 재계산
     window.addEventListener('resize', updateTreeSectionPadding);
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', updateTreeSectionPadding);
     };
-  }, [cafeInfo]); // cafeInfo가 로드된 후 실행
+  }, [cafeInfo]);
 
-  // Wake word detection callback
   const handleWakeWordDetected = useCallback((keywordIndex) => {
-    console.log('Wake word detected! Opening help modal...');
     setShowHelpModal(true);
   }, []);
 
-  // Wake word detection hook (홈 화면에서만 활성화)
-  const { isListening, error: picoError, hasPermission, requestPermission } = usePicovoice(
-    true, // 홈 화면이 마운트되면 자동으로 활성화
-    handleWakeWordDetected
-  );
+  const { isListening, error: picoError, hasPermission, requestPermission } =
+    usePicovoice(true, handleWakeWordDetected);
 
-  // Wake word 상태 로깅 (개발 중 디버깅용)
+  // load café info
   useEffect(() => {
-    console.log('🎤 Wake word status:', { isListening, hasPermission, error: picoError });
-  }, [isListening, hasPermission, picoError]);
-
-  useEffect(() => {
-    // localStorage에서 카페 정보 가져오기
     const userData = localStorage.getItem('userData');
     const userType = localStorage.getItem('userType');
     const authToken = localStorage.getItem('authToken');
 
     if (!userData || !authToken || userType !== 'cafe') {
-      // 로그인하지 않았으면 로그인 페이지로
       navigate('/login', { replace: true });
       return;
     }
@@ -98,17 +137,13 @@ function HomeScreen() {
     const cafe = JSON.parse(userData);
     setCafeInfo(cafe);
 
-    // 서버에서 통계 데이터 가져오기
     fetchStats();
 
-    // 마이크 권한 요청 (wake word detection을 위해)
     if (!hasPermission) {
       requestPermission();
     }
 
-    // 브라우저 뒤로가기 방지
     const handlePopState = () => {
-      // 뒤로가기 시 다시 현재 페이지로
       window.history.pushState(null, '', window.location.pathname);
     };
 
@@ -126,21 +161,12 @@ function HomeScreen() {
       setStats(data);
     } catch (error) {
       console.error('통계 불러오기 실패:', error);
-      // 에러 발생 시 기본값 유지
     }
   };
 
-  const handleBorrowCupAction = () => {
-    setShowVerifyModal(true);
-  };
-
-  const handleReturnCupAction = () => {
-    setShowReturnModal(true);
-  };
-
-  const handleHelpAction = () => {
-    setShowHelpModal(true);
-  };
+  const handleBorrowCupAction = () => setShowVerifyModal(true);
+  const handleReturnCupAction = () => setShowReturnModal(true);
+  const handleHelpAction = () => setShowHelpModal(true);
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -152,15 +178,9 @@ function HomeScreen() {
   const handleRentalSuccess = () => {
     setSnackbarMessage('🌱 대여가 완료되었습니다');
     setShowSuccessSnackbar(true);
-
-    // 나무 성장 (bottleclub Main.tsx:151-158 참고)
     setTreeType('grow');
-    setTreeScore(30); // 적립 1회 = 30점
-
-    // 통계 업데이트
+    setTreeScore(30);
     fetchStats();
-
-    // 성장 애니메이션 후 초기화
     setTimeout(() => {
       setTreeType('init');
       setTreeScore(0);
@@ -170,28 +190,16 @@ function HomeScreen() {
   const handleReturnSuccess = () => {
     setSnackbarMessage('🌱 반납이 완료되었습니다');
     setShowSuccessSnackbar(true);
-
-    // 나무 성장
     setTreeType('grow');
     setTreeScore(30);
-
-    // 통계 업데이트
     fetchStats();
-
-    // 성장 애니메이션 후 초기화
     setTimeout(() => {
       setTreeType('init');
       setTreeScore(0);
     }, 3000);
   };
 
-  // Debug: Log when background changes (must be before conditional return)
-  useEffect(() => {
-    console.log('🎨 Background changed:', currentBackground.id, currentBackground.backgroundImage);
-    console.log('🌥️ Show objects:', showObjects);
-  }, [currentBackground, showObjects]);
-
-  // 로딩 중이거나 카페 정보가 없으면 빈 화면
+  // loading state
   if (!cafeInfo) {
     return <div className="home-container">Loading...</div>;
   }
@@ -202,20 +210,26 @@ function HomeScreen() {
       <div className="header-section">
         <div className="header-top">
           <h1 className="cafe-name">{cafeInfo.cafeName}</h1>
-          {/* <button className="logout-btn" onClick={handleLogout}>
-            로그아웃
-          </button> */}
         </div>
+
         <div className="total-score">
           <img src={Waterpoint} alt="waterpoint" className="waterpoint-image" />
           <span className="score-number">{stats.totalScore || 0}</span>
         </div>
-        {/* <p className="sub-stats">
-          오늘 <span className="stat-value">{stats.today}</span>회 | 주간 <span className="stat-value">{stats.weekly}</span>회
-        </p> */}
+
+        {/* ----------------- FLOWING TEXT AREA ----------------- */}
+        <div className="flow-container">
+          <div
+            key={currentMessageIndex}   // key를 바꿔서 애니메이션 매번 다시 트리거
+            className="flow-text"
+          >
+            {messages[currentMessageIndex]}
+          </div>
+        </div>
+        {/* ------------------------------------------------------ */}
       </div>
 
-      {/* Settings Button - 우측 상단 */}
+      {/* Settings Button */}
       <button
         className="settings-button"
         onClick={() => setShowSettingsModal(true)}
@@ -224,7 +238,7 @@ function HomeScreen() {
         ⚙️
       </button>
 
-      {/* Tree Illustration Section */}
+      {/* Tree Section */}
       <div className="tree-section">
         <TreeContainer
           type={treeType}
@@ -242,9 +256,7 @@ function HomeScreen() {
         <img src={hillImage} alt="hill" className="hill-image" />
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* 2. Bottom Action Bar (모달 개방 여부와 관계없이 항상 렌더링) */}
-      {/* ------------------------------------------------------------- */}
+      {/* Bottom Action Bar */}
       <div className="action-section">
         <div className="action-bar">
           <div className="action-bar-header">
@@ -269,38 +281,29 @@ function HomeScreen() {
                 <span className="help-text">도움말</span>
               </div>
             </div>
-            
+
             <div className="do-section">
               <span className="do-text">기타 제로웨이스트</span>
             </div>
           </div>
 
           <div className="button-group">
-            {/* Rent Button */}
             <button className="action-button rent-button" onClick={handleBorrowCupAction}>
               대여
             </button>
 
-            {/* Return Button */}
             <button className="action-button return-button" onClick={handleReturnCupAction}>
               반납
             </button>
+
             <button className="action-button do-button" onClick={handleReturnCupAction}>
-            실천
+              실천
             </button>
-        </div>
-          {/* Return Button */}
-          
-
-          {/* Help Section */}
-          {/* 도움말 버튼은 Action Bar 외부에 있었으나, 이제 Action Bar 내부에 포함됩니다. */}
-
+          </div>
         </div>
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* 3. Modals (항상 최상단에 조건부 렌더링) */}
-      {/* ------------------------------------------------------------- */}
+      {/* Modals */}
       {showVerifyModal && (
         <VerifyModal
           onClose={() => setShowVerifyModal(false)}
@@ -311,17 +314,18 @@ function HomeScreen() {
           onSuccess={handleRentalSuccess}
         />
       )}
+
       {showReturnModal && (
         <ReturnModal
           onClose={() => setShowReturnModal(false)}
-          onOpenRental={() => {
-            setShowVerifyModal(false);
-            setShowVerifyModal(true);
-          }}
           onSuccess={handleReturnSuccess}
         />
       )}
-      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />}
+
+      {showHelpModal &&
+        <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />
+      }
+
       {showSettingsModal && (
         <SettingsModal
           isOpen={showSettingsModal}
@@ -329,7 +333,6 @@ function HomeScreen() {
         />
       )}
 
-      {/* Success Snackbar */}
       {showSuccessSnackbar && (
         <SuccessSnackbar
           message={snackbarMessage}
