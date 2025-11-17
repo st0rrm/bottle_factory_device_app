@@ -125,3 +125,10 @@
        url('./assets/fonts/Pretendard-Thin.subset.woff2') format('woff2'),
        url('./assets/fonts/Pretendard-Thin.subset.woff') format('woff');
 }
+
+@font-face {
+  font-family: 'Binggrae-bold';
+  src: url('./assets/fonts/Binggrae-Bold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}

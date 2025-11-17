@@ -97,21 +97,21 @@
 .total-score {
   display: flex;
   align-items: center;
-  gap: clamp(0.5rem, 1.5vw, 1rem);
+  gap: 5px;
   margin-bottom: clamp(0.5rem, 1vh, 1rem);
   justify-content: center;
 }
 
-.droplet-icon {
-  width: clamp(2rem, 5vw, 4rem);
-  height: clamp(2rem, 5vw, 4rem);
+.waterpoint-image {
+  width: 65px;
+  height: 65px;
   color: #497fc6;
   flex-shrink: 0;
 }
 
 .score-number {
-  font-size: clamp(4rem, 12vw, 8rem);
-  font-weight: var(--pretendard-bold);
+  font-size: 96px;
+  font-family: 'Binggrae-bold';
   color: #497fc6;
   line-height: 1;
   display: block;

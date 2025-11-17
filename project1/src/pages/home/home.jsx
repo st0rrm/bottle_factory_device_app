@@ -6,6 +6,7 @@ import ReturnModal from '../../components/ReturnModal';
 import SettingsModal from '../../components/SettingsModal';
 import helpIcon from '../../assets/images/help.svg';
 import hillImage from '../../assets/images/front_hills_new 2.png'
+import Waterpoint from '../../assets/images/waterpoint.png'
 import HelpModal from '../../components/HelpModal';
 import SuccessSnackbar from '../../components/SuccessSnackbar';
 import TreeContainer from '../../components/TreeContainer';
@@ -206,9 +207,7 @@ function HomeScreen() {
           </button> */}
         </div>
         <div className="total-score">
-          <svg className="droplet-icon" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-          </svg>
+          <img src={Waterpoint} alt="waterpoint" className="waterpoint-image" />
           <span className="score-number">{stats.totalScore || 0}</span>
         </div>
         {/* <p className="sub-stats">
