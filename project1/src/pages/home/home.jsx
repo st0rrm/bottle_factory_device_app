@@ -5,7 +5,7 @@ import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
 import SettingsModal from '../../components/SettingsModal';
 import helpIcon from '../../assets/images/help.svg';
-import hillImage from '../../assets/images/front_hills_new 1.png'
+import hillImage from '../../assets/images/front_hills_new 2.png'
 import HelpModal from '../../components/HelpModal';
 import SuccessSnackbar from '../../components/SuccessSnackbar';
 import TreeContainer from '../../components/TreeContainer';
