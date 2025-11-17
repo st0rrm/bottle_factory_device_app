@@ -289,7 +289,7 @@ function HomeScreen() {
             <button className="action-button do-button" onClick={handleReturnCupAction}>
             실천
             </button>
-          </div>
+        </div>
           {/* Return Button */}
           
 
