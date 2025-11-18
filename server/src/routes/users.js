@@ -200,6 +200,39 @@ router.post('/return-cup', async (req, res) => {
 });
 
 /**
+ * GET /api/users/phone/:phone
+ * Get user by phone number
+ */
+router.get('/phone/:phone', async (req, res) => {
+  try {
+    const { phone } = req.params;
+
+    // Query users by mobile field
+    const usersSnapshot = await db.collection('users')
+      .where('mobile', '==', phone)
+      .get();
+
+    if (usersSnapshot.empty) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Return first user (phone should be unique)
+    const userDoc = usersSnapshot.docs[0];
+    res.json({
+      uid: userDoc.id,
+      ...userDoc.data()
+    });
+
+  } catch (error) {
+    console.error('Get user by phone error:', error);
+    res.status(500).json({
+      error: 'Failed to get user by phone',
+      details: error.message
+    });
+  }
+});
+
+/**
  * GET /api/users/:uid
  * Get user information from Firebase
  */

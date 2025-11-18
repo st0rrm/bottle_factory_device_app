@@ -334,24 +334,19 @@ export const getUserByPhone = async (phoneNumber) => {
 
     console.log('전화번호로 사용자 조회:', formattedNumber);
 
-    // users 컬렉션에서 mobile 필드로 검색
-    const usersQuery = query(
-      collection(db, 'users'),
-      where('mobile', '==', formattedNumber)
-    );
-    const usersSnapshot = await getDocs(usersQuery);
+    // 백엔드 API를 통해 사용자 조회
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    const response = await fetch(`${apiUrl}/users/phone/${formattedNumber}`);
 
-    if (usersSnapshot.empty) {
-      return { success: false, error: '등록되지 않은 전화번호입니다.' };
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { success: false, error: '등록되지 않은 전화번호입니다.' };
+      }
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || '사용자 조회 실패' };
     }
 
-    // 첫 번째 사용자 반환 (전화번호는 unique해야 함)
-    const userDoc = usersSnapshot.docs[0];
-    const userData = {
-      ...userDoc.data(),
-      uid: userDoc.id
-    };
-
+    const userData = await response.json();
     console.log('사용자 조회 성공:', userData.uid);
     return { success: true, user: userData };
 
