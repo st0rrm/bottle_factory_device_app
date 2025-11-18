@@ -1,0 +1,131 @@
+.do-action-selection-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  width: 100%;
+  height: 100%;
+}
+
+.do-action-title {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.do-action-heading {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.do-action-subheading {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #666;
+  margin: 0;
+}
+
+.do-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 30px;
+}
+
+.do-action-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 140px;
+}
+
+.do-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.do-action-card-selected {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.do-action-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.do-action-label {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.do-action-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  background: #4caf50;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.do-action-count {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.count-number {
+  font-weight: 700;
+  color: #4caf50;
+}
+
+.do-action-confirm-button {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.do-action-confirm-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.do-action-confirm-button:not(:disabled):hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}

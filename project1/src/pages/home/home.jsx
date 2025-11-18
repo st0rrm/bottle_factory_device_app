@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
+import DoModal from '../../components/DoModal';
 import SettingsModal from '../../components/SettingsModal';
 import helpIcon from '../../assets/images/help.svg';
 import hillImage from '../../assets/images/front_hills_new 2.png'
@@ -21,6 +22,7 @@ function HomeScreen() {
 
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
+  const [showDoModal, setShowDoModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
@@ -166,6 +168,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const handleBorrowCupAction = () => setShowVerifyModal(true);
   const handleReturnCupAction = () => setShowReturnModal(true);
+  const handleDoAction = () => setShowDoModal(true);
   const handleHelpAction = () => setShowHelpModal(true);
 
   const handleLogout = () => {
@@ -189,6 +192,18 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const handleReturnSuccess = () => {
     setSnackbarMessage('🌱 반납이 완료되었습니다');
+    setShowSuccessSnackbar(true);
+    setTreeType('grow');
+    setTreeScore(30);
+    fetchStats();
+    setTimeout(() => {
+      setTreeType('init');
+      setTreeScore(0);
+    }, 3000);
+  };
+
+  const handleDoSuccess = () => {
+    setSnackbarMessage('🌱 제로웨이스트 실천이 기록되었습니다');
     setShowSuccessSnackbar(true);
     setTreeType('grow');
     setTreeScore(30);
@@ -296,7 +311,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
               반납
             </button>
 
-            <button className="action-button do-button" onClick={handleReturnCupAction}>
+            <button className="action-button do-button" onClick={handleDoAction}>
               실천
             </button>
           </div>
@@ -319,6 +334,13 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
         <ReturnModal
           onClose={() => setShowReturnModal(false)}
           onSuccess={handleReturnSuccess}
+        />
+      )}
+
+      {showDoModal && (
+        <DoModal
+          onClose={() => setShowDoModal(false)}
+          onSuccess={handleDoSuccess}
         />
       )}
 
