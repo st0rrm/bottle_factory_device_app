@@ -472,6 +472,12 @@ export const processRental = async (uid, tickets, shopId, shopName) => {
       rentalIds.push(rentRef.id);
     }
 
+    // 사용자의 총 대여 수 업데이트
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, {
+      bottle_all: (await getDoc(userRef)).data().bottle_all + rentalCount
+    });
+
     console.log(`✅ 대여 완료: ${rentalCount}개 대여권 사용, ${rentalCount}개 컵 대여`);
     return { success: true, rentalIds, count: rentalCount };
 
