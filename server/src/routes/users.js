@@ -298,6 +298,75 @@ router.get('/:uid/tickets', async (req, res) => {
 });
 
 /**
+ * GET /api/users/:uid/rentals?shopId=xxx
+ * Get user's active rentals (currently rented cups)
+ */
+router.get('/:uid/rentals', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const { shopId } = req.query;
+
+    if (!shopId) {
+      return res.status(400).json({ error: 'shopId is required' });
+    }
+
+    // Get shop division
+    const shopDoc = await db.collection('shops').doc(shopId).get();
+    const currentShopDivision = shopDoc.exists && shopDoc.data().division
+      ? shopDoc.data().division
+      : 'individual';
+
+    // Get all active rentals for user (status === 'rent')
+    const rentsSnapshot = await db.collection('rents')
+      .where('uid', '==', uid)
+      .where('status', '==', 'rent')
+      .get();
+
+    const rentals = [];
+    rentsSnapshot.forEach(doc => {
+      const data = doc.data();
+
+      // Check return eligibility
+      if (data.division === 'individual') {
+        // individual: can only return at the same shop
+        if (data.rented_shop_id !== shopId) {
+          return; // skip
+        }
+      } else if (data.division !== currentShopDivision && !data.group_id) {
+        // cluster: can only return at same division shops
+        // group_id rentals are excluded from this check
+        return; // skip
+      }
+
+      rentals.push({
+        id: doc.id,
+        ...data
+      });
+    });
+
+    // Sort by rented_date (oldest first)
+    rentals.sort((a, b) => {
+      if (!a.rented_date || !b.rented_date) return 0;
+      const dateA = a.rented_date.toDate ? a.rented_date.toDate() : new Date(a.rented_date);
+      const dateB = b.rented_date.toDate ? b.rented_date.toDate() : new Date(b.rented_date);
+      return dateA - dateB;
+    });
+
+    res.json({
+      success: true,
+      rentals
+    });
+
+  } catch (error) {
+    console.error('Get user rentals error:', error);
+    res.status(500).json({
+      error: 'Failed to get user rentals',
+      details: error.message
+    });
+  }
+});
+
+/**
  * GET /api/users/:uid
  * Get user information from Firebase
  */

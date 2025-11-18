@@ -538,44 +538,19 @@ export const getShopByName = async (cafeName) => {
  */
 export const getUserActiveRentals = async (uid, shopId) => {
   try {
-    // 현재 가게 정보 조회 (division 확인)
-    const shopResult = await getShopData(shopId);
-    const currentShopDivision = shopResult.success ? (shopResult.data.division || 'individual') : 'individual';
+    // 백엔드 API를 통해 활성 대여 조회
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    const response = await fetch(`${apiUrl}/users/${uid}/rentals?shopId=${shopId}`);
 
-    // rents 컬렉션에서 status가 'rent'이고 uid가 일치하는 것 조회
-    // rented_date 날짜 오래된 순으로 정렬 (먼저 빌린 것부터 반납)
-    const rentsQuery = query(
-      collection(db, 'rents'),
-      where('uid', '==', uid),
-      where('status', '==', 'rent'),
-      orderBy('rented_date', 'asc')
-    );
-    const rentsSnapshot = await getDocs(rentsQuery);
-
-    const rentals = [];
-    for (const docSnap of rentsSnapshot.docs) {
-      const data = docSnap.data();
-
-      // 반납 가능 여부 체크
-      if (data.division === 'individual') {
-        // individual: 대여한 가게에서만 반납 가능
-        if (data.rented_shop_id !== shopId) {
-          continue;
-        }
-      } else if (data.division !== currentShopDivision && !data.group_id) {
-        // cluster: 같은 division의 가게에서만 반납 가능
-        // group_id가 있는 경우는 그룹 반환이므로 제외하지 않음
-        continue;
-      }
-
-      rentals.push({
-        id: docSnap.id,
-        ...data
-      });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || '대여 중인 컵 조회 실패');
     }
 
-    console.log('대여 중인 컵 조회 완료:', rentals.length, '개');
-    return { success: true, rentals };
+    const data = await response.json();
+
+    console.log('대여 중인 컵 조회 완료:', data.rentals.length, '개');
+    return { success: true, rentals: data.rentals };
 
   } catch (error) {
     console.error('대여 중인 컵 조회 실패:', error);
