@@ -469,12 +469,6 @@ export const processRental = async (uid, tickets, shopId, shopName) => {
       }
 
       const rentRef = await addDoc(collection(db, 'rents'), rentalData);
-
-      // 생성된 문서 ID를 필드로도 저장
-      await updateDoc(rentRef, {
-        id: rentRef.id
-      });
-
       rentalIds.push(rentRef.id);
     }
 
