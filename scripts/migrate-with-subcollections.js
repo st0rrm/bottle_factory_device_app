@@ -249,10 +249,54 @@ async function createDummyData(collectionName, count, generator) {
 }
 
 /**
+ * 특정 사용자만 복사 (서브컬렉션 포함)
+ */
+async function copySpecificUserWithSubcollections(name, mobile, stats) {
+  console.log(`\n👤 users - 특정 사용자 복사 중 (이름: ${name}, 전화번호: ${mobile})...`);
+
+  try {
+    const snapshot = await prodDb.collection('users')
+      .where('name', '==', name)
+      .where('mobile', '==', mobile)
+      .get();
+
+    if (snapshot.empty) {
+      console.log(`   ⚠️  해당 사용자 없음`);
+      return 0;
+    }
+
+    let count = 0;
+
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const targetDocRef = newDb.collection('users').doc(doc.id);
+
+      console.log(`   📄 사용자 ID: ${doc.id}`);
+      console.log(`   📄 이름: ${data.name}`);
+      console.log(`   📄 전화번호: ${data.mobile}`);
+
+      // 문서 복사
+      await targetDocRef.set(convertTimestamps(data));
+      count++;
+
+      // 서브컬렉션 복사
+      await copySubcollections(doc.ref, targetDocRef, `users/${doc.id}`, stats);
+    }
+
+    console.log(`   ✅ users: 사용자 ${count}명 복사 완료`);
+    return count;
+
+  } catch (error) {
+    console.error(`   ❌ 사용자 복사 실패:`, error.message);
+    return 0;
+  }
+}
+
+/**
  * 메인 마이그레이션
  */
 async function migrate() {
-  console.log('🔥 서브컬렉션 포함 완전 마이그레이션 시작\n');
+  console.log('🔥 특정 사용자 마이그레이션 시작\n');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   const stats = {
@@ -262,76 +306,17 @@ async function migrate() {
     subcollectionDocs: 0
   };
 
-  // 1. 기준 데이터 컬렉션 (서브컬렉션 포함 전체 복사)
-  console.log('📦 기준 데이터 복사 중 (서브컬렉션 포함)...');
-  const baseCollections = [
-    'items',
-    'shops',        // shops/{id}/files, hashtags, items, reviews, savings
-    'goods',        // goods/{id}/files
-    'constants',
-    'group',
-    'projects',
-    'free_coupon',
-    'zones',
-    'announcement',
-    'contents',
-    'hashtags',
-    'savings',      // 최상위 savings (통계용)
-    'donate'        // donate/{id}/files
-  ];
-
-  for (const name of baseCollections) {
-    const count = await copyCollectionWithSubcollections(name, stats);
-    stats.realData += count;
-  }
-
-  // 2. Lawrence 사용자 데이터 복사 (서브컬렉션 포함)
-  console.log('\n\n👤 Lawrence 사용자 데이터 복사 중 (서브컬렉션 포함)...');
-
-  // Lawrence 사용자 문서 + 서브컬렉션
-  console.log('\n👤 users - Lawrence 복사 중...');
-  const lawrenceDoc = await prodDb.collection('users').doc(LAWRENCE_UID).get();
-  if (lawrenceDoc.exists) {
-    const targetDocRef = newDb.collection('users').doc(LAWRENCE_UID);
-    await targetDocRef.set(convertTimestamps(lawrenceDoc.data()));
-    console.log('   ✅ Lawrence 사용자 문서 복사');
-
-    // 서브컬렉션 복사 (collect, savings)
-    await copySubcollections(lawrenceDoc.ref, targetDocRef, `users/${LAWRENCE_UID}`, stats);
-    stats.lawrenceData += 1;
-  }
-
-  // Lawrence 관련 데이터 (서브컬렉션 포함)
-  const lawrenceCollections = [
-    { name: 'rents', field: 'uid' },
-    { name: 'goods_history', field: 'uid' },
-    { name: 'projects_history', field: 'uid' },
-    { name: 'collect_history', field: 'uid' },  // collect_history/{id}/collect_items
-    { name: 'balances', field: 'user_id' },
-    { name: 'cpoint_history', field: 'uid' },
-    { name: 'donate_history', field: 'uid' }
-  ];
-
-  for (const { name, field } of lawrenceCollections) {
-    const count = await copyLawrenceWithSubcollections(name, field, stats);
-    stats.lawrenceData += count;
-  }
-
-  // 3. 더미 데이터 생성
-  console.log('\n\n🎭 더미 데이터 생성 중...');
-
-  const dummyCount = await createDummyData('users', 49, generateDummyUser);
-  stats.dummyData += dummyCount;
+  // 특정 사용자만 복사 (서브컬렉션 포함)
+  const usersCount = await copySpecificUserWithSubcollections('Lawrence', '01082367321', stats);
+  stats.realData += usersCount;
 
   // 완료
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('\n✨ 마이그레이션 완료!\n');
   console.log('📊 통계:');
-  console.log(`   📦 실제 기준 데이터: ${stats.realData}개`);
-  console.log(`   👤 Lawrence 데이터: ${stats.lawrenceData}개`);
-  console.log(`   🎭 더미 데이터: ${stats.dummyData}개`);
+  console.log(`   📦 users 문서: ${stats.realData}개`);
   console.log(`   📦 서브컬렉션 문서: ${stats.subcollectionDocs}개`);
-  console.log(`   합계: ${stats.realData + stats.lawrenceData + stats.dummyData + stats.subcollectionDocs}개\n`);
+  console.log(`   합계: ${stats.realData + stats.subcollectionDocs}개\n`);
 
   process.exit(0);
 }

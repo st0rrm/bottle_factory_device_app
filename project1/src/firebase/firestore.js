@@ -139,29 +139,30 @@ export const createNewUser = async (user) => {
     } : {
       address: {
         address_name: "서울 서대문구 연희동",
-        b_code: "",
-        h_code: "1144010700",
+        b_code: "1141011700",
+        h_code: "1141061500",
         main_address_no: "",
         mountain_yn: "N",
         region_1depth_name: "서울",
         region_2depth_name: "서대문구",
+        region_3depth_h_name: "연희동",
         region_3depth_name: "연희동",
         sub_address_no: "",
-        x: "126.932454",
-        y: "37.570937"
+        x: "126.935230751932",
+        y: "37.5739100104158"
       },
       address_name: "서울 서대문구 연희동",
       address_type: "REGION",
       road_address: null,
-      x: "126.932454",
-      y: "37.570937"
+      x: "126.935230751932",
+      y: "37.5739100104158"
     };
 
-    const adm_cd2 = kakaoAddressData?.adm_cd2 || "1144010700";
+    const adm_cd2 = kakaoAddressData?.adm_cd2 || "1141011700";
     const sido = kakaoAddressData?.sido || "11";
-    const sgg = kakaoAddressData?.sgg || "11440";
+    const sgg = kakaoAddressData?.sgg || "11410";
     const dp_nm = kakaoAddressData?.dp_nm || "연희동";
-    const adm_nm = kakaoAddressData?.adm_nm || "서울특별시 서대문구 연희동";
+    const adm_nm = kakaoAddressData?.adm_nm || "서울 서대문구 연희동";
 
     console.log('✅ 주소 데이터:', { adm_cd2, sido, sgg, dp_nm, adm_nm });
 
