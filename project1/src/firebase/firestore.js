@@ -432,6 +432,10 @@ export const processRental = async (uid, tickets, shopId, shopName) => {
     const rentalCount = tickets.length;
     const rentalIds = [];
 
+    // 가게 정보 조회 (division 가져오기)
+    const shopResult = await getShopData(shopId);
+    const shopDivision = shopResult.success ? (shopResult.data.division || 'individual') : 'individual';
+
     // expired_date 계산 (14일 후)
     const expiredDate = new Date();
     expiredDate.setDate(expiredDate.getDate() + 14);
@@ -453,11 +457,12 @@ export const processRental = async (uid, tickets, shopId, shopName) => {
         rented_shop_id: shopId,
         rented_shop: shopName,  // 실제 DB 필드명
         status: 'rent',
-        amount: 1,  // 컵 수량
-        division: 'individual'  // 개별 반환처 (같은 가게에서 반납)
+        balance_id: ticket.id,  // 사용한 대여권 ID
+        amount: ticket.amount || 4000,  // 대여권 가격
+        division: shopDivision  // 가게의 반환 클러스터
       };
 
-      // 그룹 대여권인 경우 group_id 추가
+      // 그룹 대여권인 경우 group_id 추가 및 division 덮어쓰기
       if (ticket.group_id) {
         rentalData.group_id = ticket.group_id;
         rentalData.division = ticket.group_id;  // 그룹 반환처
@@ -551,11 +556,15 @@ export const getShopByName = async (cafeName) => {
 /**
  * 사용자의 대여 중인 컵 조회
  * @param {string} uid - 사용자 UID
- * @param {string} shopId - 가게 ID (division이 'individual'인 경우 필터링)
+ * @param {string} shopId - 가게 ID (division에 따라 반납 가능 여부 필터링)
  * @returns {Promise} 대여 중인 컵 배열
  */
 export const getUserActiveRentals = async (uid, shopId) => {
   try {
+    // 현재 가게 정보 조회 (division 확인)
+    const shopResult = await getShopData(shopId);
+    const currentShopDivision = shopResult.success ? (shopResult.data.division || 'individual') : 'individual';
+
     // rents 컬렉션에서 status가 'rent'이고 uid가 일치하는 것 조회
     // rented_date 날짜 오래된 순으로 정렬 (먼저 빌린 것부터 반납)
     const rentsQuery = query(
@@ -570,9 +579,16 @@ export const getUserActiveRentals = async (uid, shopId) => {
     for (const docSnap of rentsSnapshot.docs) {
       const data = docSnap.data();
 
-      // division이 'individual'인 경우, 같은 가게에서 대여한 것만 반납 가능
-      if (data.division === 'individual' && data.rented_shop_id !== shopId) {
-        continue;  // 다른 가게에서 대여한 컵은 제외
+      // 반납 가능 여부 체크
+      if (data.division === 'individual') {
+        // individual: 대여한 가게에서만 반납 가능
+        if (data.rented_shop_id !== shopId) {
+          continue;
+        }
+      } else if (data.division !== currentShopDivision && !data.group_id) {
+        // cluster: 같은 division의 가게에서만 반납 가능
+        // group_id가 있는 경우는 그룹 반환이므로 제외하지 않음
+        continue;
       }
 
       rentals.push({
