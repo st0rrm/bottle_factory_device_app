@@ -310,13 +310,22 @@ async function migrate() {
   const usersCount = await copySpecificUserWithSubcollections('Lawrence', '01082367321', stats);
   stats.realData += usersCount;
 
+  // Lawrence 관련 balances 복사
+  const balancesCount = await copyLawrenceWithSubcollections('balances', 'user_id', stats);
+  stats.lawrenceData += balancesCount;
+
+  // Lawrence 관련 rents 복사
+  const rentsCount = await copyLawrenceWithSubcollections('rents', 'uid', stats);
+  stats.lawrenceData += rentsCount;
+
   // 완료
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('\n✨ 마이그레이션 완료!\n');
   console.log('📊 통계:');
   console.log(`   📦 users 문서: ${stats.realData}개`);
+  console.log(`   📦 Lawrence 관련 문서 (balances, rents): ${stats.lawrenceData}개`);
   console.log(`   📦 서브컬렉션 문서: ${stats.subcollectionDocs}개`);
-  console.log(`   합계: ${stats.realData + stats.subcollectionDocs}개\n`);
+  console.log(`   합계: ${stats.realData + stats.lawrenceData + stats.subcollectionDocs}개\n`);
 
   process.exit(0);
 }
