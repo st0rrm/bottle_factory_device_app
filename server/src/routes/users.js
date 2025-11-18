@@ -328,15 +328,19 @@ router.get('/:uid/rentals', async (req, res) => {
     rentsSnapshot.forEach(doc => {
       const data = doc.data();
 
+      // Skip group rentals (group_id가 있는 대여 제외)
+      if (data.group_id) {
+        return; // skip this rental
+      }
+
       // Check return eligibility
       if (data.division === 'individual') {
         // individual: can only return at the same shop
         if (data.rented_shop_id !== shopId) {
           return; // skip
         }
-      } else if (data.division !== currentShopDivision && !data.group_id) {
+      } else if (data.division !== currentShopDivision) {
         // cluster: can only return at same division shops
-        // group_id rentals are excluded from this check
         return; // skip
       }
 
