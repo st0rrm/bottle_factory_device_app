@@ -650,7 +650,7 @@ export const processReturn = async (uid, rentals, shopId, shopName) => {
 
     await updateDoc(userRef, {
       score: userData.score + totalScore,
-      coin: userData.coin + totalScore * 10,  // 점수 1점 = 코인 10개
+      coin: userData.coin + totalScore,  // 컵 1개당 30코인
       saving_all: userData.saving_all + returnCount
     });
 
