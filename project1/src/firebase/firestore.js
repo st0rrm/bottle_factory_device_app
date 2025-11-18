@@ -363,59 +363,23 @@ export const getUserByPhone = async (phoneNumber) => {
  */
 export const getUserTickets = async (uid) => {
   try {
-    const tickets = [];
+    // 백엔드 API를 통해 대여권 조회
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    const response = await fetch(`${apiUrl}/users/${uid}/tickets`);
 
-    // 1. 전체 대여권 개수 조회 (status 상관없이)
-    const allBalancesQuery = query(
-      collection(db, 'balances'),
-      where('user_id', '==', uid)
-    );
-    const allBalancesSnapshot = await getDocs(allBalancesQuery);
-    const totalCount = allBalancesSnapshot.size;
-
-    // 2. 사용 가능한 대여권 조회
-    // status가 'charge'인 것만 (사용 가능)
-    const balancesQuery = query(
-      collection(db, 'balances'),
-      where('user_id', '==', uid),
-      where('status', '==', 'charge')
-    );
-    const balancesSnapshot = await getDocs(balancesQuery);
-
-    for (const docSnap of balancesSnapshot.docs) {
-      const data = docSnap.data();
-
-      // 대여권 이름 결정
-      let ticketName = '컵 1개 대여권';
-      if (data.pgcode === 'bottleclub') {
-        ticketName = '무료 대여권';
-      } else if (data.group_id) {
-        ticketName = data.pay_info || '그룹 대여권';
-      }
-
-      tickets.push({
-        id: docSnap.id,
-        type: 'balance',
-        name: ticketName,
-        pgcode: data.pgcode,
-        group_id: data.group_id,
-        status: data.status,
-        transaction_date: data.transaction_date
-      });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || '대여권 조회 실패');
     }
 
-    // 클라이언트 사이드에서 transaction_date로 정렬 (FIFO - 오래된 것부터)
-    tickets.sort((a, b) => {
-      if (!a.transaction_date || !b.transaction_date) return 0;
-      return a.transaction_date.localeCompare(b.transaction_date);
-    });
+    const data = await response.json();
 
-    console.log('대여권 조회 완료:', tickets.length, '개 사용가능 /', totalCount, '개 전체');
+    console.log('대여권 조회 완료:', data.availableCount, '개 사용가능 /', data.totalCount, '개 전체');
     return {
       success: true,
-      tickets,
-      totalCount,
-      availableCount: tickets.length
+      tickets: data.tickets,
+      totalCount: data.totalCount,
+      availableCount: data.availableCount
     };
 
   } catch (error) {

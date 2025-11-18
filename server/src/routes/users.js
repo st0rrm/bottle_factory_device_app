@@ -233,6 +233,71 @@ router.get('/phone/:phone', async (req, res) => {
 });
 
 /**
+ * GET /api/users/:uid/tickets
+ * Get user's available tickets (balances)
+ */
+router.get('/:uid/tickets', async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    // Get all balances for user
+    const allBalancesSnapshot = await db.collection('balances')
+      .where('user_id', '==', uid)
+      .get();
+    const totalCount = allBalancesSnapshot.size;
+
+    // Get available tickets (status === 'charge')
+    const balancesSnapshot = await db.collection('balances')
+      .where('user_id', '==', uid)
+      .where('status', '==', 'charge')
+      .get();
+
+    const tickets = [];
+    balancesSnapshot.forEach(doc => {
+      const data = doc.data();
+
+      // Determine ticket name
+      let ticketName = '컵 1개 대여권';
+      if (data.pgcode === 'bottleclub') {
+        ticketName = '무료 대여권';
+      } else if (data.group_id) {
+        ticketName = data.pay_info || '그룹 대여권';
+      }
+
+      tickets.push({
+        id: doc.id,
+        type: 'balance',
+        name: ticketName,
+        pgcode: data.pgcode,
+        group_id: data.group_id,
+        status: data.status,
+        transaction_date: data.transaction_date,
+        amount: data.amount
+      });
+    });
+
+    // Sort by transaction_date (FIFO - oldest first)
+    tickets.sort((a, b) => {
+      if (!a.transaction_date || !b.transaction_date) return 0;
+      return a.transaction_date.localeCompare(b.transaction_date);
+    });
+
+    res.json({
+      tickets,
+      availableCount: tickets.length,
+      totalCount
+    });
+
+  } catch (error) {
+    console.error('Get user tickets error:', error);
+    res.status(500).json({
+      error: 'Failed to get user tickets',
+      details: error.message
+    });
+  }
+});
+
+/**
  * GET /api/users/:uid
  * Get user information from Firebase
  */
