@@ -639,34 +639,8 @@ export const processReturn = async (uid, rentals, shopId, shopName) => {
 
     console.log(`✅ 대여권 복구: ${restoredCount}개 rent → charge`);
 
-    // 3. 사용자 점수 적립 (보틀점수)
-    const userRef = doc(db, 'users', uid);
-    const scorePerCup = 30;  // 컵 1개당 30점 (constants에서 가져와야 함)
-    const totalScore = scorePerCup * returnCount;
-
-    // 현재 사용자 정보 가져오기
-    const userDoc = await getDoc(userRef);
-    const userData = userDoc.data();
-
-    await updateDoc(userRef, {
-      score: userData.score + totalScore,
-      coin: userData.coin + totalScore * 10,  // 점수 1점 = 코인 10개
-      saving_all: userData.saving_all + returnCount
-    });
-
-    console.log(`✅ 보틀점수 적립: ${totalScore}점 (컵 ${returnCount}개)`);
-
-    // 4. collect_history에 적립 내역 추가
-    await addDoc(collection(db, 'collect_history'), {
-      score: totalScore,
-      shop_id: shopId,
-      uid: uid,
-      create: serverTimestamp()
-    });
-
-    console.log('✅ 적립 내역 생성');
-
-    // 5. 백엔드 API 호출하여 서브컬렉션 및 savings 컬렉션 업데이트
+    // 3. 백엔드 API 호출하여 점수 적립, 서브컬렉션 및 savings 컬렉션 업데이트
+    const scorePerCup = 30;  // 컵 1개당 30점
     try {
       const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 리턴미컵 아이템 ID
 
@@ -692,14 +666,14 @@ export const processReturn = async (uid, rentals, shopId, shopName) => {
         // 백엔드 API 실패해도 반납 자체는 성공으로 처리 (Firebase 업데이트는 완료됨)
       } else {
         const apiResult = await response.json();
-        console.log('✅ 백엔드 API 호출 성공 - 서브컬렉션 및 savings 업데이트 완료:', apiResult);
+        console.log('✅ 백엔드 API 호출 성공 - 점수 적립, 서브컬렉션 및 savings 업데이트 완료:', apiResult);
       }
     } catch (apiError) {
       console.error('⚠️ 백엔드 API 호출 중 에러:', apiError);
       // 백엔드 API 실패해도 반납 자체는 성공으로 처리
     }
 
-    return { success: true, score: totalScore, count: returnCount };
+    return { success: true, score: scorePerCup * returnCount, count: returnCount };
 
   } catch (error) {
     console.error('반납 처리 실패:', error);
