@@ -256,12 +256,15 @@ router.get('/:uid/tickets', async (req, res) => {
     balancesSnapshot.forEach(doc => {
       const data = doc.data();
 
+      // Skip group tickets (group_id가 있는 대여권 제외)
+      if (data.group_id) {
+        return; // skip this ticket
+      }
+
       // Determine ticket name
       let ticketName = '컵 1개 대여권';
       if (data.pgcode === 'bottleclub') {
         ticketName = '무료 대여권';
-      } else if (data.group_id) {
-        ticketName = data.pay_info || '그룹 대여권';
       }
 
       tickets.push({
@@ -269,7 +272,6 @@ router.get('/:uid/tickets', async (req, res) => {
         type: 'balance',
         name: ticketName,
         pgcode: data.pgcode,
-        group_id: data.group_id,
         status: data.status,
         transaction_date: data.transaction_date,
         amount: data.amount
