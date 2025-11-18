@@ -1,12 +1,7 @@
 {
-  "buildCommand": "cd project1 && npm install && npm run build",
-  "outputDirectory": "project1/dist",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "headers": [
     {
       "source": "/(.*)",
@@ -20,6 +15,12 @@
           "value": "same-origin"
         }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
