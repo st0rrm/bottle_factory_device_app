@@ -81,21 +81,34 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
 
         if (result.success) {
           console.log('인증 성공:', result.user.uid);
-          setCurrentUser(result.user);
 
           // 항상 users 컬렉션 확인 후 없으면 생성 (isNewUser에 의존하지 않음)
           console.log('사용자 문서 확인/생성 중...');
           const createResult = await createNewUser(result.user);
-          if (createResult.success && createResult.isNew) {
+
+          // 사용할 UID 결정
+          let effectiveUser = result.user;
+          if (createResult.existingUser) {
+            // 기존 사용자가 있으면 그 UID 사용
+            console.log('⚠️ 기존 사용자 발견! UID 전환:');
+            console.log('   Firebase Auth UID:', result.user.uid);
+            console.log('   기존 Firestore UID:', createResult.existingUser.uid);
+            effectiveUser = {
+              ...result.user,
+              uid: createResult.existingUser.uid
+            };
+          } else if (createResult.success && createResult.isNew) {
             console.log('신규 사용자 생성 완료:', createResult.nickname);
           } else if (createResult.success && !createResult.isNew) {
-            console.log('기존 사용자 확인 완료');
+            console.log('기존 사용자 확인 완료 (UID 일치)');
           } else {
             console.error('사용자 생성 실패:', createResult.error);
           }
 
-          // 사용자 대여권 조회
-          const ticketsResult = await getUserTickets(result.user.uid);
+          setCurrentUser(effectiveUser);
+
+          // 사용자 대여권 조회 (effectiveUser UID 사용)
+          const ticketsResult = await getUserTickets(effectiveUser.uid);
           if (ticketsResult.success) {
             let tickets = ticketsResult.tickets;
             const { totalCount, availableCount } = ticketsResult;
