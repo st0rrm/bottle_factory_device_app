@@ -113,6 +113,97 @@ async function addStatistics(statisticsRef, items) {
 }
 
 /**
+ * POST /api/users/rental
+ * Handle cup rental and update all relevant collections
+ *
+ * Request body:
+ * {
+ *   uid: string,              // User ID
+ *   tickets: [{ id, amount }], // Tickets to use for rental
+ *   shopId: string,           // Shop ID where cups are rented
+ *   shopName: string          // Shop name
+ * }
+ */
+router.post('/rental', async (req, res) => {
+  try {
+    const { uid, tickets, shopId, shopName } = req.body;
+
+    // Validate required fields
+    if (!uid || !tickets || !shopId || !shopName) {
+      return res.status(400).json({
+        error: 'Missing required fields: uid, tickets, shopId, shopName'
+      });
+    }
+
+    if (!Array.isArray(tickets) || tickets.length === 0) {
+      return res.status(400).json({ error: 'No tickets provided' });
+    }
+
+    const rentalCount = tickets.length;
+    const rentalIds = [];
+
+    // Get shop division
+    const shopDoc = await db.collection('shops').doc(shopId).get();
+    const shopDivision = shopDoc.exists && shopDoc.data().division
+      ? shopDoc.data().division
+      : 'individual';
+
+    // Calculate expired_date (14 days from now)
+    const expiredDate = new Date();
+    expiredDate.setDate(expiredDate.getDate() + 14);
+
+    // Process each ticket
+    for (const ticket of tickets) {
+      // 1. Update balance status: 'charge' → 'rent'
+      await db.collection('balances').doc(ticket.id).update({
+        status: 'rent',
+        update: FieldValue.serverTimestamp()
+      });
+
+      // 2. Create rent document
+      const rentalData = {
+        uid,
+        rented_date: FieldValue.serverTimestamp(),
+        expired_date: expiredDate,
+        rented_shop_id: shopId,
+        rented_shop: shopName,
+        status: 'rent',
+        balance_id: ticket.id,
+        amount: ticket.amount || 4000,
+        division: shopDivision
+      };
+
+      const rentRef = await db.collection('rents').add(rentalData);
+      rentalIds.push(rentRef.id);
+    }
+
+    // 3. Update user stats (bottle_all, saving_all)
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data();
+    await db.collection('users').doc(uid).update({
+      bottle_all: userData.bottle_all + rentalCount,
+      saving_all: userData.saving_all + rentalCount
+    });
+
+    res.json({
+      success: true,
+      message: 'Cup rental processed successfully',
+      data: {
+        rentalIds,
+        count: rentalCount
+      }
+    });
+
+  } catch (error) {
+    console.error('Cup rental error:', error);
+    res.status(500).json({
+      error: 'Failed to process cup rental',
+      details: error.message
+    });
+  }
+});
+
+/**
  * POST /api/users/return-cup
  * Handle cup return and update all relevant collections and subcollections
  *

@@ -404,59 +404,34 @@ export const getUserTickets = async (uid) => {
  */
 export const processRental = async (uid, tickets, shopId, shopName) => {
   try {
-    const rentalCount = tickets.length;
-    const rentalIds = [];
-
-    // 가게 정보 조회 (division 가져오기)
-    const shopResult = await getShopData(shopId);
-    const shopDivision = shopResult.success ? (shopResult.data.division || 'individual') : 'individual';
-
-    // expired_date 계산 (14일 후)
-    const expiredDate = new Date();
-    expiredDate.setDate(expiredDate.getDate() + 14);
-
-    // 각 대여권마다 처리
-    for (const ticket of tickets) {
-      // 1. balances 상태를 'charge' → 'rent'로 변경
-      const balanceRef = doc(db, 'balances', ticket.id);
-      await updateDoc(balanceRef, {
-        status: 'rent',
-        update: serverTimestamp()
-      });
-
-      // 2. rents 컬렉션에 새 문서 추가
-      const rentalData = {
-        uid: uid,
-        rented_date: serverTimestamp(),
-        expired_date: Timestamp.fromDate(expiredDate),  // 만료일 (14일 후)
-        rented_shop_id: shopId,
-        rented_shop: shopName,  // 실제 DB 필드명
-        status: 'rent',
-        balance_id: ticket.id,  // 사용한 대여권 ID
-        amount: ticket.amount || 4000,  // 대여권 가격
-        division: shopDivision  // 가게의 반환 클러스터
-      };
-
-      // 그룹 대여권인 경우 group_id 추가 및 division 덮어쓰기
-      if (ticket.group_id) {
-        rentalData.group_id = ticket.group_id;
-        rentalData.division = ticket.group_id;  // 그룹 반환처
-      }
-
-      const rentRef = await addDoc(collection(db, 'rents'), rentalData);
-      rentalIds.push(rentRef.id);
-    }
-
-    // 사용자의 총 대여 수 및 실천 수 업데이트
-    const userRef = doc(db, 'users', uid);
-    const userData = (await getDoc(userRef)).data();
-    await updateDoc(userRef, {
-      bottle_all: userData.bottle_all + rentalCount,
-      saving_all: userData.saving_all + rentalCount
+    // 백엔드 API를 통해 대여 처리
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    const response = await fetch(`${apiUrl}/users/rental`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        uid,
+        tickets,
+        shopId,
+        shopName
+      })
     });
 
-    console.log(`✅ 대여 완료: ${rentalCount}개 대여권 사용, ${rentalCount}개 컵 대여`);
-    return { success: true, rentalIds, count: rentalCount };
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || '대여 처리 실패');
+    }
+
+    const data = await response.json();
+
+    console.log(`✅ 대여 완료: ${data.data.count}개 대여권 사용, ${data.data.count}개 컵 대여`);
+    return {
+      success: true,
+      rentalIds: data.data.rentalIds,
+      count: data.data.count
+    };
 
   } catch (error) {
     console.error('대여 처리 실패:', error);
