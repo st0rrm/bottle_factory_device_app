@@ -102,20 +102,36 @@ export const createNewUser = async (user) => {
     console.log('🔍 신규 사용자 생성 시작:', user.uid);
     const userRef = doc(db, 'users', user.uid);
 
-    // 이미 문서가 있는지 확인
+    // 이미 문서가 있는지 확인 (UID 기반)
     const userDoc = await getDoc(userRef);
     if (userDoc.exists()) {
-      console.log('✅ 사용자 문서가 이미 존재합니다.');
+      console.log('✅ 사용자 문서가 이미 존재합니다. (UID 일치)');
       return { success: true, isNew: false };
     }
-
-    console.log('📝 새 사용자 문서 생성 중...');
 
     // 전화번호 포맷 변환 (+821012345678 → 01012345678)
     let phoneNumber = user.phoneNumber;
     if (phoneNumber.startsWith('+82')) {
       phoneNumber = '0' + phoneNumber.slice(3);
     }
+
+    // 전화번호로 기존 사용자 확인
+    console.log('📱 전화번호로 기존 사용자 확인 중:', phoneNumber);
+    const existingUserResult = await getUserByPhone(phoneNumber);
+    if (existingUserResult.success) {
+      console.log('✅ 해당 전화번호로 등록된 사용자가 이미 존재합니다.');
+      console.log('   기존 UID:', existingUserResult.user.uid);
+      console.log('   새 UID:', user.uid);
+      console.log('⚠️  Firebase 프로젝트가 다르면 UID가 다를 수 있습니다.');
+      return {
+        success: true,
+        isNew: false,
+        message: '이미 등록된 전화번호입니다.',
+        existingUser: existingUserResult.user
+      };
+    }
+
+    console.log('📝 새 사용자 문서 생성 중...');
 
     // 닉네임 생성 (휴대폰 뒤 7자리)
     // 예: 01012345678 → 2345678
