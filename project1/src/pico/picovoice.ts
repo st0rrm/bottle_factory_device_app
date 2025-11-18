@@ -5,8 +5,8 @@ import { WebVoiceProcessor } from "@picovoice/web-voice-processor";
 const ACCESS_KEY = import.meta.env.VITE_PC_ACCESS_KEY as string;
 
 const KEYWORDS = [
-  { label: "takeout", publicPath: "/pico/takeout_ko.ppn", sensitivity: 0.6 },
-  { label: "pojang", publicPath: "/pico/pojang_ko.ppn", sensitivity: 0.6 },
+  { label: "takeout", publicPath: `${window.location.origin}/pico/takeout_ko.ppn`, sensitivity: 0.6 },
+  { label: "pojang", publicPath: `${window.location.origin}/pico/pojang_ko.ppn`, sensitivity: 0.6 },
 ];
 
 let isListening = false;
@@ -24,7 +24,7 @@ export async function startWakeword(onDetect: (index: number) => void) {
       console.log("Porcupine detection:", detection);
       onDetect(detection.index);
     },
-    { publicPath: "/pico/porcupine_params_ko.pv" }, // 한국어 모델 파일 지정
+    { publicPath: `${window.location.origin}/pico/porcupine_params_ko.pv` }, // 한국어 모델 파일 지정
     {}
   );
 
