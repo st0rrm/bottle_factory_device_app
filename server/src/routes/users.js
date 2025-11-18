@@ -145,11 +145,10 @@ router.post('/return-cup', async (req, res) => {
     // Calculate total score (score per cup * total cups)
     const totalScore = score * totalCount;
 
-    // 1. Update user document (score, coin, saving_all)
+    // 1. Update user document (score, coin)
     await db.collection('users').doc(uid).update({
       score: FieldValue.increment(totalScore),
-      coin: FieldValue.increment(totalScore), // coin = score (동일하게 적립)
-      saving_all: FieldValue.increment(totalCount)
+      coin: FieldValue.increment(totalScore) // coin = score (동일하게 적립)
     });
 
     // 2. Create collect_history document
