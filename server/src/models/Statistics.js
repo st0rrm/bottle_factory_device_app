@@ -109,7 +109,8 @@ class Statistics {
           c.cafe_name,
           COUNT(t.id) as total_transactions,
           COUNT(t.id) FILTER (WHERE DATE(t.created_at) = CURRENT_DATE) as today_count,
-          COUNT(t.id) FILTER (WHERE t.created_at >= CURRENT_DATE - INTERVAL '7 days') as weekly_count
+          COUNT(t.id) FILTER (WHERE t.created_at >= CURRENT_DATE - INTERVAL '7 days') as weekly_count,
+          COALESCE(SUM(t.quantity * 30) FILTER (WHERE t.transaction_type = 'borrow'), 0) as total_score
         FROM cafes c
         LEFT JOIN transactions t ON c.id = t.cafe_id
         GROUP BY c.id, c.cafe_id, c.cafe_name
@@ -120,7 +121,8 @@ class Statistics {
         ...row,
         total_transactions: parseInt(row.total_transactions) || 0,
         today_count: parseInt(row.today_count) || 0,
-        weekly_count: parseInt(row.weekly_count) || 0
+        weekly_count: parseInt(row.weekly_count) || 0,
+        total_score: parseInt(row.total_score) || 0
       }));
     } catch (err) {
       throw err;
