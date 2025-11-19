@@ -104,4 +104,18 @@ router.get('/all-cafes', authenticateAdmin, async (req, res) => {
   }
 });
 
+// 모든 통계 초기화 (관리자 전용)
+router.delete('/reset', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await Statistics.resetAllStats();
+    res.json({
+      message: 'All statistics have been reset',
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    console.error('Reset stats error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

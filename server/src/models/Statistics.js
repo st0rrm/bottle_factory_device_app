@@ -128,6 +128,19 @@ class Statistics {
       throw err;
     }
   }
+
+  // 관리자용: 모든 통계 초기화 (모든 거래 기록 삭제)
+  static async resetAllStats() {
+    try {
+      const result = await pool.query('DELETE FROM transactions RETURNING COUNT(*)');
+      return {
+        success: true,
+        deletedCount: result.rowCount
+      };
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 module.exports = Statistics;
