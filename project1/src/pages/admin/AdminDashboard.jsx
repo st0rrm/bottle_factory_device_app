@@ -339,9 +339,9 @@ function AdminDashboard() {
     setResetLoading(true);
     try {
       const authToken = localStorage.getItem('authToken');
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://returnmecup-api-dev.onrender.com';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://returnmecup-api-dev.onrender.com/api';
 
-      const response = await fetch(`${apiUrl}/api/statistics/reset`, {
+      const response = await fetch(`${apiUrl}/statistics/reset`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authToken}`
