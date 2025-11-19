@@ -27,6 +27,7 @@ function AdminDashboard() {
   const [dateMode, setDateMode] = useState('preset'); // 'preset' or 'custom'
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
 
   // 폼 데이터
@@ -329,6 +330,41 @@ function AdminDashboard() {
     }
   };
 
+  // 통계 초기화
+  const handleResetStats = async () => {
+    if (!confirm('모든 거래 기록이 삭제됩니다. 정말 초기화하시겠습니까?')) {
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const authToken = localStorage.getItem('authToken');
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://returnmecup-api-dev.onrender.com';
+
+      const response = await fetch(`${apiUrl}/api/statistics/reset`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('통계 초기화 실패');
+      }
+
+      const result = await response.json();
+      alert(`통계가 초기화되었습니다. (${result.deletedCount}개 삭제)`);
+
+      // 통계 다시 불러오기
+      loadStats();
+    } catch (error) {
+      console.error('통계 초기화 오류:', error);
+      alert('통계 초기화 중 오류가 발생했습니다.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       {/* Header */}
@@ -414,9 +450,19 @@ function AdminDashboard() {
                 {sortOrder === 'asc' ? '↑ 오름차순' : '↓ 내림차순'}
               </button>
               {showStatsView && (
-                <button className="export-button" onClick={handleExportToExcel}>
-                  📊 엑셀 다운로드
-                </button>
+                <>
+                  <button className="export-button" onClick={handleExportToExcel}>
+                    📊 엑셀 다운로드
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={handleResetStats}
+                    disabled={resetLoading}
+                    style={{ marginLeft: '10px' }}
+                  >
+                    {resetLoading ? '초기화 중...' : '🗑️ 통계 초기화'}
+                  </button>
+                </>
               )}
             </div>
           </div>
