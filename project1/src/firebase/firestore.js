@@ -544,79 +544,37 @@ export const getUserActiveRentals = async (uid, shopId) => {
 export const processReturn = async (uid, rentals, shopId, shopName) => {
   try {
     const returnCount = rentals.length;
-
-    // 1. rents 문서들 업데이트: status 'rent' → 'return'
-    for (const rental of rentals) {
-      const rentRef = doc(db, 'rents', rental.id);
-      await updateDoc(rentRef, {
-        status: 'return',
-        returned_date: serverTimestamp(),
-        returned_shop_id: shopId,
-        returned_shop: shopName  // 실제 DB 필드명
-      });
-    }
-
-    console.log(`✅ 대여 기록 업데이트: ${returnCount}개 rent → return`);
-
-    // 2. balances 복구: count-based 복구 (balance_id 없이)
-    // status='rent'인 balances를 찾아서 반납한 개수만큼 복구
-    const balancesQuery = query(
-      collection(db, 'balances'),
-      where('user_id', '==', uid),
-      where('status', '==', 'rent')
-    );
-    const balancesSnapshot = await getDocs(balancesQuery);
-
-    // 반납한 개수만큼만 복구
-    let restoredCount = 0;
-    for (const docSnap of balancesSnapshot.docs) {
-      if (restoredCount >= returnCount) break;
-
-      const balanceRef = doc(db, 'balances', docSnap.id);
-      await updateDoc(balanceRef, {
-        status: 'charge',
-        update: serverTimestamp()
-      });
-      restoredCount++;
-    }
-
-    console.log(`✅ 대여권 복구: ${restoredCount}개 rent → charge`);
-
-    // 3. 백엔드 API 호출하여 점수 적립, 서브컬렉션 및 savings 컬렉션 업데이트
     const scorePerCup = 30;  // 컵 1개당 30점
-    try {
-      const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 리턴미컵 아이템 ID
 
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-      const response = await fetch(`${apiUrl}/users/return-cup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          uid: uid,
-          shopId: shopId,
-          items: {
-            [RETURNMECUP_ITEM_ID]: returnCount  // 리턴미컵 반납 개수
-          },
-          score: scorePerCup  // 컵당 점수
-        })
-      });
+    // 백엔드 API 호출하여 전체 반납 프로세스 처리
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    const response = await fetch(`${apiUrl}/users/return`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        uid,
+        rentals,
+        shopId,
+        shopName
+      })
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('⚠️ 백엔드 API 호출 실패:', errorData);
-        // 백엔드 API 실패해도 반납 자체는 성공으로 처리 (Firebase 업데이트는 완료됨)
-      } else {
-        const apiResult = await response.json();
-        console.log('✅ 백엔드 API 호출 성공 - 점수 적립, 서브컬렉션 및 savings 업데이트 완료:', apiResult);
-      }
-    } catch (apiError) {
-      console.error('⚠️ 백엔드 API 호출 중 에러:', apiError);
-      // 백엔드 API 실패해도 반납 자체는 성공으로 처리
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('⚠️ 반납 처리 실패:', errorData);
+      throw new Error(errorData.error || '반납 처리 실패');
     }
 
-    return { success: true, score: scorePerCup * returnCount, count: returnCount };
+    const result = await response.json();
+    console.log('✅ 반납 처리 성공:', result);
+
+    return {
+      success: true,
+      score: scorePerCup * returnCount,
+      count: returnCount
+    };
 
   } catch (error) {
     console.error('반납 처리 실패:', error);

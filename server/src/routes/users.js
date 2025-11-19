@@ -204,6 +204,122 @@ router.post('/rental', async (req, res) => {
 });
 
 /**
+ * POST /api/users/return
+ * Handle full cup return process (rents, balances, and scoring)
+ *
+ * Request body:
+ * {
+ *   uid: string,              // User ID
+ *   rentals: [{ id }],        // Rental documents to return
+ *   shopId: string,           // Shop ID where cups are returned
+ *   shopName: string          // Shop name
+ * }
+ */
+router.post('/return', async (req, res) => {
+  try {
+    const { uid, rentals, shopId, shopName } = req.body;
+
+    // Validate required fields
+    if (!uid || !rentals || !shopId || !shopName) {
+      return res.status(400).json({
+        error: 'Missing required fields: uid, rentals, shopId, shopName'
+      });
+    }
+
+    if (!Array.isArray(rentals) || rentals.length === 0) {
+      return res.status(400).json({ error: 'No rentals provided' });
+    }
+
+    const returnCount = rentals.length;
+    const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH';
+    const scorePerCup = 30;
+
+    // 1. Update rents documents: status 'rent' → 'return'
+    for (const rental of rentals) {
+      await db.collection('rents').doc(rental.id).update({
+        status: 'return',
+        returned_date: FieldValue.serverTimestamp(),
+        returned_shop_id: shopId,
+        returned_shop: shopName
+      });
+    }
+
+    // 2. Restore balances: find 'rent' status balances and restore to 'charge'
+    const balancesSnapshot = await db.collection('balances')
+      .where('user_id', '==', uid)
+      .where('status', '==', 'rent')
+      .get();
+
+    let restoredCount = 0;
+    for (const docSnap of balancesSnapshot.docs) {
+      if (restoredCount >= returnCount) break;
+
+      await db.collection('balances').doc(docSnap.id).update({
+        status: 'charge',
+        update: FieldValue.serverTimestamp()
+      });
+      restoredCount++;
+    }
+
+    // 3. Process scoring and savings (using existing logic)
+    const totalScore = scorePerCup * returnCount;
+
+    // Update user document (score, coin)
+    await db.collection('users').doc(uid).update({
+      score: FieldValue.increment(totalScore),
+      coin: FieldValue.increment(totalScore)
+    });
+
+    // Create collect_history document
+    const collectHistoryRef = await db.collection('collect_history').add({
+      uid,
+      shop_id: shopId,
+      score: totalScore,
+      create: FieldValue.serverTimestamp()
+    });
+
+    const collectHistoryId = collectHistoryRef.id;
+
+    // Add collect_items subcollection
+    const items = { [RETURNMECUP_ITEM_ID]: returnCount };
+    await addSavedItems(collectHistoryId, items);
+
+    // Add reference to users/{uid}/collect subcollection
+    await addUserCollect(uid, collectHistoryId);
+
+    // Update statistics: users/{uid}/savings
+    const userSavingsRef = db.collection('users').doc(uid).collection('savings');
+    await addStatistics(userSavingsRef, items);
+
+    // Update statistics: shops/{shopId}/savings
+    const shopSavingsRef = db.collection('shops').doc(shopId).collection('savings');
+    await addStatistics(shopSavingsRef, items);
+
+    // Update global savings collection
+    const globalSavingsRef = db.collection('savings');
+    await addStatistics(globalSavingsRef, items);
+
+    res.json({
+      success: true,
+      message: 'Cup return processed successfully',
+      data: {
+        returnCount,
+        restoredCount,
+        totalScore,
+        collectHistoryId
+      }
+    });
+
+  } catch (error) {
+    console.error('Cup return error:', error);
+    res.status(500).json({
+      error: 'Failed to process cup return',
+      details: error.message
+    });
+  }
+});
+
+/**
  * POST /api/users/return-cup
  * Handle cup return and update all relevant collections and subcollections
  *
