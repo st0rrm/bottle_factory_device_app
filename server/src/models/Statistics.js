@@ -132,7 +132,7 @@ class Statistics {
   // 관리자용: 모든 통계 초기화 (모든 거래 기록 삭제)
   static async resetAllStats() {
     try {
-      const result = await pool.query('DELETE FROM transactions RETURNING COUNT(*)');
+      const result = await pool.query('DELETE FROM transactions');
       return {
         success: true,
         deletedCount: result.rowCount
