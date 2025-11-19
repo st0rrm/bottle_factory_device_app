@@ -1,48 +1,106 @@
 import React from 'react';
 import './DoActionSelectionView.css';
 
-export default function DoActionSelectionView({ selectedActions, onToggleAction, onConfirm }) {
+import cupImage from '../assets/images/do_image_cup.png';
+import refillImage from '../assets/images/do_image_refill.png';
+import containerImage from '../assets/images/do_image_container.png';
+import recycleImage from '../assets/images/do_image_recycle.png';
+
+// import cupIcon from '../assets/images/do_icon_cup.png';
+// import refillIcon from '../assets/images/do_icon_refill.png';
+// import containerIcon from '../assets/images/do_icon_container.png';
+// import recycleIcon from '../assets/images/do_icon_recycle.png';
+
+import cupIcon from '../assets/images/do_confirm_cup.png';
+import refillIcon from '../assets/images/do_confirm_refill.png';
+import containerIcon from '../assets/images/do_confirm_container.png';
+import recycleIcon from '../assets/images/do_confirm_recycle.png';
+
+export default function DoActionSelectionView({
+  selectedActions,
+  onToggleAction,
+  onRemoveSelectedIndex,
+  onConfirm,
+}) {
   const actions = [
-    { id: 'tumbler', label: '텀블러 사용', icon: '☕', score: 10 },
-    { id: 'bag', label: '장바구니 사용', icon: '🛍️', score: 10 },
-    { id: 'transport', label: '대중교통 이용', icon: '🚌', score: 10 },
-    { id: 'recycle', label: '분리수거', icon: '♻️', score: 10 },
+    { id: 'tumbler', label: '텀블러 사용', icon: cupImage, score: 10, miniicon: cupIcon },
+    { id: 'container', label: '다회용기', icon: containerImage, score: 10, miniicon: containerIcon},
+    { id: 'refill', label: '리필용기', icon: refillImage, score: 10, miniicon: refillIcon},
+    { id: 'recycle', label: '자원 순환', icon: recycleImage, score: 10, miniicon: recycleIcon},
   ];
 
+  // 체크마크용: 하나라도 있으면 선택 상태로 보기
   const isSelected = (actionId) => selectedActions.includes(actionId);
 
   return (
     <div className="do-action-selection-view">
       {/* Title */}
       <div className="do-action-title">
-        <h2 className="do-action-heading">친환경 실천을 행동</h2>
-        <h3 className="do-action-subheading">미완성 페이지입니다.</h3>
+        <h2 className="do-action-heading">친환경 실천을 위한 <br></br> 행동을 선택해주세요</h2>
+        {/* <h3 className="do-action-subheading">행동을 선택해주세요</h3> */}
       </div>
 
-      {/* Action Grid */}
-      <div className="do-action-grid">
-        {actions.map((action) => (
-          <button
-            key={action.id}
-            onClick={() => onToggleAction(action.id)}
-            className={`do-action-card ${isSelected(action.id) ? 'do-action-card-selected' : ''}`}
-          >
-            <div className="do-action-icon">{action.icon}</div>
-            <div className="do-action-label">{action.label}</div>
-            {isSelected(action.id) && (
-              <div className="do-action-check">✓</div>
-            )}
-          </button>
-        ))}
-      </div>
+      <div className="do-action-main">
+        {/* Action Grid */}
+        <div className="do-action-grid">
+          {actions.map((action) => (
+            <button
+              key={action.id}
+              type="button"
+              onClick={() => onToggleAction(action.id)}
+              className={`do-action-card ${isSelected(action.id) ? 'do-action-card-selected' : ''}`}
+            >
+              <img
+                className="do-action-icon-image"
+                src={action.icon}
+                alt={action.label}
+              />
+              <div className="do-action-label">{action.label}</div>
 
-      {/* Selected Count */}
-      <div className="do-action-count">
-        선택된 항목: <span className="count-number">{selectedActions.length}</span>
+              {isSelected(action.id) && <div className="do-action-check">✓</div>}
+            </button>
+          ))}
+        </div>
+
+        {/* Selected Mini Icons Row (5칸) */}
+        <div className="do-action-selected-row">
+          {Array.from({ length: 5 }).map((_, index) => {
+            const actionId = selectedActions[index];
+            const action = actions.find((a) => a.id === actionId);
+            const hasAction = !!action;
+
+            return (
+              <div
+                key={index}
+                className={`do-action-selected-slot ${
+                  hasAction ? 'do-action-selected-slot-filled' : ''
+                }`}
+              >
+                {hasAction && (
+                  <>
+                    <img
+                      className="do-action-selected-icon"
+                      src={action.miniicon}
+                      alt={action.label}
+                    />
+                    <button
+                      type="button"
+                      className="do-action-selected-remove"
+                      onClick={() => onRemoveSelectedIndex(index)}
+                    >
+                      ×
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Confirm Button */}
       <button
+        type="button"
         onClick={onConfirm}
         className="do-action-confirm-button"
         disabled={selectedActions.length === 0}

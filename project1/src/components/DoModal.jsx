@@ -4,12 +4,15 @@ import QRCodeView from './QRCodeView';
 import VerificationCodeView from './VerificationCodeView';
 import DoActionSelectionView from './DoActionSelectionView';
 import DoConfirmationView from './DoConfirmationView';
+
 import phoneIcon from '../assets/images/phone_icon_identification.svg';
 import phoneIconNot from '../assets/images/phone_icon_identification_not.svg';
 import qrIcon from '../assets/images/qr_icon_identification.svg';
 import qrIconActive from '../assets/images/qr_icon_identification_active.svg';
-import './ReturnModal.css';
 import xIcon from '../assets/images/x_icon.svg';
+
+import './ReturnModal.css';
+
 import { trackBehavior } from '../api/behaviors';
 import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
@@ -33,14 +36,19 @@ export default function DoModal({ onClose, onSuccess }) {
   const [showActionSelection, setShowActionSelection] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // ✅ 선택된 행동들 (중복 허용)
   const [selectedActions, setSelectedActions] = useState([]);
+
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [timer, setTimer] = useState(180);
   const [attempts, setAttempts] = useState(0);
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
   const MAX_ATTEMPTS = 5;
+  const MAX_SELECTIONS = 5;
 
   useEffect(() => {
     if (showVerification && timer > 0) {
@@ -62,13 +70,13 @@ export default function DoModal({ onClose, onSuccess }) {
 
   const handleNumberClick = (num) => {
     if (phoneNumber.length < 11) {
-      setPhoneNumber(phoneNumber + num);
+      setPhoneNumber((prev) => prev + num);
     }
   };
 
   const handleDelete = () => {
     if (phoneNumber.length > 3) {
-      setPhoneNumber(phoneNumber.slice(0, -1));
+      setPhoneNumber((prev) => prev.slice(0, -1));
     }
   };
 
@@ -117,7 +125,7 @@ export default function DoModal({ onClose, onSuccess }) {
 
   const handleCodeDelete = () => {
     if (verificationCode.length > 0 && !isError) {
-      setVerificationCode(verificationCode.slice(0, -1));
+      setVerificationCode((prev) => prev.slice(0, -1));
     }
   };
 
@@ -170,7 +178,7 @@ export default function DoModal({ onClose, onSuccess }) {
     const authenticatedUser = {
       uid: result.user.uid,
       phoneNumber: result.user.phoneNumber,
-      mobile: phoneNumber
+      mobile: phoneNumber,
     };
 
     setCurrentUser(authenticatedUser);
@@ -179,14 +187,17 @@ export default function DoModal({ onClose, onSuccess }) {
     setShowActionSelection(true);
   };
 
+  // ✅ 행동 클릭 시: 최대 5개까지, 중복 허용해서 뒤에 추가
   const handleToggleAction = (actionId) => {
     setSelectedActions((prev) => {
-      if (prev.includes(actionId)) {
-        return prev.filter((id) => id !== actionId);
-      } else {
-        return [...prev, actionId];
-      }
+      if (prev.length >= MAX_SELECTIONS) return prev;
+      return [...prev, actionId];
     });
+  };
+
+  // ✅ 아래 미니 아이콘 X 버튼 눌렀을 때: 해당 index 삭제
+  const handleRemoveSelectedIndex = (indexToRemove) => {
+    setSelectedActions((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleActionConfirm = () => {
@@ -229,8 +240,8 @@ export default function DoModal({ onClose, onSuccess }) {
 
     try {
       const totalScore = selectedActions.length * 10;
+      console.log('총 점수:', totalScore);
 
-      // PostgreSQL 기록 추가
       try {
         await addTransaction('do', phoneNumber, selectedActions.length);
         console.log(`실천 기록 완료: ${selectedActions.length}개 행동 실천`);
@@ -239,7 +250,6 @@ export default function DoModal({ onClose, onSuccess }) {
       }
 
       setIsLoading(false);
-
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -252,7 +262,7 @@ export default function DoModal({ onClose, onSuccess }) {
     }
   };
 
-  // Ux Tt
+  // 확인 화면
   if (showConfirmation) {
     return (
       <DoConfirmationView
@@ -265,18 +275,19 @@ export default function DoModal({ onClose, onSuccess }) {
     );
   }
 
-  // ��  � Tt
+  // 행동 선택 화면
   if (showActionSelection) {
     return (
       <div className="return-modal-overlay">
         <div className="return-modal-container">
           <button onClick={onClose} className="return-modal-close-button">
-            <img src={xIcon} alt="�0" style={{ width: '24px', height: '24px' }} />
+            <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
           </button>
 
           <DoActionSelectionView
             selectedActions={selectedActions}
             onToggleAction={handleToggleAction}
+            onRemoveSelectedIndex={handleRemoveSelectedIndex}
             onConfirm={handleActionConfirm}
           />
         </div>
@@ -284,6 +295,7 @@ export default function DoModal({ onClose, onSuccess }) {
     );
   }
 
+  // 기본(휴대폰 / QR) 화면
   return (
     <div className="return-modal-overlay">
       <div className="return-modal-container">
@@ -291,10 +303,10 @@ export default function DoModal({ onClose, onSuccess }) {
         <div id="recaptcha-container-do"></div>
 
         <button onClick={onClose} className="return-modal-close-button">
-          <img src={xIcon} alt="�0" style={{ width: '24px', height: '24px' }} />
+          <img src={xIcon} alt="닫기" style={{ width: '24px', height: '24px' }} />
         </button>
 
-        {/* Toggle Tabs with Tooltip */}
+        {/* Tabs + Tooltip */}
         <div className="return-tabs-wrapper">
           <div className="return-tooltip-container">
             <div className="return-tooltip-wrapper">
@@ -306,15 +318,27 @@ export default function DoModal({ onClose, onSuccess }) {
           <div className="return-tabs-container">
             <button
               onClick={() => handleTabChange('phone')}
-              className={`return-tab ${activeTab === 'phone' ? 'return-tab-active' : 'return-tab-inactive'}`}
+              className={`return-tab ${
+                activeTab === 'phone' ? 'return-tab-active' : 'return-tab-inactive'
+              }`}
             >
-              <img src={activeTab === 'phone' ? phoneIcon : phoneIconNot} alt="Phone" className="return-tab-icon" />
+              <img
+                src={activeTab === 'phone' ? phoneIcon : phoneIconNot}
+                alt="Phone"
+                className="return-tab-icon"
+              />
             </button>
             <button
               onClick={() => handleTabChange('qr')}
-              className={`return-tab return-tab-qr ${activeTab === 'qr' ? 'return-tab-active' : 'return-tab-inactive'}`}
+              className={`return-tab return-tab-qr ${
+                activeTab === 'qr' ? 'return-tab-active' : 'return-tab-inactive'
+              }`}
             >
-              <img src={activeTab === 'qr' ? qrIconActive : qrIcon} alt="QR" className="return-tab-icon" />
+              <img
+                src={activeTab === 'qr' ? qrIconActive : qrIcon}
+                alt="QR"
+                className="return-tab-icon"
+              />
             </button>
           </div>
         </div>

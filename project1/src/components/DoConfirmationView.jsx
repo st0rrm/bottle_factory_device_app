@@ -2,12 +2,18 @@ import React from 'react';
 import './DoConfirmationView.css';
 import xIcon from '../assets/images/x_icon.svg';
 
+import cupIcon from '../assets/images/do_confirm_cup.png';
+import refillIcon from '../assets/images/do_confirm_refill.png';
+import containerIcon from '../assets/images/do_confirm_container.png';
+import recycleIcon from '../assets/images/do_confirm_recycle.png';
+
+
 export default function DoConfirmationView({ selectedActions, onClose, onCancel, onConfirm, isLoading }) {
   const actionLabels = {
-    tumbler: { label: '텀블러 사용', icon: '☕', score: 10 },
-    bag: { label: '장바구니 사용', icon: '🛍️', score: 10 },
-    transport: { label: '대중교통 이용', icon: '🚌', score: 10 },
-    recycle: { label: '분리수거', icon: '♻️', score: 10 },
+    tumbler: { label: '텀블러 사용', icon: cupIcon, score: 10 },
+    bag: { label: '장바구니 사용', icon: refillIcon, score: 10 },
+    transport: { label: '대중교통 이용', icon: containerIcon, score: 10 },
+    recycle: { label: '분리수거', icon: recycleIcon, score: 10 },
   };
 
   const totalScore = selectedActions.length * 10;
