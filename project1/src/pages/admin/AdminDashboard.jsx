@@ -302,6 +302,7 @@ function AdminDashboard() {
       '총 거래': cafe.total_transactions || 0,
       '오늘 거래': cafe.today_count || 0,
       '주간 거래': cafe.weekly_count || 0,
+      '보틀': cafe.total_score || 0,
       'QR 탭 (총)': cafe.qr_tab_clicks || 0,
       'QR 대여': cafe.qr_borrow_clicks || 0,
       'QR 반납': cafe.qr_return_clicks || 0,
@@ -399,6 +400,7 @@ function AdminDashboard() {
                     <option value="total_transactions">총 거래</option>
                     <option value="today_count">오늘 거래</option>
                     <option value="weekly_count">주간 거래</option>
+                    <option value="total_score">보틀</option>
                     <option value="qr_tab_clicks">QR 탭</option>
                     <option value="phone_tab_clicks">전화 탭</option>
                   </>
@@ -557,6 +559,7 @@ function AdminDashboard() {
                   <th>총 거래</th>
                   <th>오늘</th>
                   <th>주간</th>
+                  <th>보틀</th>
                   <th>QR 탭 (총)</th>
                   <th>QR 대여</th>
                   <th>QR 반납</th>
@@ -571,7 +574,7 @@ function AdminDashboard() {
                   if (filteredStats.length === 0) {
                     return (
                       <tr>
-                        <td colSpan="11" style={{ textAlign: 'center' }}>
+                        <td colSpan="12" style={{ textAlign: 'center' }}>
                           {searchQuery ? '검색 결과가 없습니다.' : '통계 데이터가 없습니다.'}
                         </td>
                       </tr>
@@ -584,6 +587,7 @@ function AdminDashboard() {
                       <td>{cafe.total_transactions || 0}</td>
                       <td>{cafe.today_count || 0}</td>
                       <td>{cafe.weekly_count || 0}</td>
+                      <td>{cafe.total_score || 0}</td>
                       <td>{cafe.qr_tab_clicks || 0}</td>
                       <td>{cafe.qr_borrow_clicks || 0}</td>
                       <td>{cafe.qr_return_clicks || 0}</td>
