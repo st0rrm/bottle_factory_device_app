@@ -129,13 +129,22 @@ class Statistics {
     }
   }
 
-  // 관리자용: 모든 통계 초기화 (모든 거래 기록 삭제)
+  // 관리자용: 모든 통계 초기화 (모든 거래 기록 및 행동 데이터 삭제)
   static async resetAllStats() {
     try {
-      const result = await pool.query('DELETE FROM transactions');
+      // Delete user behaviors (QR 탭, 전화 탭 등)
+      const behaviorsResult = await pool.query('DELETE FROM user_behaviors');
+
+      // Delete transactions
+      const transactionsResult = await pool.query('DELETE FROM transactions');
+
+      const totalDeleted = behaviorsResult.rowCount + transactionsResult.rowCount;
+
       return {
         success: true,
-        deletedCount: result.rowCount
+        deletedCount: totalDeleted,
+        deletedBehaviors: behaviorsResult.rowCount,
+        deletedTransactions: transactionsResult.rowCount
       };
     } catch (err) {
       throw err;
