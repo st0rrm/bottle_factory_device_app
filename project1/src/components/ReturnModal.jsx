@@ -15,7 +15,7 @@ import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
-import { getUserActiveRentals, processReturn } from '../firebase/firestore';
+import { getUserActiveRentals, processReturn, createNewUser } from '../firebase/firestore';
 import { getDeviceShopIdAsync } from '../config/device';
 
 export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
@@ -182,11 +182,32 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
     // 인증 성공
     console.log('✅ 인증 성공:', result.user.uid);
 
-    // Firebase Auth 인증으로 이미 사용자 확인 완료
-    // result.user를 직접 사용 (전화번호가 일치하므로 본인 확인됨)
+    // 전화번호로 기존 사용자 확인/생성
+    console.log('사용자 문서 확인/생성 중...');
+    const createResult = await createNewUser(result.user);
+
+    // 사용할 UID 결정
+    let effectiveUser = result.user;
+    if (createResult.existingUser) {
+      // 기존 사용자가 있으면 그 UID 사용
+      console.log('⚠️ 기존 사용자 발견! UID 전환:');
+      console.log('   Firebase Auth UID:', result.user.uid);
+      console.log('   기존 Firestore UID:', createResult.existingUser.uid);
+      effectiveUser = {
+        ...result.user,
+        uid: createResult.existingUser.uid
+      };
+    } else if (createResult.success && createResult.isNew) {
+      console.log('신규 사용자 생성 완료:', createResult.nickname);
+    } else if (createResult.success && !createResult.isNew) {
+      console.log('기존 사용자 확인 완료 (UID 일치)');
+    } else {
+      console.error('사용자 생성 실패:', createResult.error);
+    }
+
     const authenticatedUser = {
-      uid: result.user.uid,
-      phoneNumber: result.user.phoneNumber,
+      uid: effectiveUser.uid,
+      phoneNumber: effectiveUser.phoneNumber,
       mobile: phoneNumber
     };
 
