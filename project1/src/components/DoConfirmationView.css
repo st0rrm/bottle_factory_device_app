@@ -4,7 +4,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,9 +14,6 @@
   position: relative;
   background: white;
   border-radius: 20px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
@@ -34,20 +30,22 @@
 }
 
 .do-confirmation-content {
-  padding: 60px 30px 30px;
+  padding: 69px 102px 68px 102px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 55px;
 }
 
 .do-confirmation-title {
   text-align: center;
-  margin-bottom: 30px;
 }
 
 .do-confirmation-heading {
-  font-family: 'Pretendard', sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+  font-weight: var(--pretendard-semibold);
+  font-size: 40px;
+  color: #44748A;
+  line-height: 1.3;
 }
 
 .do-confirmation-subheading {
@@ -61,17 +59,14 @@
 .do-confirmation-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 15px;
 }
 
 .do-confirmation-item {
   display: flex;
   align-items: center;
   padding: 16px;
-  background: #f8f9fa;
   border-radius: 12px;
-  border: 1px solid #e0e0e0;
 }
 
 .do-confirmation-item-icon {
@@ -99,45 +94,40 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #e8f5e9;
-  border-radius: 12px;
-  margin-bottom: 24px;
+  width: 471px;
 }
 
 .do-confirmation-total-label {
-  font-family: 'Pretendard', sans-serif;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
+  font-size: 32px;
+  line-height: 1.3;
+  font-weight: var(--pretendard-semibold);
+  color: #44748A;
 }
 
 .do-confirmation-total-score {
-  font-family: 'Pretendard', sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  color: #4caf50;
+  font-size: 32px;
+  line-height: 1.3;
+  font-weight: var(--pretendard-semibold);
+  color: #497FC6;
 }
 
 .do-confirmation-buttons {
   display: flex;
-  gap: 12px;
-}
-
-.do-confirmation-button {
-  flex: 1;
-  padding: 16px;
-  border: none;
-  border-radius: 12px;
-  font-family: 'Pretendard', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  gap: 30px;
+  width: 100%;
+  height: 73px;
 }
 
 .do-confirmation-cancel-button {
-  background: #e0e0e0;
-  color: #666;
+  border-radius: 14px;
+  width: 122px;
+  height: 73px;
+  font-size: 25px;
+  background: #e9edef;
+  color: #44748A;
+  padding: 22px;
+  text-align: center;
+  line-height: 1.3;
 }
 
 .do-confirmation-cancel-button:hover:not(:disabled) {
@@ -145,8 +135,14 @@
 }
 
 .do-confirmation-confirm-button {
-  background: #4caf50;
+  border-radius: 14px;
+  width: 100%;
+  background: #44748a;
+  font-size: 25px;
   color: white;
+  text-align: center;
+  line-height: 1.3;
+  padding: 24px;
 }
 
 .do-confirmation-confirm-button:hover:not(:disabled) {
@@ -192,4 +188,69 @@
 .do-action-selected-icon {
   font-size: 22px;
   line-height: 1;
+}
+
+
+.do-confirmation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center; /* 중앙 정렬 */
+}
+
+/* 한 줄 (아이콘 원 + 텍스트) */
+.do-confirmation-item {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+/* 파란 동그라미 배경 */
+.do-confirmation-item-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 동그라미 안의 아이콘 이미지 */
+.do-confirmation-item-icon {
+  width: 90px;
+  height: 90px;
+  object-fit: fill;
+}
+
+/* 오른쪽 텍스트 묶음 */
+.do-confirmation-item-text {
+  display: flex;
+  flex-direction: column;
+}
+
+/* "1개" 줄 */
+.do-confirmation-item-count-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.do-confirmation-item-count {
+  font-size: 70px;
+  font-weight: var(--pretendard-bold);
+  color: #0C2950;
+}
+
+.do-confirmation-item-unit {
+  font-size: 26px;
+  font-weight: var(--pretendard-bold);
+  color: #0C2950;
+}
+
+/* 아래 라벨 (다회용 컵 / 다회용기 등) */
+.do-confirmation-item-label {
+  font-size: 22px;
+  font-weight: var(--pretendard-regular);
+  color: #000000;
 }

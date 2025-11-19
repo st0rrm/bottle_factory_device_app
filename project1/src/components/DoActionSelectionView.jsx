@@ -105,7 +105,7 @@ export default function DoActionSelectionView({
         className="do-action-confirm-button"
         disabled={selectedActions.length === 0}
       >
-        선택완료
+        선택 완료!
       </button>
     </div>
   );
