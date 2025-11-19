@@ -79,6 +79,14 @@ class Cafe {
 
   static async delete(id) {
     try {
+      // Delete related records first to avoid foreign key constraint errors
+      // Delete behaviors
+      await pool.query('DELETE FROM behaviors WHERE cafe_id = $1', [id]);
+
+      // Delete transactions
+      await pool.query('DELETE FROM transactions WHERE cafe_id = $1', [id]);
+
+      // Finally delete the cafe
       await pool.query('DELETE FROM cafes WHERE id = $1', [id]);
     } catch (err) {
       throw err;
