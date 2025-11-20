@@ -373,41 +373,31 @@ router.post('/do-actions', async (req, res) => {
       saving_all: FieldValue.increment(totalCount)
     });
 
-    // 2. Create individual collect_history documents for each action
-    const collectHistoryIds = [];
+    // 2. Create single collect_history document with total score
+    const collectHistoryRef = await db.collection('collect_history').add({
+      uid,
+      shop_id: shopId,
+      score: totalScore,
+      create: FieldValue.serverTimestamp()
+    });
 
-    for (const [itemId, count] of Object.entries(items)) {
-      const scorePerItem = itemScores[itemId] || 30;
+    const collectHistoryId = collectHistoryRef.id;
 
-      // Create one collect_history per item count
-      for (let i = 0; i < count; i++) {
-        const collectHistoryRef = await db.collection('collect_history').add({
-          uid,
-          shop_id: shopId,
-          score: scorePerItem,
-          create: FieldValue.serverTimestamp()
-        });
+    // 3. Add collect_items subcollection with all items
+    await addSavedItems(collectHistoryId, items);
 
-        const collectHistoryId = collectHistoryRef.id;
-        collectHistoryIds.push(collectHistoryId);
+    // 4. Add reference to users/{uid}/collect subcollection
+    await addUserCollect(uid, collectHistoryId);
 
-        // Add collect_items subcollection (single item per history)
-        await addSavedItems(collectHistoryId, { [itemId]: 1 });
-
-        // Add reference to users/{uid}/collect subcollection
-        await addUserCollect(uid, collectHistoryId);
-      }
-    }
-
-    // 3. Update users/{uid}/savings statistics (aggregate all items)
+    // 5. Update users/{uid}/savings statistics
     const userSavingsRef = db.collection('users').doc(uid).collection('savings');
     await addStatistics(userSavingsRef, items);
 
-    // 4. Update shops/{shopId}/savings statistics (aggregate all items)
+    // 6. Update shops/{shopId}/savings statistics
     const shopSavingsRef = db.collection('shops').doc(shopId).collection('savings');
     await addStatistics(shopSavingsRef, items);
 
-    // 5. Update global savings collection (aggregate all items)
+    // 7. Update global savings collection
     const globalSavingsRef = db.collection('savings');
     await addStatistics(globalSavingsRef, items);
 
@@ -415,7 +405,7 @@ router.post('/do-actions', async (req, res) => {
       success: true,
       message: 'Do actions recorded successfully',
       data: {
-        collectHistoryIds,
+        collectHistoryId,
         totalCount,
         totalScore
       }
