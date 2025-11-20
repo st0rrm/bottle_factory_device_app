@@ -16,10 +16,10 @@ export default function DoConfirmationView({
 }) {
   // 👉 선택 시 사용한 id들과 맞춰주기 (tumbler / container / refill / recycle)
   const actionMeta = {
-    tumbler: { label: '다회용 컵', icon: cupIcon, score: 10 },
-    container: { label: '다회용기', icon: containerIcon, score: 10 },
-    refill: { label: '리필용기', icon: refillIcon, score: 10 },
-    recycle: { label: '자원 순환', icon: recycleIcon, score: 10 },
+    tumbler:   { label: '텀블러 사용', icon: cupIcon,       score: 10 },
+    container: { label: '다회용기',   icon: containerIcon, score: 10 },
+    refill:    { label: '리필용기',   icon: refillIcon,    score: 10 },
+    recycle:   { label: '자원 순환',  icon: recycleIcon,   score: 10 },
   };
 
   // 👉 selectedActions 배열을 종류별로 묶어서 개수 세기
@@ -31,15 +31,17 @@ export default function DoConfirmationView({
   }, {});
 
   // 👉 렌더링용 배열로 변환
-  const summaryList = Object.entries(countsByActionId).map(
-    ([id, count]) => ({
-      id,
-      count,
-      ...actionMeta[id],
-    }),
-  );
+  const summaryList = Object.entries(countsByActionId).map(([id, count]) => ({
+    id,
+    count,
+    ...actionMeta[id],
+  }));
 
-  const totalScore = selectedActions.length * 10;
+  // ✅ 행동별 score * 개수 합산해서 최종 보상 계산
+  const totalScore = summaryList.reduce(
+    (sum, item) => sum + item.score * item.count,
+    0
+  );
 
   return (
     <div className="do-confirmation-overlay">
@@ -52,7 +54,6 @@ export default function DoConfirmationView({
           {/* Title */}
           <div className="do-confirmation-title">
             <h2 className="do-confirmation-heading">“일회용품 안 주셔도 괜찮아요!”</h2>
-            {/* 필요 없으면 아래 문구는 지워도 됨 */}
             {/* <p className="do-confirmation-subheading">아래 내용으로 기록됩니다</p> */}
           </div>
 
@@ -73,15 +74,13 @@ export default function DoConfirmationView({
                     <span className="do-confirmation-item-count">{item.count}</span>
                     <span className="do-confirmation-item-unit">개</span>
                   </div>
-                  <div className="do-confirmation-item-label">
-                    {item.label}
-                  </div>
+                  <div className="do-confirmation-item-label">{item.label}</div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Total Score (보틀/점수 영역은 프로젝트 룰에 맞게 수정해서 쓰면 됨) */}
+          {/* Total Score */}
           <div className="do-confirmation-total">
             <span className="do-confirmation-total-label">보상</span>
             <span className="do-confirmation-total-score">

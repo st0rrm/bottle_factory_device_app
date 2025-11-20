@@ -4,7 +4,6 @@
   gap : 55px;
   align-items: center;
   padding: 69px 102px 68px 102px;
-  margin: 78px 101px 78px 101px;
   line-height: 1.3;
 }
 
@@ -141,11 +140,11 @@
   position: absolute;
 
   /* 🔥 슬롯 밖으로 살짝 더 나오게 조정 */
-  top: -8px;   
-  right: -8px;
+  top: -25px;   
+  right: -25px;
 
-  width: 18px;
-  height: 18px;
+  width: 30px;
+  height: 30px;
 
   border-radius: 50%;
   border: none;

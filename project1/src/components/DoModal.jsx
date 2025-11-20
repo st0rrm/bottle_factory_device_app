@@ -21,6 +21,14 @@ import { getDeviceShopIdAsync } from '../config/device';
 export default function DoModal({ onClose, onSuccess }) {
   const [activeTab, setActiveTab] = useState('phone');
 
+  // ✅ 행동별 점수 테이블 (DoActionSelectionView / DoConfirmationView와 동일하게 맞추기)
+  const ACTION_SCORES = {
+    tumbler: 10,
+    container: 10,
+    refill: 10,
+    recycle: 10,
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     trackBehavior('tab_switch', `${tab}_do`);
@@ -219,6 +227,12 @@ export default function DoModal({ onClose, onSuccess }) {
       return;
     }
 
+    // ✅ 선택된 행동들의 점수를 합산
+    const totalScore = selectedActions.reduce(
+      (sum, actionId) => sum + (ACTION_SCORES[actionId] || 0),
+      0
+    );
+
     const shopInfo = await getDeviceShopIdAsync();
     if (!shopInfo.shopId) {
       console.error('❌ Firebase에서 가게 정보를 찾을 수 없습니다.');
@@ -234,17 +248,20 @@ export default function DoModal({ onClose, onSuccess }) {
       actions: selectedActions,
       shopId: shopId,
       shopName: shopName,
+      totalScore,
     });
 
     setIsLoading(true);
 
     try {
-      const totalScore = selectedActions.length * 10;
       console.log('총 점수:', totalScore);
 
       try {
-        await addTransaction('do', phoneNumber, selectedActions.length);
-        console.log(`실천 기록 완료: ${selectedActions.length}개 행동 실천`);
+        // ✅ 개수 대신 합산 점수로 기록
+        await addTransaction('do', phoneNumber, totalScore);
+        console.log(
+          `실천 기록 완료: 총 ${totalScore}점`
+        );
       } catch (error) {
         console.error('기록 실패', error);
       }
