@@ -116,7 +116,7 @@ function TreeContainer({
       uid: cafeId,
       total: totalScore,
       force: true,
-      count: totalCount,
+      count: 1,
       score: score
     };
 
