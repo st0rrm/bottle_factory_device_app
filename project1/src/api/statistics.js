@@ -38,14 +38,21 @@ export const getMyHistory = async (limit = 50, offset = 0) => {
   }
 };
 
-// 거래 기록 추가 (대여 또는 반납)
-export const addTransaction = async (transactionType, phoneNumber, quantity = 1) => {
+// 거래 기록 추가 (대여, 반납, 또는 실천)
+export const addTransaction = async (transactionType, phoneNumber, quantity = 1, score = null) => {
   try {
-    const response = await apiClient.post('/statistics/transaction', {
+    const payload = {
       transactionType,
       phoneNumber,
       quantity
-    });
+    };
+
+    // score가 제공되면 포함
+    if (score !== null) {
+      payload.score = score;
+    }
+
+    const response = await apiClient.post('/statistics/transaction', payload);
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: '거래 기록 중 오류가 발생했습니다.' };

@@ -10,17 +10,24 @@ router.post('/transaction', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Cafe access required' });
     }
 
-    const { transactionType, phoneNumber, quantity } = req.body;
+    const { transactionType, phoneNumber, quantity, score } = req.body;
 
     if (!transactionType || !['borrow', 'return', 'do'].includes(transactionType)) {
       return res.status(400).json({ error: 'Valid transaction type required (borrow, return, or do)' });
+    }
+
+    // Calculate score if not provided
+    let calculatedScore = score || 0;
+    if (!score && transactionType === 'borrow') {
+      calculatedScore = (quantity || 1) * 30;
     }
 
     const result = await Statistics.addTransaction(
       req.user.id,
       transactionType,
       phoneNumber || null,
-      quantity || 1
+      quantity || 1,
+      calculatedScore
     );
 
     res.status(201).json({

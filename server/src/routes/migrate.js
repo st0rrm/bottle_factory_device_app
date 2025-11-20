@@ -70,4 +70,51 @@ router.get('/check-constraint', authenticateAdmin, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/migrate/add-score-column
+ * Add score column to transactions table
+ * Admin only - requires authentication
+ */
+router.post('/add-score-column', authenticateAdmin, async (req, res) => {
+  try {
+    // Add score column
+    await pool.query(`
+      ALTER TABLE transactions
+      ADD COLUMN IF NOT EXISTS score INTEGER DEFAULT 0
+    `);
+
+    console.log('✅ Added score column');
+
+    // Update existing borrow transactions
+    const updateResult = await pool.query(`
+      UPDATE transactions
+      SET score = quantity * 30
+      WHERE transaction_type = 'borrow' AND score = 0
+    `);
+
+    console.log(`✅ Updated ${updateResult.rowCount} existing borrow records`);
+
+    // Create index
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_transactions_score ON transactions(score)
+    `);
+
+    console.log('✅ Created index on score column');
+
+    res.json({
+      success: true,
+      message: 'Migration completed successfully',
+      details: `Added score column and updated ${updateResult.rowCount} existing records`
+    });
+
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Migration failed',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;

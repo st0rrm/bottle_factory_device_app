@@ -397,6 +397,41 @@ function AdminDashboard() {
     }
   };
 
+  // DB 마이그레이션: score 칼럼 추가
+  const handleScoreMigration = async () => {
+    if (!confirm('데이터베이스에 score 칼럼을 추가하고 기존 데이터를 업데이트합니다. 계속하시겠습니까?')) {
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const authToken = localStorage.getItem('authToken');
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://returnmecup-api-dev.onrender.com/api';
+
+      const response = await fetch(`${apiUrl}/migrate/add-score-column`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('마이그레이션 실패');
+      }
+
+      const result = await response.json();
+      alert(`✅ 마이그레이션 완료!\n${result.message}\n${result.details}`);
+
+      // 통계 다시 불러오기
+      loadStats();
+    } catch (error) {
+      console.error('마이그레이션 오류:', error);
+      alert('마이그레이션 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       {/* Header */}
@@ -501,6 +536,14 @@ function AdminDashboard() {
                     style={{ marginLeft: '10px', backgroundColor: '#4CAF50' }}
                   >
                     {resetLoading ? '실행 중...' : '🔧 DB 마이그레이션'}
+                  </button>
+                  <button
+                    className="export-button"
+                    onClick={handleScoreMigration}
+                    disabled={resetLoading}
+                    style={{ marginLeft: '10px', backgroundColor: '#FF9800' }}
+                  >
+                    {resetLoading ? '실행 중...' : '📊 Score 칼럼 추가'}
                   </button>
                 </>
               )}

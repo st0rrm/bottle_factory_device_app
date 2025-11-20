@@ -1,12 +1,12 @@
 const pool = require('../config/database');
 
 class Statistics {
-  // 거래 기록 추가 (대여 또는 반납)
-  static async addTransaction(cafeId, transactionType, phoneNumber, quantity) {
+  // 거래 기록 추가 (대여, 반납, 또는 실천)
+  static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0) {
     try {
       const result = await pool.query(
-        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity) VALUES ($1, $2, $3, $4) RETURNING id',
-        [cafeId, transactionType, phoneNumber, quantity]
+        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity, score) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [cafeId, transactionType, phoneNumber, quantity, score]
       );
       return result.rows[0];
     } catch (err) {
@@ -62,7 +62,7 @@ class Statistics {
     try {
       const result = await pool.query(
         `SELECT
-          COALESCE(SUM(quantity * 30) FILTER (WHERE transaction_type = 'borrow'), 0) as total_score,
+          COALESCE(SUM(score), 0) as total_score,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow'), 0) as total_count,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND DATE(created_at) = CURRENT_DATE), 0) as today,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly
@@ -110,7 +110,7 @@ class Statistics {
           COUNT(t.id) as total_transactions,
           COUNT(t.id) FILTER (WHERE DATE(t.created_at) = CURRENT_DATE) as today_count,
           COUNT(t.id) FILTER (WHERE t.created_at >= CURRENT_DATE - INTERVAL '7 days') as weekly_count,
-          COALESCE(SUM(t.quantity * 30) FILTER (WHERE t.transaction_type = 'borrow'), 0) as total_score
+          COALESCE(SUM(t.score), 0) as total_score
         FROM cafes c
         LEFT JOIN transactions t ON c.id = t.cafe_id
         GROUP BY c.id, c.cafe_id, c.cafe_name
