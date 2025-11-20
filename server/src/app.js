@@ -5,6 +5,7 @@ const cafeRoutes = require('./routes/cafe');
 const statisticsRoutes = require('./routes/statistics');
 const behaviorsRoutes = require('./routes/behaviors');
 const userRoutes = require('./routes/users');
+const migrateRoutes = require('./routes/migrate');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/cafe', cafeRoutes);
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/behaviors', behaviorsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/migrate', migrateRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -49,6 +51,7 @@ app.get('/', (req, res) => {
       statistics: '/api/statistics',
       behaviors: '/api/behaviors',
       users: '/api/users',
+      migrate: '/api/migrate',
       health: '/health'
     }
   });
