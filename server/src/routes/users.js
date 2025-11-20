@@ -320,6 +320,101 @@ router.post('/return', async (req, res) => {
 });
 
 /**
+ * POST /api/users/do-actions
+ * Handle zero-waste actions and update Firestore
+ *
+ * Request body:
+ * {
+ *   uid: string,              // User ID
+ *   shopId: string,           // Shop ID where actions were performed
+ *   items: { [itemId]: count }, // Items { item_id: quantity }
+ * }
+ */
+router.post('/do-actions', async (req, res) => {
+  try {
+    const { uid, shopId, items } = req.body;
+
+    // Validate required fields
+    if (!uid || !shopId || !items) {
+      return res.status(400).json({
+        error: 'Missing required fields: uid, shopId, items'
+      });
+    }
+
+    // Calculate total score based on item counts
+    const itemScores = {
+      'AESpVawGP202Tg4QOmvH': 30, // 텀블러
+      'hjzsUXGds7dcqJyQYQzr': 30, // 다회용기
+      'r6V568cm0yGwDfQ8vooW': 30, // 리필용기
+      'VjlasSJRJjC6cw8BItvS': 5,  // 자원순환
+    };
+
+    let totalScore = 0;
+    for (const [itemId, count] of Object.entries(items)) {
+      const scorePerItem = itemScores[itemId] || 30; // Default 30 if not found
+      totalScore += scorePerItem * count;
+    }
+
+    const totalCount = Object.values(items).reduce((sum, count) => sum + count, 0);
+
+    if (totalCount === 0) {
+      return res.status(400).json({ error: 'No items to record' });
+    }
+
+    // 1. Update user document (score, coin)
+    await db.collection('users').doc(uid).update({
+      score: FieldValue.increment(totalScore),
+      coin: FieldValue.increment(totalScore)
+    });
+
+    // 2. Create collect_history document
+    const collectHistoryRef = await db.collection('collect_history').add({
+      uid,
+      shop_id: shopId,
+      score: totalScore,
+      create: FieldValue.serverTimestamp()
+    });
+
+    const collectHistoryId = collectHistoryRef.id;
+
+    // 3. Add collect_items subcollection to collect_history
+    await addSavedItems(collectHistoryId, items);
+
+    // 4. Add reference to users/{uid}/collect subcollection
+    await addUserCollect(uid, collectHistoryId);
+
+    // 5. Update users/{uid}/savings statistics
+    const userSavingsRef = db.collection('users').doc(uid).collection('savings');
+    await addStatistics(userSavingsRef, items);
+
+    // 6. Update shops/{shopId}/savings statistics
+    const shopSavingsRef = db.collection('shops').doc(shopId).collection('savings');
+    await addStatistics(shopSavingsRef, items);
+
+    // 7. Update global savings collection
+    const globalSavingsRef = db.collection('savings');
+    await addStatistics(globalSavingsRef, items);
+
+    res.json({
+      success: true,
+      message: 'Do actions recorded successfully',
+      data: {
+        collectHistoryId,
+        totalCount,
+        totalScore
+      }
+    });
+
+  } catch (error) {
+    console.error('Do actions error:', error);
+    res.status(500).json({
+      error: 'Failed to record do actions',
+      details: error.message
+    });
+  }
+});
+
+/**
  * POST /api/users/return-cup
  * Handle cup return and update all relevant collections and subcollections
  *

@@ -22,12 +22,19 @@ import { createNewUser } from '../firebase/firestore';
 export default function DoModal({ onClose, onSuccess }) {
   const [activeTab, setActiveTab] = useState('phone');
 
-  // ✅ 행동별 점수 테이블 (DoActionSelectionView / DoConfirmationView와 동일하게 맞추기)
+  // ✅ 행동별 점수 및 아이템 ID
   const ACTION_SCORES = {
-    tumbler: 10,
-    container: 10,
-    refill: 10,
-    recycle: 10,
+    tumbler: 30,    // 텀블러: AESpVawGP202Tg4QOmvH
+    container: 30,  // 다회용기: hjzsUXGds7dcqJyQYQzr
+    refill: 30,     // 리필용기: r6V568cm0yGwDfQ8vooW
+    recycle: 5,     // 자원순환: VjlasSJRJjC6cw8BItvS
+  };
+
+  const ACTION_ITEM_IDS = {
+    tumbler: 'AESpVawGP202Tg4QOmvH',
+    container: 'hjzsUXGds7dcqJyQYQzr',
+    refill: 'r6V568cm0yGwDfQ8vooW',
+    recycle: 'VjlasSJRJjC6cw8BItvS',
   };
 
   const handleTabChange = (tab) => {
@@ -244,12 +251,6 @@ export default function DoModal({ onClose, onSuccess }) {
       return;
     }
 
-    // ✅ 선택된 행동들의 점수를 합산
-    const totalScore = selectedActions.reduce(
-      (sum, actionId) => sum + (ACTION_SCORES[actionId] || 0),
-      0
-    );
-
     const shopInfo = await getDeviceShopIdAsync();
     if (!shopInfo.shopId) {
       console.error('❌ Firebase에서 가게 정보를 찾을 수 없습니다.');
@@ -260,9 +261,25 @@ export default function DoModal({ onClose, onSuccess }) {
     const shopId = shopInfo.shopId;
     const shopName = shopInfo.shopName || '카페명 없음';
 
+    // ✅ 선택된 행동들을 아이템별로 개수 집계
+    const itemCounts = {};
+    for (const actionId of selectedActions) {
+      const itemId = ACTION_ITEM_IDS[actionId];
+      if (itemId) {
+        itemCounts[itemId] = (itemCounts[itemId] || 0) + 1;
+      }
+    }
+
+    // ✅ 총 점수 계산
+    const totalScore = selectedActions.reduce(
+      (sum, actionId) => sum + (ACTION_SCORES[actionId] || 0),
+      0
+    );
+
     console.log('실천 적립 시작...', {
       userId: currentUser.uid,
       actions: selectedActions,
+      items: itemCounts,
       shopId: shopId,
       shopName: shopName,
       totalScore,
@@ -271,25 +288,44 @@ export default function DoModal({ onClose, onSuccess }) {
     setIsLoading(true);
 
     try {
-      console.log('총 점수:', totalScore);
+      // ✅ 백엔드 API 호출하여 Firestore 업데이트
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${apiUrl}/users/do-actions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: currentUser.uid,
+          shopId: shopId,
+          items: itemCounts
+        })
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('⚠️ 백엔드 API 호출 실패:', errorData);
+        throw new Error(errorData.error || '실천 기록 실패');
+      }
+
+      const apiResult = await response.json();
+      console.log('✅ Firestore 업데이트 완료:', apiResult);
+
+      // ✅ PostgreSQL에 기록 (통계용)
       try {
-        // ✅ 개수 대신 합산 점수로 기록
         await addTransaction('do', phoneNumber, totalScore);
-        console.log(
-          `실천 기록 완료: 총 ${totalScore}점`
-        );
+        console.log(`✅ 실천 기록 완료: 총 ${totalScore}점`);
       } catch (error) {
-        console.error('기록 실패', error);
+        console.error('⚠️ PostgreSQL 기록 실패:', error);
       }
 
       setIsLoading(false);
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('실천 기록 실패', error);
+      console.error('실천 기록 실패:', error);
       setIsLoading(false);
-      setErrorMessage('실천 기록에 실패했습니다.');
+      setErrorMessage(error.message || '실천 기록에 실패했습니다.');
       setTimeout(() => {
         setErrorMessage('');
       }, 2000);

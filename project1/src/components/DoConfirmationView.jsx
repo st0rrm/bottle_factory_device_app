@@ -16,10 +16,10 @@ export default function DoConfirmationView({
 }) {
   // 👉 선택 시 사용한 id들과 맞춰주기 (tumbler / container / refill / recycle)
   const actionMeta = {
-    tumbler:   { label: '텀블러 사용', icon: cupIcon,       score: 10 },
-    container: { label: '다회용기',   icon: containerIcon, score: 10 },
-    refill:    { label: '리필용기',   icon: refillIcon,    score: 10 },
-    recycle:   { label: '자원 순환',  icon: recycleIcon,   score: 10 },
+    tumbler:   { label: '텀블러 사용', icon: cupIcon,       score: 30 },
+    container: { label: '다회용기',   icon: containerIcon, score: 30 },
+    refill:    { label: '리필용기',   icon: refillIcon,    score: 30 },
+    recycle:   { label: '자원 순환',  icon: recycleIcon,   score: 5 },
   };
 
   // 👉 selectedActions 배열을 종류별로 묶어서 개수 세기
