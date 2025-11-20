@@ -65,23 +65,41 @@ function TreeContainer({
       return;
     }
 
-    const message = {
-      type: 'init',
-      uid: cafeId,
-      total: totalScore,
-      count: totalCount+1,
-      score: 0,
-      force: true
-    };
-
     const iframe = document.querySelector('.tree-iframe');
+    if (!iframe?.contentWindow) return;
 
-    if (iframe?.contentWindow) {
-      try {
-        iframe.contentWindow.postMessage(JSON.stringify(message), '*');
-      } catch (error) {
-        console.error('TreeContainer: init 전송 실패', error);
+    try {
+      // 1. 항상 count=1로 초기화
+      const initMessage = {
+        type: 'init',
+        uid: cafeId,
+        total: 0,
+        count: 1,
+        score: 0,
+        force: true
+      };
+
+      iframe.contentWindow.postMessage(JSON.stringify(initMessage), '*');
+      console.log('🌱 TreeContainer: init 전송 완료', initMessage);
+
+      // 2. totalCount > 0이면 grow 메시지 추가 전송
+      if (totalCount > 0) {
+        setTimeout(() => {
+          const growMessage = {
+            type: 'grow',
+            uid: cafeId,
+            total: totalScore,
+            count: totalCount,
+            score: totalScore,
+            force: true
+          };
+
+          iframe.contentWindow.postMessage(JSON.stringify(growMessage), '*');
+          console.log('🌳 TreeContainer: grow 전송 완료 (새로고침 후)', growMessage);
+        }, 100); // init 후 약간의 딜레이
       }
+    } catch (error) {
+      console.error('TreeContainer: 메시지 전송 실패', error);
     }
   }, [isReady, cafeId, type, totalScore, totalCount]);
 
