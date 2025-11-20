@@ -80,23 +80,29 @@ function TreeContainer({
       };
 
       iframe.contentWindow.postMessage(JSON.stringify(initMessage), '*');
-      console.log('🌱 TreeContainer: init 전송 완료', initMessage);
+      console.log('🌱 TreeContainer: init 전송 완료 (count=1)', initMessage);
 
-      // 2. totalCount > 0이면 grow 메시지 추가 전송
-      if (totalCount > 0) {
+      // 2. totalCount > 1이면 grow 메시지를 (totalCount - 1)번 반복 전송
+      if (totalCount > 1) {
         setTimeout(() => {
-          const growMessage = {
-            type: 'grow',
-            uid: cafeId,
-            total: totalScore,
-            count: totalCount,
-            score: totalScore,
-            force: true
-          };
+          for (let i = 1; i < totalCount; i++) {
+            const growMessage = {
+              type: 'grow',
+              uid: cafeId,
+              total: 30 * (i + 1), // 누적 점수 (30점씩 증가)
+              count: i + 1,         // 누적 횟수
+              score: 30,
+              force: true
+            };
 
-          iframe.contentWindow.postMessage(JSON.stringify(growMessage), '*');
-          console.log('🌳 TreeContainer: grow 전송 완료 (새로고침 후)', growMessage);
-        }, 100); // init 후 약간의 딜레이
+            // 각 grow 메시지를 100ms 간격으로 전송
+            setTimeout(() => {
+              iframe.contentWindow.postMessage(JSON.stringify(growMessage), '*');
+              // console.log(`🌿 TreeContainer: grow ${i} 전송 완료`, { count: i + 1, total: 30 * (i + 1) });
+              console.log(`🌿 TreeContainer: grow ${i} 전송 완료`, { count: i + 1, total: totalScore });
+            }, i * 100);
+          }
+        }, 100); // init 후 100ms 대기
       }
     } catch (error) {
       console.error('TreeContainer: 메시지 전송 실패', error);

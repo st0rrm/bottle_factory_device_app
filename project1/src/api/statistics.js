@@ -16,8 +16,8 @@ export const getMyStats = async () => {
     if (token === 'dev-token-12345') {
       console.log('개발 모드: 목 통계 데이터 사용');
       return {
-        totalScore: 90,  // 총 보틀 점수 (3개 * 30점)
-        totalCount: 3,   // 총 적립 횟수 3회 (나무 가지 3개)
+        totalScore: 150,  // 총 보틀 점수 (3개 * 30점)
+        totalCount: 5,   // 총 적립 횟수 3회 (나무 가지 3개)
         today: 1,        // 오늘 1회
         weekly: 1        // 주간 1회
       };
