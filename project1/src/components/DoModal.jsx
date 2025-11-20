@@ -203,8 +203,10 @@ export default function DoModal({ onClose, onSuccess }) {
         ...result.user,
         uid: createResult.existingUser.uid
       };
-    } else if (createResult.success) {
+    } else if (createResult.isNew) {
       console.log('✅ 신규 사용자 생성 완료');
+    } else if (createResult.success) {
+      console.log('✅ 기존 사용자 확인 완료');
     }
 
     const authenticatedUser = {

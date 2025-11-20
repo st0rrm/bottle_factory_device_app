@@ -99,13 +99,13 @@ const fetchAddressFromKakao = async (addressQuery) => {
  */
 export const createNewUser = async (user) => {
   try {
-    console.log('🔍 신규 사용자 생성 시작:', user.uid);
+    console.log('🔍 사용자 확인 시작:', user.uid);
     const userRef = doc(db, 'users', user.uid);
 
     // 이미 문서가 있는지 확인 (UID 기반)
     const userDoc = await getDoc(userRef);
     if (userDoc.exists()) {
-      console.log('✅ 사용자 문서가 이미 존재합니다. (UID 일치)');
+      console.log('✅ 기존 사용자 확인 완료 (UID 일치)');
       return { success: true, isNew: false };
     }
 
