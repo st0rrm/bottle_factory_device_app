@@ -20,11 +20,11 @@ CREATE TABLE IF NOT EXISTS cafes (
   created_by INTEGER REFERENCES admins(id)
 );
 
--- Create transactions table (대여/반납 거래 기록)
+-- Create transactions table (대여/반납/실천 거래 기록)
 CREATE TABLE IF NOT EXISTS transactions (
   id SERIAL PRIMARY KEY,
   cafe_id INTEGER NOT NULL REFERENCES cafes(id),
-  transaction_type VARCHAR(50) NOT NULL CHECK(transaction_type IN ('borrow', 'return')),
+  transaction_type VARCHAR(50) NOT NULL CHECK(transaction_type IN ('borrow', 'return', 'do')),
   phone_number VARCHAR(20),
   quantity INTEGER DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

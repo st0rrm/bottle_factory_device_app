@@ -315,8 +315,8 @@ export default function DoModal({ onClose, onSuccess }) {
 
       // ✅ PostgreSQL에 기록 (통계용)
       try {
-        await addTransaction('do', phoneNumber, totalScore);
-        console.log(`✅ 실천 기록 완료: 총 ${totalScore}점`);
+        await addTransaction('do', phoneNumber, selectedActions.length);
+        console.log(`✅ 실천 기록 완료: ${selectedActions.length}개 행동, 총 ${totalScore}점`);
       } catch (error) {
         console.error('⚠️ PostgreSQL 기록 실패:', error);
       }

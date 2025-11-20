@@ -12,8 +12,8 @@ router.post('/transaction', authenticateToken, async (req, res) => {
 
     const { transactionType, phoneNumber, quantity } = req.body;
 
-    if (!transactionType || !['borrow', 'return'].includes(transactionType)) {
-      return res.status(400).json({ error: 'Valid transaction type required (borrow or return)' });
+    if (!transactionType || !['borrow', 'return', 'do'].includes(transactionType)) {
+      return res.status(400).json({ error: 'Valid transaction type required (borrow, return, or do)' });
     }
 
     const result = await Statistics.addTransaction(
