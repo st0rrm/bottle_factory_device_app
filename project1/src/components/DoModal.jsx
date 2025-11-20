@@ -17,6 +17,7 @@ import { trackBehavior } from '../api/behaviors';
 import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { getDeviceShopIdAsync } from '../config/device';
+import { createNewUser } from '../firebase/firestore';
 
 export default function DoModal({ onClose, onSuccess }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -183,9 +184,25 @@ export default function DoModal({ onClose, onSuccess }) {
     // 인증 성공
     console.log('✅ 인증 성공:', result.user.uid);
 
+    // 신규/기존 사용자 확인 및 UID 전환
+    const createResult = await createNewUser(result.user);
+    let effectiveUser = result.user;
+
+    if (createResult.existingUser) {
+      console.log('⚠️ 기존 사용자 발견! UID 전환:');
+      console.log('  Firebase Auth UID:', result.user.uid);
+      console.log('  Firestore 기존 UID:', createResult.existingUser.uid);
+      effectiveUser = {
+        ...result.user,
+        uid: createResult.existingUser.uid
+      };
+    } else if (createResult.success) {
+      console.log('✅ 신규 사용자 생성 완료');
+    }
+
     const authenticatedUser = {
-      uid: result.user.uid,
-      phoneNumber: result.user.phoneNumber,
+      uid: effectiveUser.uid,
+      phoneNumber: effectiveUser.phoneNumber,
       mobile: phoneNumber,
     };
 
