@@ -8,7 +8,7 @@ function CafeStats() {
   const navigate = useNavigate();
   const [cafeInfo, setCafeInfo] = useState(null);
   const [dailyStats, setDailyStats] = useState([]);
-  const [transactionStats, setTransactionStats] = useState({ total: 0, today: 0, weekly: 0 });
+  const [transactionStats, setTransactionStats] = useState({ totalCount: 0, today: 0, weekly: 0 });
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(7);
 
@@ -86,7 +86,7 @@ function CafeStats() {
       <div className="summary-cards">
         <div className="summary-card">
           <div className="card-label">총 거래</div>
-          <div className="card-value">{transactionStats.total}</div>
+          <div className="card-value">{transactionStats.totalCount}</div>
         </div>
         <div className="summary-card">
           <div className="card-label">오늘</div>
@@ -137,9 +137,11 @@ function CafeStats() {
                   <th>QR 탭</th>
                   <th>QR 대여</th>
                   <th>QR 반납</th>
+                  <th>QR 실천</th>
                   <th>전화 탭</th>
                   <th>전화 대여</th>
                   <th>전화 반납</th>
+                  <th>전화 실천</th>
                   <th>인증 시도</th>
                   <th>총 액션</th>
                 </tr>
@@ -153,9 +155,11 @@ function CafeStats() {
                     <td>{stat.qr_tab_clicks}</td>
                     <td>{stat.qr_borrow_clicks}</td>
                     <td>{stat.qr_return_clicks}</td>
+                    <td>{stat.qr_do_clicks || 0}</td>
                     <td>{stat.phone_tab_clicks}</td>
                     <td>{stat.phone_borrow_clicks}</td>
                     <td>{stat.phone_return_clicks}</td>
+                    <td>{stat.phone_do_clicks || 0}</td>
                     <td>{stat.verification_attempts}</td>
                     <td><strong>{stat.total_actions}</strong></td>
                   </tr>
