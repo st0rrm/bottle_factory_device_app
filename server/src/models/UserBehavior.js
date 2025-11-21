@@ -68,8 +68,10 @@ class UserBehavior {
           COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail LIKE '%phone%') as phone_tab_clicks,
           COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'qr_borrow') as qr_borrow_clicks,
           COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'qr_return') as qr_return_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'qr_do') as qr_do_clicks,
           COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'phone_borrow') as phone_borrow_clicks,
           COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'phone_return') as phone_return_clicks,
+          COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch' AND ub.action_detail = 'phone_do') as phone_do_clicks,
           COUNT(*) FILTER (WHERE ub.action_type = 'tab_switch') as total_tab_switches
         FROM cafes c
         LEFT JOIN user_behaviors ub ON c.id = ub.cafe_id
@@ -84,8 +86,10 @@ class UserBehavior {
         phone_tab_clicks: parseInt(row.phone_tab_clicks) || 0,
         qr_borrow_clicks: parseInt(row.qr_borrow_clicks) || 0,
         qr_return_clicks: parseInt(row.qr_return_clicks) || 0,
+        qr_do_clicks: parseInt(row.qr_do_clicks) || 0,
         phone_borrow_clicks: parseInt(row.phone_borrow_clicks) || 0,
         phone_return_clicks: parseInt(row.phone_return_clicks) || 0,
+        phone_do_clicks: parseInt(row.phone_do_clicks) || 0,
         total_tab_switches: parseInt(row.total_tab_switches) || 0
       }));
     } catch (err) {

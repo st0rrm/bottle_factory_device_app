@@ -307,9 +307,11 @@ function AdminDashboard() {
       'QR 탭 (총)': cafe.qr_tab_clicks || 0,
       'QR 대여': cafe.qr_borrow_clicks || 0,
       'QR 반납': cafe.qr_return_clicks || 0,
+      'QR 실천': cafe.qr_do_clicks || 0,
       '전화 탭 (총)': cafe.phone_tab_clicks || 0,
       '전화 대여': cafe.phone_borrow_clicks || 0,
       '전화 반납': cafe.phone_return_clicks || 0,
+      '전화 실천': cafe.phone_do_clicks || 0,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -610,9 +612,11 @@ function AdminDashboard() {
                   <th>QR 탭 (총)</th>
                   <th>QR 대여</th>
                   <th>QR 반납</th>
+                  <th>QR 실천</th>
                   <th>전화 탭 (총)</th>
                   <th>전화 대여</th>
                   <th>전화 반납</th>
+                  <th>전화 실천</th>
                 </tr>
               </thead>
               <tbody>
@@ -621,7 +625,7 @@ function AdminDashboard() {
                   if (filteredStats.length === 0) {
                     return (
                       <tr>
-                        <td colSpan="12" style={{ textAlign: 'center' }}>
+                        <td colSpan="14" style={{ textAlign: 'center' }}>
                           {searchQuery ? '검색 결과가 없습니다.' : '통계 데이터가 없습니다.'}
                         </td>
                       </tr>
@@ -638,9 +642,11 @@ function AdminDashboard() {
                       <td>{cafe.qr_tab_clicks || 0}</td>
                       <td>{cafe.qr_borrow_clicks || 0}</td>
                       <td>{cafe.qr_return_clicks || 0}</td>
+                      <td>{cafe.qr_do_clicks || 0}</td>
                       <td>{cafe.phone_tab_clicks || 0}</td>
                       <td>{cafe.phone_borrow_clicks || 0}</td>
                       <td>{cafe.phone_return_clicks || 0}</td>
+                      <td>{cafe.phone_do_clicks || 0}</td>
                     </tr>
                   ));
                 })()}
