@@ -322,7 +322,7 @@ export default function DoModal({ onClose, onSuccess }) {
       }
 
       setIsLoading(false);
-      onSuccess?.();
+      onSuccess?.(totalScore);
       onClose();
     } catch (error) {
       console.error('실천 기록 실패:', error);

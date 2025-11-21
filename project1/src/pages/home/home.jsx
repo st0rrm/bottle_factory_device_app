@@ -202,11 +202,11 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     }, 3000);
   };
 
-  const handleDoSuccess = () => {
+  const handleDoSuccess = (score) => {
     setSnackbarMessage('🌱 제로웨이스트 실천이 기록되었습니다');
     setShowSuccessSnackbar(true);
     setTreeType('grow');
-    setTreeScore(30);
+    setTreeScore(score || 30);
     fetchStats();
     setTimeout(() => {
       setTreeType('init');
