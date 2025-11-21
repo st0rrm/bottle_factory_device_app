@@ -63,9 +63,9 @@ class Statistics {
       const result = await pool.query(
         `SELECT
           COALESCE(SUM(score), 0) as total_score,
-          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow'), 0) as total_count,
-          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND DATE(created_at) = CURRENT_DATE), 0) as today,
-          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do')), 0) as total_count,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do') AND DATE(created_at) = CURRENT_DATE), 0) as today,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do') AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly
         FROM transactions
         WHERE cafe_id = $1`,
         [cafeId]
@@ -107,9 +107,9 @@ class Statistics {
           c.id,
           c.cafe_id,
           c.cafe_name,
-          COUNT(t.id) as total_transactions,
-          COUNT(t.id) FILTER (WHERE DATE(t.created_at) = CURRENT_DATE) as today_count,
-          COUNT(t.id) FILTER (WHERE t.created_at >= CURRENT_DATE - INTERVAL '7 days') as weekly_count,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type IN ('borrow', 'do')), 0) as total_transactions,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type IN ('borrow', 'do') AND DATE(t.created_at) = CURRENT_DATE), 0) as today_count,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type IN ('borrow', 'do') AND t.created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_count,
           COALESCE(SUM(t.score), 0) as total_score
         FROM cafes c
         LEFT JOIN transactions t ON c.id = t.cafe_id
