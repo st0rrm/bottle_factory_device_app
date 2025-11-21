@@ -361,9 +361,9 @@ router.post('/do-actions', async (req, res) => {
       return res.status(400).json({ error: 'No items to record' });
     }
 
-    // Calculate bottle_all (only container items)
-    const CONTAINER_ITEM_ID = 'hjzsUXGds7dcqJyQYQzr'; // 다회용기
-    const bottleCount = items[CONTAINER_ITEM_ID] || 0;
+    // Calculate bottle_all (only tumbler/returnmecup items)
+    const TUMBLER_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 텀블러/리턴미컵
+    const bottleCount = items[TUMBLER_ITEM_ID] || 0;
 
     // 1. Update user document (score, coin, bottle_all, saving_all)
     await db.collection('users').doc(uid).update({
