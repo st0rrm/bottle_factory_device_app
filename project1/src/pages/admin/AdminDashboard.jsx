@@ -554,9 +554,11 @@ function AdminDashboard() {
                   <th>QR 탭</th>
                   <th>QR 대여</th>
                   <th>QR 반납</th>
+                  <th>QR 실천</th>
                   <th>전화 탭</th>
                   <th>전화 대여</th>
                   <th>전화 반납</th>
+                  <th>전화 실천</th>
                   <th>인증 시도</th>
                   <th>총 액션</th>
                 </tr>
@@ -571,7 +573,7 @@ function AdminDashboard() {
                   if (filteredStats.length === 0) {
                     return (
                       <tr>
-                        <td colSpan="12" style={{ textAlign: 'center' }}>
+                        <td colSpan="14" style={{ textAlign: 'center' }}>
                           통계 데이터가 없습니다.
                         </td>
                       </tr>
@@ -587,9 +589,11 @@ function AdminDashboard() {
                       <td>{stat.qr_tab_clicks}</td>
                       <td>{stat.qr_borrow_clicks}</td>
                       <td>{stat.qr_return_clicks}</td>
+                      <td>{stat.qr_do_clicks || 0}</td>
                       <td>{stat.phone_tab_clicks}</td>
                       <td>{stat.phone_borrow_clicks}</td>
                       <td>{stat.phone_return_clicks}</td>
+                      <td>{stat.phone_do_clicks || 0}</td>
                       <td>{stat.verification_attempts}</td>
                       <td><strong>{stat.total_actions}</strong></td>
                     </tr>
