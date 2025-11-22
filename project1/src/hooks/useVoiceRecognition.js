@@ -6,11 +6,11 @@ import { useVoiceActivityDetection } from './useVoiceActivityDetection';
  * OpenAI Whisper (음성→텍스트) + Claude Haiku (의도 분석)
  *
  * 동작 방식:
- * - VAD: 음량이 일정 수준 이상일 때만 API 활성화 (비용 절감)
- * - 5초마다 API로 음성 분석
- * - 0-15초: 누적 분석 (0-5초, 0-10초, 0-15초)
- * - 15초 이후: 15초 슬라이딩 윈도우 (5-20초, 10-25초, ...)
- * - confidence 기반 적응형 녹음 (최소 5초 ~ 최대 30초)
+ * 1. 5초 세그먼트 지속 녹음
+ * 2. 각 세그먼트를 VAD로 음량 분석
+ * 3. 음량 낮음 → 폐기, 다음 세그먼트로
+ * 4. 음량 충분 → LLM API 전송 (최대 15초 누적 + 15초 슬라이딩 윈도우)
+ * 5. Confidence 기반 적응형 처리
  *
  * @param {boolean} enabled - 음성 인식 활성화 여부
  * @param {function} onTakeoutDetected - 포장 의도 감지 시 콜백 함수
@@ -28,42 +28,29 @@ export const useVoiceRecognition = (
     maxCumulativeDuration = 15000,  // 15초까지 누적 모드
     windowSize = 15000,             // 슬라이딩 윈도우 크기
     maxTotalDuration = 30000,       // 최대 총 녹음 시간 (30초)
-    restartDelay = 1000,
     vadThreshold = 40,              // VAD 음량 임계값 (0-255)
-    vadSilenceDuration = 2000,      // VAD 침묵 판정 시간 (ms)
   } = options;
 
   const [isListening, setIsListening] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const [error, setError] = useState(null);
   const [currentSegments, setCurrentSegments] = useState(0);
-  const [phase, setPhase] = useState('idle'); // idle, cumulative, sliding
+  const [phase, setPhase] = useState('idle'); // idle, recording, analyzing
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
 
-  // 세그먼트별로 청크 저장: [[chunk1, chunk2], [chunk3, chunk4], ...]
-  const segmentsRef = useRef([]);
+  // 녹음된 세그먼트들 저장 (Blob 배열)
+  const segmentsRef = useRef([]); // [blob1, blob2, blob3, ...]
   const currentSegmentChunksRef = useRef([]);
 
-  const startTimeRef = useRef(0);
-  const segmentTimeoutRef = useRef(null);
+  const segmentIntervalRef = useRef(null);
   const isAnalyzingRef = useRef(false);
 
-  // VAD 초기화
-  const { isVoiceDetected, currentVolume, startDetection, stopDetection } =
-    useVoiceActivityDetection({
-      threshold: vadThreshold,
-      silenceDuration: vadSilenceDuration,
-      onVoiceStart: () => {
-        console.log('🎤 VAD: 음성 감지 → API 활성화');
-        startContinuousRecording();
-      },
-      onVoiceEnd: () => {
-        console.log('⏸️ VAD: 침묵 감지 → API 비활성화');
-        stopRecording();
-      },
-    });
+  // VAD Hook (오디오 blob 분석용)
+  const { currentVolume, analyzeSegment } = useVoiceActivityDetection({
+    threshold: vadThreshold,
+  });
 
   // 마이크 권한 요청
   const requestPermission = useCallback(async () => {
@@ -82,7 +69,7 @@ export const useVoiceRecognition = (
   }, []);
 
   // 연속 녹음 시작
-  const startContinuousRecording = useCallback(async () => {
+  const startRecording = useCallback(async () => {
     if (!hasPermission) {
       const granted = await requestPermission();
       if (!granted) return;
@@ -106,9 +93,8 @@ export const useVoiceRecognition = (
       mediaRecorderRef.current = mediaRecorder;
       segmentsRef.current = [];
       currentSegmentChunksRef.current = [];
-      startTimeRef.current = Date.now();
 
-      // 100ms마다 청크 수집 (분석 중에도 연속 녹음)
+      // 데이터 수집 (100ms 간격)
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           currentSegmentChunksRef.current.push(event.data);
@@ -117,13 +103,13 @@ export const useVoiceRecognition = (
 
       mediaRecorder.start(100);
       setIsListening(true);
-      setPhase('cumulative');
+      setPhase('recording');
       setError(null);
 
-      console.log('🎤 음성 인식 시작');
+      console.log('🎤 녹음 시작');
 
-      // 첫 번째 세그먼트 분석 예약
-      scheduleNextSegment();
+      // 5초마다 세그먼트 처리
+      scheduleSegmentProcessing();
 
     } catch (err) {
       console.error('녹음 시작 실패:', err);
@@ -132,106 +118,130 @@ export const useVoiceRecognition = (
     }
   }, [hasPermission, requestPermission]);
 
-  // 다음 세그먼트 처리 예약
-  const scheduleNextSegment = useCallback(() => {
-    segmentTimeoutRef.current = setTimeout(() => {
-      saveCurrentSegment();
-      analyzeSegments();
+  // 5초마다 세그먼트 처리
+  const scheduleSegmentProcessing = useCallback(() => {
+    segmentIntervalRef.current = setInterval(() => {
+      processCurrentSegment();
     }, segmentDuration);
   }, [segmentDuration]);
 
-  // 현재 세그먼트 저장
-  const saveCurrentSegment = useCallback(() => {
-    if (currentSegmentChunksRef.current.length > 0) {
-      segmentsRef.current.push([...currentSegmentChunksRef.current]);
-      currentSegmentChunksRef.current = [];
-
-      const totalSegments = segmentsRef.current.length;
-      setCurrentSegments(totalSegments);
-
-      console.log(`💾 세그먼트 ${totalSegments} 저장`);
+  // 현재 세그먼트 처리
+  const processCurrentSegment = useCallback(async () => {
+    if (currentSegmentChunksRef.current.length === 0) {
+      console.log('⚠️ 녹음 청크 없음, 건너뛰기');
+      return;
     }
-  }, []);
 
-  // 세그먼트 분석
-  const analyzeSegments = useCallback(async () => {
+    // 세그먼트 Blob 생성
+    const segmentBlob = new Blob(currentSegmentChunksRef.current, { type: 'audio/webm' });
+    currentSegmentChunksRef.current = [];
+
+    const segmentIndex = segmentsRef.current.length + 1;
+    console.log(`\n💾 세그먼트 ${segmentIndex} 생성 (${(segmentBlob.size / 1024).toFixed(2)}KB)`);
+
+    // VAD 분석
+    const { averageVolume, shouldStartRecognition } = await analyzeSegment(segmentBlob);
+
+    if (!shouldStartRecognition) {
+      // 음량 낮음 → 폐기하고 다음 세그먼트로
+      console.log(`🗑️ 세그먼트 ${segmentIndex} 폐기 (음량 ${averageVolume} < ${vadThreshold})\n`);
+      // 세그먼트는 저장하지 않음
+      return;
+    }
+
+    // 음량 충분 → 세그먼트 저장 및 LLM 분석
+    segmentsRef.current.push(segmentBlob);
+    const totalSegments = segmentsRef.current.length;
+    setCurrentSegments(totalSegments);
+
+    console.log(`✅ 세그먼트 ${segmentIndex} 저장 (총 ${totalSegments}개)`);
+
+    // LLM 분석 시작
+    analyzeLLM();
+  }, [analyzeSegment, vadThreshold]);
+
+  // LLM 분석
+  const analyzeLLM = useCallback(async () => {
     if (isAnalyzingRef.current) {
       console.log('⚠️ 이미 분석 중, 건너뛰기');
       return;
     }
 
     isAnalyzingRef.current = true;
+    setPhase('analyzing');
+
     const totalSegments = segmentsRef.current.length;
     const totalDuration = totalSegments * segmentDuration;
 
-    console.log(`\n📊 분석 시작 (${totalDuration}ms)`);
+    console.log(`\n📊 LLM 분석 시작 (세그먼트 ${totalSegments}개, ${totalDuration}ms)`);
 
     try {
       // 분석할 세그먼트 선택
-      let segmentsToAnalyze;
+      let blobsToAnalyze;
       let analysisMode;
 
       if (totalDuration <= maxCumulativeDuration) {
         // 0-15초: 누적 분석
-        segmentsToAnalyze = segmentsRef.current;
+        blobsToAnalyze = segmentsRef.current;
         analysisMode = 'cumulative';
-        setPhase('cumulative');
-        console.log(`📈 누적: 0-${totalDuration}ms`);
+        console.log(`📈 누적 모드: 0-${totalDuration}ms (${blobsToAnalyze.length}개 세그먼트)`);
       } else {
         // 15초 이후: 슬라이딩 윈도우
         const windowSegments = Math.floor(windowSize / segmentDuration);
-        segmentsToAnalyze = segmentsRef.current.slice(-windowSegments);
+        blobsToAnalyze = segmentsRef.current.slice(-windowSegments);
         analysisMode = 'sliding';
-        setPhase('sliding');
 
         const startIdx = segmentsRef.current.length - windowSegments;
         const startTime = startIdx * segmentDuration;
         const endTime = startTime + windowSize;
-        console.log(`🔄 슬라이딩: ${startTime}-${endTime}ms`);
+        console.log(`🔄 슬라이딩 모드: ${startTime}-${endTime}ms (${blobsToAnalyze.length}개 세그먼트)`);
       }
 
-      // 청크 병합
-      const allChunks = segmentsToAnalyze.flat();
-      const audioBlob = new Blob(allChunks, { type: 'audio/webm' });
+      // 세그먼트들을 하나의 Blob으로 병합
+      const mergedBlob = new Blob(blobsToAnalyze, { type: 'audio/webm' });
 
-      console.log(`📦 ${(audioBlob.size / 1024).toFixed(2)}KB`);
+      console.log(`📦 병합된 오디오: ${(mergedBlob.size / 1024).toFixed(2)}KB`);
 
       const analysisStartTime = Date.now();
-      const result = await analyzeVoice(audioBlob);
+      const result = await analyzeVoice(mergedBlob);
       const analysisTime = Date.now() - analysisStartTime;
 
-      console.log(`✅ 응답: ${analysisTime}ms, confidence: ${result.confidence}, text: "${result.text || 'N/A'}"`);
+      console.log(`✅ API 응답 (${analysisTime}ms):`);
+      console.log(`   텍스트: "${result.text || 'N/A'}"`);
+      console.log(`   포장: ${result.takeout}, 확신도: ${result.confidence}`);
+      console.log(`   이유: ${result.reason}`);
 
       // 결과 처리
       if (result.confidence >= highThreshold && result.takeout) {
-        // 확정
-        console.log(`✅ 포장 감지 (confidence ${result.confidence})`);
+        // 확정 → 포장 감지
+        console.log(`\n🎉 포장 의도 확정 (confidence ${result.confidence})`);
         stopRecording();
         onTakeoutDetected(0);
 
       } else if (result.confidence >= lowThreshold && result.confidence < highThreshold && result.takeout) {
-        // 추가 녹음
+        // 애매함 → 추가 녹음
         if (totalDuration >= maxTotalDuration) {
-          console.log(`⏱️ 최대 시간 도달`);
+          console.log(`\n⏱️ 최대 시간 도달 (${totalDuration}ms), 재시작`);
           stopRecording();
-          restartRecording();
+          setTimeout(() => startRecording(), 1000);
         } else {
-          console.log(`⏳ 추가 녹음 (confidence ${result.confidence})`);
-          scheduleNextSegment();
+          console.log(`\n⏳ 추가 녹음 진행 (confidence ${result.confidence})`);
+          setPhase('recording');
+          // 계속 녹음 (interval이 자동으로 다음 세그먼트 처리)
         }
 
       } else {
-        // 재시작
-        console.log(`❌ 재시작 (confidence ${result.confidence})`);
+        // 포장 아님 or 확신도 낮음 → 폐기 및 재시작
+        console.log(`\n❌ 포장 의도 없음 또는 낮은 확신도 (confidence ${result.confidence}), 재시작`);
         stopRecording();
-        restartRecording();
+        setTimeout(() => startRecording(), 1000);
       }
 
     } catch (error) {
-      console.error('❌ 분석 실패:', error);
+      console.error('\n❌ LLM 분석 실패:', error);
       setError('음성 분석에 실패했습니다.');
       stopRecording();
-      restartRecording();
+      setTimeout(() => startRecording(), 1000);
     } finally {
       isAnalyzingRef.current = false;
     }
@@ -242,7 +252,8 @@ export const useVoiceRecognition = (
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
 
-    const response = await fetch('/api/voice/analyze', {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    const response = await fetch(`${apiBaseUrl}/voice/analyze`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -251,7 +262,7 @@ export const useVoiceRecognition = (
     });
 
     if (!response.ok) {
-      throw new Error('음성 분석 API 호출 실패');
+      throw new Error(`API 호출 실패: ${response.status}`);
     }
 
     return response.json();
@@ -259,9 +270,11 @@ export const useVoiceRecognition = (
 
   // 녹음 중지
   const stopRecording = useCallback(() => {
-    if (segmentTimeoutRef.current) {
-      clearTimeout(segmentTimeoutRef.current);
-      segmentTimeoutRef.current = null;
+    console.log('⏹️ 녹음 중지\n');
+
+    if (segmentIntervalRef.current) {
+      clearInterval(segmentIntervalRef.current);
+      segmentIntervalRef.current = null;
     }
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -279,58 +292,17 @@ export const useVoiceRecognition = (
     segmentsRef.current = [];
     currentSegmentChunksRef.current = [];
     isAnalyzingRef.current = false;
-
-    console.log('⏹️ 중지\n');
   }, []);
 
-  // 재시작
-  const restartRecording = useCallback(() => {
-    setTimeout(() => {
-      if (enabled) {
-        console.log(`🔄 재시작\n`);
-        startContinuousRecording();
-      }
-    }, restartDelay);
-  }, [enabled, restartDelay, startContinuousRecording]);
-
-  // VAD 자동 시작 (enabled=true일 때)
+  // enabled=true일 때 자동 시작
   useEffect(() => {
     if (!enabled || !hasPermission) return;
 
-    let stream = null;
-
-    const startVAD = async () => {
-      try {
-        // 마이크 스트림 획득
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          }
-        });
-
-        // VAD 시작 (음량 감지만 수행, API 호출 X)
-        console.log('🎧 VAD 활성화 (음성 감지 대기 중...)');
-        startDetection(stream);
-
-      } catch (err) {
-        console.error('마이크 접근 실패:', err);
-        setError('마이크 접근 권한이 필요합니다.');
-      }
-    };
-
-    startVAD();
+    console.log('🎧 음성 인식 활성화');
+    startRecording();
 
     return () => {
-      if (segmentTimeoutRef.current) {
-        clearTimeout(segmentTimeoutRef.current);
-      }
-      stopDetection();
       stopRecording();
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
     };
   }, [enabled, hasPermission]);
 
@@ -341,7 +313,6 @@ export const useVoiceRecognition = (
     error,
     currentSegments,
     phase,
-    isVoiceDetected,  // VAD 음성 감지 여부
     currentVolume,    // VAD 현재 음량
     stopRecording,
   };

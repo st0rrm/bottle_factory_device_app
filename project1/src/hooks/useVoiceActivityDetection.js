@@ -1,154 +1,83 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 /**
- * 음성 활동 감지 (VAD - Voice Activity Detection)
- * 브라우저 내장 Web Audio API 사용 (외부 라이브러리 없음)
+ * 세그먼트 기반 음성 활동 감지 (VAD)
  *
  * 동작:
- * - 마이크 입력의 평균 음량을 실시간 측정
- * - threshold 이상이면 음성 시작으로 간주
- * - silenceDuration 동안 threshold 미만이면 음성 종료로 간주
+ * - 녹음된 오디오 blob을 받아서 음량 분석
+ * - Web Audio API로 평균 음량 계산
+ * - threshold 이상이면 LLM 분석 진행, 미만이면 폐기
  *
  * @param {object} options - 설정 옵션
  * @param {number} options.threshold - 음량 임계값 (0-255, 기본 40)
- * @param {number} options.silenceDuration - 침묵 판정 시간 (ms, 기본 2000)
- * @param {function} options.onVoiceStart - 음성 시작 시 콜백
- * @param {function} options.onVoiceEnd - 음성 종료 시 콜백
  */
 export const useVoiceActivityDetection = (options = {}) => {
   const {
     threshold = 40,
-    silenceDuration = 2000,
-    onVoiceStart = () => {},
-    onVoiceEnd = () => {},
   } = options;
 
-  const [isVoiceDetected, setIsVoiceDetected] = useState(false);
   const [currentVolume, setCurrentVolume] = useState(0);
 
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const animationFrameRef = useRef(null);
-  const silenceTimeoutRef = useRef(null);
-  const isVoiceDetectedRef = useRef(false);
-
-  // 음량 감지 시작
-  const startDetection = useCallback(async (stream) => {
+  /**
+   * 오디오 blob의 평균 음량 분석
+   * @param {Blob} audioBlob - 분석할 오디오 blob
+   * @returns {Promise<{averageVolume: number, shouldStartRecognition: boolean}>}
+   */
+  const analyzeSegment = useCallback(async (audioBlob) => {
     try {
-      // AudioContext 생성 (브라우저 내장)
+      // AudioContext 생성
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      audioContextRef.current = audioContext;
 
-      // Analyser 노드 생성 (주파수/음량 분석용)
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 512; // 분석 해상도 (256 bins)
-      analyser.smoothingTimeConstant = 0.8; // 평활화 (노이즈 감소)
-      analyserRef.current = analyser;
+      // Blob을 ArrayBuffer로 변환
+      const arrayBuffer = await audioBlob.arrayBuffer();
 
-      // 마이크 스트림을 AudioContext에 연결
-      const microphone = audioContext.createMediaStreamSource(stream);
-      microphone.connect(analyser);
+      // AudioBuffer로 디코딩
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-      // 음량 데이터를 저장할 배열
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      // 채널 데이터 가져오기 (모노/스테레오 모두 처리)
+      const channelData = audioBuffer.getChannelData(0);
 
-      console.log('🎧 VAD 시작 (threshold:', threshold, ')');
+      // 평균 음량 계산 (RMS)
+      let sum = 0;
+      for (let i = 0; i < channelData.length; i++) {
+        sum += channelData[i] * channelData[i];
+      }
+      const rms = Math.sqrt(sum / channelData.length);
 
-      // 음량 체크 함수 (60fps로 실행)
-      const checkVolume = () => {
-        // 주파수 데이터를 가져옴 (0-255 범위)
-        analyser.getByteFrequencyData(dataArray);
+      // 0-255 범위로 정규화
+      const averageVolume = Math.min(255, Math.round(rms * 255 * 10));
 
-        // 평균 음량 계산
-        const sum = dataArray.reduce((a, b) => a + b, 0);
-        const average = sum / dataArray.length;
+      setCurrentVolume(averageVolume);
 
-        // 상태 업데이트 (디버깅/UI용)
-        setCurrentVolume(Math.round(average));
+      console.log(`📊 세그먼트 분석: 평균 음량 ${averageVolume} (threshold: ${threshold})`);
 
-        // 5초마다 음량 로그 출력 (너무 많은 로그 방지)
-        if (!checkVolume.lastLog || Date.now() - checkVolume.lastLog > 5000) {
-          console.log(`🔊 현재 음량: ${average.toFixed(1)} (threshold: ${threshold})`);
-          checkVolume.lastLog = Date.now();
-        }
+      // AudioContext 정리
+      await audioContext.close();
 
-        // 음성 감지 로직
-        if (average > threshold) {
-          // 음량이 임계값 초과 → 음성 시작
-          if (!isVoiceDetectedRef.current) {
-            console.log(`✅ 음성 시작 감지 (음량: ${average.toFixed(1)})`);
-            isVoiceDetectedRef.current = true;
-            setIsVoiceDetected(true);
-            onVoiceStart();
-          }
+      const shouldStartRecognition = averageVolume >= threshold;
 
-          // 침묵 타이머 초기화 (계속 말하고 있음)
-          if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-          }
+      if (shouldStartRecognition) {
+        console.log(`✅ 음성 감지 (음량: ${averageVolume}) → LLM 분석 진행`);
+      } else {
+        console.log(`❌ 낮은 음량 (음량: ${averageVolume}) → 세그먼트 폐기`);
+      }
 
-          // silenceDuration 동안 threshold 미만이면 음성 종료
-          silenceTimeoutRef.current = setTimeout(() => {
-            if (isVoiceDetectedRef.current) {
-              console.log(`⏸️ 음성 종료 (${silenceDuration}ms 침묵)`);
-              isVoiceDetectedRef.current = false;
-              setIsVoiceDetected(false);
-              onVoiceEnd();
-            }
-          }, silenceDuration);
-        }
-
-        // 다음 프레임에서 다시 체크
-        animationFrameRef.current = requestAnimationFrame(checkVolume);
+      return {
+        averageVolume,
+        shouldStartRecognition,
       };
 
-      // 첫 체크 시작
-      checkVolume();
-
     } catch (error) {
-      console.error('❌ VAD 시작 실패:', error);
+      console.error('❌ VAD 분석 실패:', error);
+      return {
+        averageVolume: 0,
+        shouldStartRecognition: false,
+      };
     }
-  }, [threshold, silenceDuration, onVoiceStart, onVoiceEnd]);
-
-  // 음량 감지 중지
-  const stopDetection = useCallback(() => {
-    console.log('🛑 VAD 중지');
-
-    // 애니메이션 프레임 취소
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    // 침묵 타이머 취소
-    if (silenceTimeoutRef.current) {
-      clearTimeout(silenceTimeoutRef.current);
-      silenceTimeoutRef.current = null;
-    }
-
-    // AudioContext 종료
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-
-    // 상태 초기화
-    isVoiceDetectedRef.current = false;
-    setIsVoiceDetected(false);
-    setCurrentVolume(0);
-  }, []);
-
-  // 컴포넌트 언마운트 시 정리
-  useEffect(() => {
-    return () => {
-      stopDetection();
-    };
-  }, [stopDetection]);
+  }, [threshold]);
 
   return {
-    isVoiceDetected,    // 현재 음성 감지 여부
-    currentVolume,      // 현재 음량 (0-255)
-    startDetection,     // 감지 시작 함수
-    stopDetection,      // 감지 중지 함수
+    currentVolume,
+    analyzeSegment,  // 오디오 blob 분석 함수
   };
 };
