@@ -53,9 +53,12 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
     });
 
     // Step 1: OpenAI Whisper로 음성을 텍스트로 변환
-    // Node.js 환경에서는 Buffer를 Blob처럼 사용 가능
-    const audioFile = req.file.buffer;
-    audioFile.name = 'audio.webm'; // OpenAI SDK가 요구하는 name 속성 추가
+    // OpenAI SDK를 위한 File 객체 생성
+    const audioFile = new File(
+      [req.file.buffer],
+      'audio.webm',
+      { type: req.file.mimetype || 'audio/webm' }
+    );
 
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
