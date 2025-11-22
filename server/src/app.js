@@ -6,6 +6,7 @@ const statisticsRoutes = require('./routes/statistics');
 const behaviorsRoutes = require('./routes/behaviors');
 const userRoutes = require('./routes/users');
 const migrateRoutes = require('./routes/migrate');
+const voiceRoutes = require('./routes/voice');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/api/statistics', statisticsRoutes);
 app.use('/api/behaviors', behaviorsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/migrate', migrateRoutes);
+app.use('/api/voice', voiceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -52,6 +54,7 @@ app.get('/', (req, res) => {
       behaviors: '/api/behaviors',
       users: '/api/users',
       migrate: '/api/migrate',
+      voice: '/api/voice',
       health: '/health'
     }
   });

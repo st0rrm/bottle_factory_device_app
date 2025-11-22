@@ -14,6 +14,7 @@ import TreeContainer from '../../components/TreeContainer';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
 import { usePicovoice } from '../../hooks/usePicovoice';
+// import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (Whisper + Claude)
 import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
 
 function HomeScreen() {
@@ -122,8 +123,25 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     setShowHelpModal(true);
   }, []);
 
+  // 음성 인식 방법 선택
+
+  // 방법 1: Picovoice (현재 사용 중)
+  // const { isListening, error: picoError, hasPermission, requestPermission } =
+  //   usePicovoice(true, handleWakeWordDetected);
+
+  // 방법 2: LLM 기반 (Whisper + Claude)
   const { isListening, error: picoError, hasPermission, requestPermission } =
-    usePicovoice(true, handleWakeWordDetected);
+    useVoiceRecognition(true, handleWakeWordDetected, {
+      segmentDuration: 5000,         // 5초마다 분석
+      lowThreshold: 0.4,             // 0.4 미만 → 폐기
+      highThreshold: 0.7,            // 0.7 이상 → 확정
+      maxCumulativeDuration: 15000,  // 최대 15초 누적
+      windowSize: 15000,             // 슬라이딩 윈도우 15초
+      maxTotalDuration: 30000,       // 최대 30초
+      restartDelay: 1000,
+      vadThreshold: 40,              // VAD 음량 임계값 (0-255, 기본 40)
+      vadSilenceDuration: 2000,      // VAD 침묵 판정 시간 (ms, 기본 2000)
+    });
 
   // load café info
   useEffect(() => {
