@@ -138,9 +138,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       maxCumulativeDuration: 15000,  // 최대 15초 누적
       windowSize: 15000,             // 슬라이딩 윈도우 15초
       maxTotalDuration: 30000,       // 최대 30초
-      restartDelay: 1000,
-      vadThreshold: 40,              // VAD 음량 임계값 (0-255, 기본 40)
-      vadSilenceDuration: 2000,      // VAD 침묵 판정 시간 (ms, 기본 2000)
+      vadThreshold: 40,              // VAD 음량 임계값 (0-255)
     });
 
   // load café info

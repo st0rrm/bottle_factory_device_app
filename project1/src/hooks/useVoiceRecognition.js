@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useVoiceActivityDetection } from './useVoiceActivityDetection';
 
 /**
  * LLM 기반 음성 인식 훅
@@ -7,7 +6,7 @@ import { useVoiceActivityDetection } from './useVoiceActivityDetection';
  *
  * 동작 방식:
  * 1. 5초 세그먼트 지속 녹음
- * 2. 각 세그먼트를 VAD로 음량 분석
+ * 2. 각 세그먼트를 크기 기반 휴리스틱으로 음량 추정
  * 3. 음량 낮음 → 폐기, 다음 세그먼트로
  * 4. 음량 충분 → LLM API 전송 (최대 15초 누적 + 15초 슬라이딩 윈도우)
  * 5. Confidence 기반 적응형 처리
@@ -46,11 +45,6 @@ export const useVoiceRecognition = (
 
   const segmentIntervalRef = useRef(null);
   const isAnalyzingRef = useRef(false);
-
-  // VAD Hook (오디오 blob 분석용)
-  const { currentVolume, analyzeSegment } = useVoiceActivityDetection({
-    threshold: vadThreshold,
-  });
 
   // 마이크 권한 요청
   const requestPermission = useCallback(async () => {
@@ -139,8 +133,11 @@ export const useVoiceRecognition = (
     const segmentIndex = segmentsRef.current.length + 1;
     console.log(`\n💾 세그먼트 ${segmentIndex} 생성 (${(segmentBlob.size / 1024).toFixed(2)}KB)`);
 
-    // VAD 분석
-    const { averageVolume, shouldStartRecognition } = await analyzeSegment(segmentBlob);
+    // VAD 분석 (간단한 크기 기반 휴리스틱 사용)
+    const averageVolume = estimateVolumeFromSize(segmentBlob.size, segmentDuration);
+    const shouldStartRecognition = averageVolume >= vadThreshold;
+
+    console.log(`📊 세그먼트 분석: 예상 음량 ${averageVolume} (threshold: ${vadThreshold})`);
 
     if (!shouldStartRecognition) {
       // 음량 낮음 → 폐기하고 다음 세그먼트로
@@ -148,6 +145,8 @@ export const useVoiceRecognition = (
       // 세그먼트는 저장하지 않음
       return;
     }
+
+    console.log(`✅ 음성 감지 (음량: ${averageVolume}) → 세그먼트 저장`);
 
     // 음량 충분 → 세그먼트 저장 및 LLM 분석
     segmentsRef.current.push(segmentBlob);
@@ -158,7 +157,30 @@ export const useVoiceRecognition = (
 
     // LLM 분석 시작
     analyzeLLM();
-  }, [analyzeSegment, vadThreshold]);
+  }, [vadThreshold]);
+
+  // 크기 기반 음량 추정 (휴리스틱)
+  const estimateVolumeFromSize = (blobSize, duration) => {
+    // WebM 오디오는 보통 8-12 KB/s (64-96 kbps)
+    // 5초 = 40-60 KB (정상 음성)
+    // 5초 < 20 KB = 매우 조용함 또는 침묵
+
+    const bytesPerSecond = blobSize / (duration / 1000);
+
+    if (bytesPerSecond < 4000) {
+      // < 4 KB/s = 침묵 (음량 0-30)
+      return Math.round(bytesPerSecond / 200);
+    } else if (bytesPerSecond < 8000) {
+      // 4-8 KB/s = 낮은 음량 (음량 30-60)
+      return Math.round(30 + (bytesPerSecond - 4000) / 133);
+    } else if (bytesPerSecond < 16000) {
+      // 8-16 KB/s = 정상 음량 (음량 60-150)
+      return Math.round(60 + (bytesPerSecond - 8000) / 89);
+    } else {
+      // > 16 KB/s = 높은 음량 (음량 150-255)
+      return Math.min(255, Math.round(150 + (bytesPerSecond - 16000) / 200));
+    }
+  };
 
   // LLM 분석
   const analyzeLLM = useCallback(async () => {
@@ -313,7 +335,6 @@ export const useVoiceRecognition = (
     error,
     currentSegments,
     phase,
-    currentVolume,    // VAD 현재 음량
     stopRecording,
   };
 };
