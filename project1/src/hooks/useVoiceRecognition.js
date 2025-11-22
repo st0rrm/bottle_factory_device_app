@@ -200,7 +200,7 @@ export const useVoiceRecognition = (
       const result = await analyzeVoice(audioBlob);
       const analysisTime = Date.now() - analysisStartTime;
 
-      console.log(`✅ 응답: ${analysisTime}ms, confidence: ${result.confidence}`);
+      console.log(`✅ 응답: ${analysisTime}ms, confidence: ${result.confidence}, text: "${result.text || 'N/A'}"`);
 
       // 결과 처리
       if (result.confidence >= highThreshold && result.takeout) {
@@ -295,26 +295,28 @@ export const useVoiceRecognition = (
 
   // VAD 자동 시작 (enabled=true일 때)
   useEffect(() => {
+    if (!enabled || !hasPermission) return;
+
+    let stream = null;
+
     const startVAD = async () => {
-      if (enabled && hasPermission) {
-        try {
-          // 마이크 스트림 획득
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            }
-          });
+      try {
+        // 마이크 스트림 획득
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          }
+        });
 
-          // VAD 시작 (음량 감지만 수행, API 호출 X)
-          console.log('🎧 VAD 활성화 (음성 감지 대기 중...)');
-          startDetection(stream);
+        // VAD 시작 (음량 감지만 수행, API 호출 X)
+        console.log('🎧 VAD 활성화 (음성 감지 대기 중...)');
+        startDetection(stream);
 
-        } catch (err) {
-          console.error('마이크 접근 실패:', err);
-          setError('마이크 접근 권한이 필요합니다.');
-        }
+      } catch (err) {
+        console.error('마이크 접근 실패:', err);
+        setError('마이크 접근 권한이 필요합니다.');
       }
     };
 
@@ -326,8 +328,11 @@ export const useVoiceRecognition = (
       }
       stopDetection();
       stopRecording();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, [enabled, hasPermission, startDetection, stopDetection]);
+  }, [enabled, hasPermission]);
 
   return {
     isListening,

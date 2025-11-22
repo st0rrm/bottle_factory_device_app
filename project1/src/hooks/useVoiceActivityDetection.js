@@ -66,6 +66,12 @@ export const useVoiceActivityDetection = (options = {}) => {
         // 상태 업데이트 (디버깅/UI용)
         setCurrentVolume(Math.round(average));
 
+        // 5초마다 음량 로그 출력 (너무 많은 로그 방지)
+        if (!checkVolume.lastLog || Date.now() - checkVolume.lastLog > 5000) {
+          console.log(`🔊 현재 음량: ${average.toFixed(1)} (threshold: ${threshold})`);
+          checkVolume.lastLog = Date.now();
+        }
+
         // 음성 감지 로직
         if (average > threshold) {
           // 음량이 임계값 초과 → 음성 시작
