@@ -194,7 +194,8 @@
   width: 100%;
   max-width: 100%;
   background-color: #478a81;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   padding: 10px 40px 50px;
   flex-shrink: 0;
   box-sizing: border-box;

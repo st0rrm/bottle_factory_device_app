@@ -50,7 +50,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -55%) scale(1);
+  /* transform은 TreeContainer.jsx에서 동적으로 적용 (DPR 기반) */
   z-index: 4;                    /* 가장 위에 나무 */
   pointer-events: auto;          /* iframe 상호작용 허용 */
 }

@@ -25,10 +25,26 @@ function TreeContainer({
   const iframeRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const countRef = useRef(-1); // grow 메시지 중복 실행 방지용
+  const [iframeScale, setIframeScale] = useState(1);
 
   // 환경변수에서 Tree URL 가져오기 + noBackground 파라미터 추가
   const treeUrl = import.meta.env.VITE_TREE_URL || 'https://bottleclub-tree.web.app/';
   const treeUrlWithParams = `${treeUrl}?noBackground=true`;
+
+  // DPR에 따른 iframe scale 계산
+  useEffect(() => {
+    const updateScale = () => {
+      const dpr = window.devicePixelRatio || 1;
+      // DPR로 나누어 모바일에서 나무가 커지는 것을 보정
+      const scale = 1 / dpr;
+      setIframeScale(scale);
+      console.log('🌳 TreeContainer DPR scaling:', { dpr, scale });
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   // Debug: Log when background props change
   useEffect(() => {
@@ -159,6 +175,9 @@ function TreeContainer({
         src={treeUrlWithParams}
         title="보틀 나무"
         className="tree-iframe"
+        style={{
+          transform: `translate(-50%, -55%) scale(${iframeScale})`
+        }}
         sandbox="allow-scripts allow-same-origin allow-forms"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; storage-access"
       />
