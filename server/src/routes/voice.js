@@ -156,9 +156,11 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
             role: 'user',
             content: `카페 키오스크 발화: "${recognizedText}"
 
-포장 의도 판단 (예: 포장/테이크아웃/가져갈게요/to go)
+일회용컵 포장 의도 판단:
+- false: 매장 이용 또는 개인컵 사용 (예: 텀블러/매장/먹고갈게요)
+- true: 그 이외의 포장 (예: 포장/테이크아웃/가져갈게요)
 
-JSON으로만 답변:
+JSON만 출력:
 {"takeout":true|false,"confidence":0.0~1.0,"reason":"string"}`
           }
         ]

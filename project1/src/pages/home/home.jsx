@@ -156,7 +156,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       maxCumulativeDuration: 15000,  // 최대 15초 누적
       windowSize: 15000,             // 슬라이딩 윈도우 15초
       maxTotalDuration: 30000,       // 최대 30초
-      vadThreshold: 15,              // VAD 음량 임계값 (RMS 기반, 0-255)
+      vadThreshold: 10,              // VAD 음량 임계값 (RMS 기반, 0-255)
                                      // 15 = 배경 소음 차단, 정상 대화 감지
     });
 
