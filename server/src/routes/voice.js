@@ -101,6 +101,7 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
         model: 'whisper-1',
         language: 'ko',
         response_format: 'text',
+        prompt: '카페 키오스크 주문: 포장, 테이크아웃, 매장 이용, 가져갈게요, 들고갈게요',
       });
 
       const recognizedText = transcription.trim();
@@ -109,8 +110,28 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
       console.log('   → 인식된 텍스트:', recognizedText || '(없음)');
       console.log('   → 텍스트 길이:', recognizedText.length, '자');
 
-      if (!recognizedText) {
-        console.log('⚠️ 음성이 인식되지 않음. 빈 응답 반환.');
+      // 환각(hallucination) 패턴 감지
+      const hallucinationPatterns = [
+        /시청.*감사/,
+        /구독.*좋아요/,
+        /댓글.*부탁/,
+        /자막[:：]/,
+        /번역[:：]/,
+        /thank you for watching/i,
+        /please subscribe/i,
+        /subtitle/i,
+      ];
+
+      const isHallucination = hallucinationPatterns.some(pattern =>
+        pattern.test(recognizedText)
+      );
+
+      if (!recognizedText || isHallucination) {
+        if (isHallucination) {
+          console.log('⚠️ Whisper 환각 패턴 감지:', recognizedText);
+        } else {
+          console.log('⚠️ 음성이 인식되지 않음.');
+        }
         const totalDuration = Date.now() - startTime;
         console.log(`⏱️ 총 소요 시간: ${totalDuration}ms`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
