@@ -47,6 +47,7 @@ export const useVoiceRecognition = (
   const segmentIntervalRef = useRef(null);
   const isAnalyzingRef = useRef(false);
   const isListeningRef = useRef(false);
+  const startRecordingRef = useRef(null); // 순환 참조 방지
 
   // 초기 마이크 권한 확인 (새로고침 시에도 권한 유지)
   useEffect(() => {
@@ -154,6 +155,11 @@ export const useVoiceRecognition = (
       setIsListening(false);
     }
   }, [hasPermission, requestPermission, scheduleSegmentProcessing]);
+
+  // startRecording ref 업데이트 (순환 참조 방지)
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+  }, [startRecording]);
 
   // 5초마다 MediaRecorder stop (완전한 WebM 세그먼트 생성)
   const scheduleSegmentProcessing = useCallback(() => {
@@ -339,7 +345,7 @@ export const useVoiceRecognition = (
             console.log(`   → 액션: 녹음 재시작`);
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
             stopRecording();
-            setTimeout(() => startRecording(), 1000);
+            setTimeout(() => startRecordingRef.current?.(), 1000);
           } else {
             console.log(`\n⏳ [결과] 추가 녹음 진행`);
             console.log(`   → Confidence: ${result.confidence} (${lowThreshold} ~ ${highThreshold} 사이)`);
@@ -357,7 +363,7 @@ export const useVoiceRecognition = (
           console.log(`   → 액션: 녹음 재시작`);
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
           stopRecording();
-          setTimeout(() => startRecording(), 1000);
+          setTimeout(() => startRecordingRef.current?.(), 1000);
         }
 
       } catch (apiError) {
@@ -376,11 +382,11 @@ export const useVoiceRecognition = (
 
       setError('음성 분석에 실패했습니다.');
       stopRecording();
-      setTimeout(() => startRecording(), 1000);
+      setTimeout(() => startRecordingRef.current?.(), 1000);
     } finally {
       isAnalyzingRef.current = false;
     }
-  }, [segmentDuration, maxCumulativeDuration, windowSize, maxTotalDuration, lowThreshold, highThreshold, onTakeoutDetected, stopRecording, startRecording]);
+  }, [segmentDuration, maxCumulativeDuration, windowSize, maxTotalDuration, lowThreshold, highThreshold, onTakeoutDetected, stopRecording]);
 
   // API 호출
   const analyzeVoice = async (audioBlob) => {
