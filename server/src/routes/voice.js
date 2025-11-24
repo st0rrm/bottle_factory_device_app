@@ -149,26 +149,17 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
       const message = await anthropic.messages.create({
         model: 'claude-3-5-haiku-20241022',
-        max_tokens: 150,
-        temperature: 0.3,
+        max_tokens: 100,
+        temperature: 0.0,
         messages: [
           {
             role: 'user',
-            content: `다음은 카페 키오스크에서 사용자가 한 말입니다. 사용자가 포장(테이크아웃)을 원하는지 판단하세요.
+            content: `카페 키오스크 발화: "${recognizedText}"
 
-발화: "${recognizedText}"
+포장 의도 판단 (예: 포장/테이크아웃/가져갈게요/to go)
 
-포장 관련 표현 예시:
-- "포장", "테이크아웃", "가져갈게요", "들고갈게요", "싸주세요"
-- "take out", "to go", "포장해주세요", "테잌아웃"
-- "가지고 갈래요", "집에서 먹을게요", "가져가서 먹을게요"
-
-JSON 형식으로만 답변하세요:
-{
-  "takeout": true 또는 false,
-  "confidence": 0.0~1.0 사이의 숫자 (확신도),
-  "reason": "판단 근거를 한 문장으로"
-}`
+JSON으로만 답변:
+{"takeout":true|false,"confidence":0.0~1.0,"reason":"string"}`
           }
         ]
       });
