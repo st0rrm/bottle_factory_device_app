@@ -99,23 +99,41 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   // --------------------------------------------------------------------
 
 
-  // action-bar bottom padding dynamic adjustment
+  // action-bar bottom padding and tree-container positioning adjustment
   useEffect(() => {
-    const updateTreeSectionPadding = () => {
+    const updateTreeLayout = () => {
       const actionBar = document.querySelector('.action-bar');
       const treeSection = document.querySelector('.tree-section');
+      const flowContainer = document.querySelector('.flow-container');
+      const treeContainer = document.querySelector('.tree-container');
 
       if (actionBar && treeSection) {
         treeSection.style.paddingBottom = `${actionBar.offsetHeight}px`;
       }
+
+      if (flowContainer && actionBar && treeContainer) {
+        const flowRect = flowContainer.getBoundingClientRect();
+        const actionBarRect = actionBar.getBoundingClientRect();
+
+        const topPosition = flowRect.bottom;
+        const bottomPosition = actionBarRect.top;
+        const height = bottomPosition - topPosition;
+
+        // tree-container의 위치와 크기 설정
+        treeContainer.style.position = 'fixed';
+        treeContainer.style.top = `${topPosition}px`;
+        treeContainer.style.left = '0';
+        treeContainer.style.width = '100%';
+        treeContainer.style.height = `${height}px`;
+      }
     };
 
-    const timer = setTimeout(updateTreeSectionPadding, 100);
-    window.addEventListener('resize', updateTreeSectionPadding);
+    const timer = setTimeout(updateTreeLayout, 100);
+    window.addEventListener('resize', updateTreeLayout);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updateTreeSectionPadding);
+      window.removeEventListener('resize', updateTreeLayout);
     };
   }, [cafeInfo]);
 

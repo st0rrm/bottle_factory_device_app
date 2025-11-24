@@ -195,7 +195,10 @@ export const useVoiceRecognition = (
     const totalSegments = segmentsRef.current.length;
     const totalDuration = totalSegments * segmentDuration;
 
-    console.log(`\n📊 LLM 분석 시작 (세그먼트 ${totalSegments}개, ${totalDuration}ms)`);
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📊 [프론트엔드] LLM 분석 시작`);
+    console.log(`   → 세그먼트 수: ${totalSegments}개`);
+    console.log(`   → 총 녹음 시간: ${totalDuration}ms (${(totalDuration / 1000).toFixed(1)}초)`);
 
     try {
       // 분석할 세그먼트 선택
@@ -223,44 +226,76 @@ export const useVoiceRecognition = (
       const mergedBlob = new Blob(blobsToAnalyze, { type: 'audio/webm' });
 
       console.log(`📦 병합된 오디오: ${(mergedBlob.size / 1024).toFixed(2)}KB`);
+      console.log(`🌐 API 호출 준비:`);
+      console.log(`   → URL: ${import.meta.env.VITE_API_BASE_URL}/voice/analyze`);
+      console.log(`   → Auth Token: ${localStorage.getItem('authToken') ? '✅ 있음' : '❌ 없음'}`);
 
       const analysisStartTime = Date.now();
-      const result = await analyzeVoice(mergedBlob);
-      const analysisTime = Date.now() - analysisStartTime;
+      console.log(`⏱️ API 호출 시작... (${new Date().toISOString()})`);
 
-      console.log(`✅ API 응답 (${analysisTime}ms):`);
-      console.log(`   텍스트: "${result.text || 'N/A'}"`);
-      console.log(`   포장: ${result.takeout}, 확신도: ${result.confidence}`);
-      console.log(`   이유: ${result.reason}`);
+      try {
+        const result = await analyzeVoice(mergedBlob);
+        const analysisTime = Date.now() - analysisStartTime;
 
-      // 결과 처리
-      if (result.confidence >= highThreshold && result.takeout) {
-        // 확정 → 포장 감지
-        console.log(`\n🎉 포장 의도 확정 (confidence ${result.confidence})`);
-        stopRecording();
-        onTakeoutDetected(0);
+        console.log(`✅ [프론트엔드] API 응답 성공 (${analysisTime}ms, ${(analysisTime / 1000).toFixed(1)}초)`);
+        console.log(`   → 텍스트: "${result.text || '(없음)'}"`);
+        console.log(`   → 포장 의도: ${result.takeout ? '✅ 예' : '❌ 아니오'}`);
+        console.log(`   → 확신도: ${result.confidence} (${(result.confidence * 100).toFixed(0)}%)`);
+        console.log(`   → 이유: ${result.reason}`);
 
-      } else if (result.confidence >= lowThreshold && result.confidence < highThreshold && result.takeout) {
-        // 애매함 → 추가 녹음
-        if (totalDuration >= maxTotalDuration) {
-          console.log(`\n⏱️ 최대 시간 도달 (${totalDuration}ms), 재시작`);
+        // 결과 처리
+        if (result.confidence >= highThreshold && result.takeout) {
+          // 확정 → 포장 감지
+          console.log(`\n🎉 [결과] 포장 의도 확정!`);
+          console.log(`   → Confidence: ${result.confidence} >= ${highThreshold} (highThreshold)`);
+          console.log(`   → 액션: 콜백 호출 및 녹음 중지`);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          stopRecording();
+          onTakeoutDetected(0);
+
+        } else if (result.confidence >= lowThreshold && result.confidence < highThreshold && result.takeout) {
+          // 애매함 → 추가 녹음
+          if (totalDuration >= maxTotalDuration) {
+            console.log(`\n⏱️ [결과] 최대 시간 도달`);
+            console.log(`   → 총 녹음 시간: ${totalDuration}ms >= ${maxTotalDuration}ms (maxTotalDuration)`);
+            console.log(`   → 액션: 녹음 재시작`);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            stopRecording();
+            setTimeout(() => startRecording(), 1000);
+          } else {
+            console.log(`\n⏳ [결과] 추가 녹음 진행`);
+            console.log(`   → Confidence: ${result.confidence} (${lowThreshold} ~ ${highThreshold} 사이)`);
+            console.log(`   → 액션: 계속 녹음`);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            setPhase('recording');
+            // 계속 녹음 (interval이 자동으로 다음 세그먼트 처리)
+          }
+
+        } else {
+          // 포장 아님 or 확신도 낮음 → 폐기 및 재시작
+          console.log(`\n❌ [결과] 포장 의도 없음`);
+          console.log(`   → Confidence: ${result.confidence} < ${lowThreshold} (lowThreshold)`);
+          console.log(`   → 또는 takeout: ${result.takeout}`);
+          console.log(`   → 액션: 녹음 재시작`);
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
           stopRecording();
           setTimeout(() => startRecording(), 1000);
-        } else {
-          console.log(`\n⏳ 추가 녹음 진행 (confidence ${result.confidence})`);
-          setPhase('recording');
-          // 계속 녹음 (interval이 자동으로 다음 세그먼트 처리)
         }
 
-      } else {
-        // 포장 아님 or 확신도 낮음 → 폐기 및 재시작
-        console.log(`\n❌ 포장 의도 없음 또는 낮은 확신도 (confidence ${result.confidence}), 재시작`);
-        stopRecording();
-        setTimeout(() => startRecording(), 1000);
+      } catch (apiError) {
+        const analysisTime = Date.now() - analysisStartTime;
+        console.error(`\n❌ [프론트엔드] API 호출 실패 (${analysisTime}ms)`);
+        console.error('   → 에러:', apiError.message);
+        console.error('   → 전체 에러:', apiError);
+        throw apiError;
       }
 
     } catch (error) {
-      console.error('\n❌ LLM 분석 실패:', error);
+      console.error('\n❌ [프론트엔드] LLM 분석 실패');
+      console.error('   → 에러 메시지:', error.message);
+      console.error('   → 에러 스택:', error.stack);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
       setError('음성 분석에 실패했습니다.');
       stopRecording();
       setTimeout(() => startRecording(), 1000);
@@ -275,7 +310,11 @@ export const useVoiceRecognition = (
     formData.append('audio', audioBlob, 'recording.webm');
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-    const response = await fetch(`${apiBaseUrl}/voice/analyze`, {
+    const url = `${apiBaseUrl}/voice/analyze`;
+
+    console.log(`   → Fetch 시작: ${url}`);
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -283,11 +322,26 @@ export const useVoiceRecognition = (
       body: formData,
     });
 
+    console.log(`   → HTTP 응답: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
-      throw new Error(`API 호출 실패: ${response.status}`);
+      // 에러 응답 본문 읽기
+      let errorBody;
+      try {
+        errorBody = await response.json();
+        console.error('   → 에러 응답 본문:', errorBody);
+      } catch (e) {
+        errorBody = await response.text();
+        console.error('   → 에러 응답 텍스트:', errorBody);
+      }
+
+      throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('   → JSON 파싱 성공');
+
+    return result;
   };
 
   // 녹음 중지
