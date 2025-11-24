@@ -45,6 +45,7 @@ export const useVoiceRecognition = (
 
   const segmentIntervalRef = useRef(null);
   const isAnalyzingRef = useRef(false);
+  const isListeningRef = useRef(false);
 
   // 마이크 권한 요청
   const requestPermission = useCallback(async () => {
@@ -88,21 +89,39 @@ export const useVoiceRecognition = (
       segmentsRef.current = [];
       currentSegmentChunksRef.current = [];
 
-      // 데이터 수집 (100ms 간격)
+      // 데이터 수집: stop 시 완전한 세그먼트 수신
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           currentSegmentChunksRef.current.push(event.data);
         }
       };
 
-      mediaRecorder.start(100);
+      // stop 시 세그먼트 처리 및 즉시 재시작
+      mediaRecorder.onstop = () => {
+        if (currentSegmentChunksRef.current.length > 0) {
+          processCurrentSegment(); // 비동기지만 기다리지 않음
+        }
+
+        // 즉시 재시작 (음성 손실 최소화: 5-10ms)
+        if (isListeningRef.current && mediaRecorderRef.current) {
+          currentSegmentChunksRef.current = [];
+          try {
+            mediaRecorderRef.current.start(); // timeslice 없음 → 완전한 WebM 생성
+          } catch (error) {
+            console.error('❌ 녹음 재시작 실패:', error);
+          }
+        }
+      };
+
+      mediaRecorder.start(); // timeslice 없이 시작
       setIsListening(true);
+      isListeningRef.current = true;
       setPhase('recording');
       setError(null);
 
-      console.log('🎤 녹음 시작');
+      console.log('🎤 녹음 시작 (stop/start 패턴)');
 
-      // 5초마다 세그먼트 처리
+      // 5초마다 stop (완전한 세그먼트 생성)
       scheduleSegmentProcessing();
 
     } catch (err) {
@@ -112,13 +131,12 @@ export const useVoiceRecognition = (
     }
   }, [hasPermission, requestPermission]);
 
-  // 5초마다 세그먼트 처리 (200ms 딜레이로 ondataavailable 완료 보장)
+  // 5초마다 MediaRecorder stop (완전한 WebM 세그먼트 생성)
   const scheduleSegmentProcessing = useCallback(() => {
     segmentIntervalRef.current = setInterval(() => {
-      // ondataavailable이 완료될 때까지 짧은 딜레이
-      setTimeout(() => {
-        processCurrentSegment();
-      }, 200);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop(); // onstop 이벤트에서 처리 + 자동 재시작
+      }
     }, segmentDuration);
   }, [segmentDuration]);
 
@@ -383,6 +401,11 @@ export const useVoiceRecognition = (
   const stopRecording = useCallback(() => {
     console.log('⏹️ 녹음 중지\n');
 
+    // 자동 재시작 방지
+    isListeningRef.current = false;
+    setIsListening(false);
+    setPhase('idle');
+
     if (segmentIntervalRef.current) {
       clearInterval(segmentIntervalRef.current);
       segmentIntervalRef.current = null;
@@ -396,9 +419,6 @@ export const useVoiceRecognition = (
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-
-    setIsListening(false);
-    setPhase('idle');
     setCurrentSegments(0);
     segmentsRef.current = [];
     currentSegmentChunksRef.current = [];
