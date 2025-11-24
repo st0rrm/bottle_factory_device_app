@@ -103,6 +103,7 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
         response_format: 'text',
       });
 
+      const recognizedText = transcription.trim();
       const whisperDuration = Date.now() - whisperStartTime;
       console.log(`✅ Whisper 완료 (${whisperDuration}ms)`);
       console.log('   → 인식된 텍스트:', recognizedText || '(없음)');
