@@ -112,10 +112,13 @@ export const useVoiceRecognition = (
     }
   }, [hasPermission, requestPermission]);
 
-  // 5초마다 세그먼트 처리
+  // 5초마다 세그먼트 처리 (200ms 딜레이로 ondataavailable 완료 보장)
   const scheduleSegmentProcessing = useCallback(() => {
     segmentIntervalRef.current = setInterval(() => {
-      processCurrentSegment();
+      // ondataavailable이 완료될 때까지 짧은 딜레이
+      setTimeout(() => {
+        processCurrentSegment();
+      }, 200);
     }, segmentDuration);
   }, [segmentDuration]);
 
@@ -135,6 +138,13 @@ export const useVoiceRecognition = (
 
     // VAD 분석 (RMS 기반 실제 음압 측정)
     const averageVolume = await analyzeAudioVolumeRMS(segmentBlob);
+
+    // RMS 분석 실패 (손상된 세그먼트) → 폐기
+    if (averageVolume === null) {
+      console.log(`🗑️ 세그먼트 ${segmentIndex} 폐기 (RMS 분석 실패 - 손상된 데이터)\n`);
+      return;
+    }
+
     const shouldStartRecognition = averageVolume >= vadThreshold;
 
     console.log(`📊 세그먼트 분석: 음량 ${averageVolume} (threshold: ${vadThreshold})`);
@@ -202,8 +212,8 @@ export const useVoiceRecognition = (
       return volume;
     } catch (error) {
       console.error('❌ RMS 분석 실패:', error);
-      // 에러 시 기본값 반환 (중간값, 안전하게 통과)
-      return 50;
+      // 에러 시 null 반환 → 손상된 세그먼트 폐기
+      return null;
     }
   };
 
