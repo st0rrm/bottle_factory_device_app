@@ -48,6 +48,7 @@ export const useVoiceRecognition = (
   const isAnalyzingRef = useRef(false);
   const isListeningRef = useRef(false);
   const startRecordingRef = useRef(null); // 순환 참조 방지
+  const analyzeLLMRef = useRef(null); // 순환 참조 방지
 
   // 초기 마이크 권한 확인 (새로고침 시에도 권한 유지)
   useEffect(() => {
@@ -156,10 +157,11 @@ export const useVoiceRecognition = (
     }
   }, [hasPermission, requestPermission, scheduleSegmentProcessing]);
 
-  // startRecording ref 업데이트 (순환 참조 방지)
+  // Ref 업데이트 (순환 참조 방지)
   useEffect(() => {
     startRecordingRef.current = startRecording;
-  }, [startRecording]);
+    analyzeLLMRef.current = analyzeLLM;
+  }, [startRecording, analyzeLLM]);
 
   // 5초마다 MediaRecorder stop (완전한 WebM 세그먼트 생성)
   const scheduleSegmentProcessing = useCallback(() => {
@@ -215,8 +217,8 @@ export const useVoiceRecognition = (
     console.log(`✅ 세그먼트 ${segmentIndex} 저장 (총 ${totalSegments}개)`);
 
     // LLM 분석 시작
-    analyzeLLM();
-  }, [vadThreshold, analyzeLLM]);
+    analyzeLLMRef.current?.();
+  }, [vadThreshold]);
 
   // AudioContext 싱글톤 (재사용)
   const audioContextRef = useRef(null);
