@@ -69,6 +69,17 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
     }
 
     const startTime = Date.now();
+
+    // RMS 값 파싱 (프론트엔드에서 전달)
+    let rmsValues = [];
+    try {
+      if (req.body.rmsValues) {
+        rmsValues = JSON.parse(req.body.rmsValues);
+      }
+    } catch (e) {
+      console.log('⚠️ RMS 값 파싱 실패:', e.message);
+    }
+
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎙️ 음성 분석 시작:', {
       timestamp: new Date().toISOString(),
@@ -76,6 +87,8 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
       mimetype: req.file.mimetype,
       cafe: req.user.cafeName,
       cafeId: req.user.cafeId,
+      rmsValues: rmsValues.length > 0 ? rmsValues : '(없음)',
+      avgRMS: rmsValues.length > 0 ? (rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length).toFixed(1) : 'N/A',
     });
 
     // Step 1: OpenAI Whisper로 음성을 텍스트로 변환
@@ -158,7 +171,7 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
 일회용컵 포장 의도 판단:
 - false: 매장 이용 또는 개인컵 사용 (예: 텀블러/매장/먹고갈게요)
-- true: 그 이외의 포장 (예: 포장/테이크아웃/가져갈게요)
+- true: 그 이외의 일회용컵을 사용하는 포장 (예: 포장/테이크아웃/가져갈게요)
 
 JSON만 출력:
 {"takeout":true|false,"confidence":0.0~1.0,"reason":"string"}`

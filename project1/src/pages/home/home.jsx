@@ -148,7 +148,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   //   usePicovoice(true, handleWakeWordDetected);
 
   // 방법 2: LLM 기반 (Whisper + Claude)
-  const { isListening, error: picoError, hasPermission, requestPermission } =
+  const { isListening, error: picoError, hasPermission, requestPermission, startRecording } =
     useVoiceRecognition(true, handleWakeWordDetected, {
       segmentDuration: 5000,         // 5초마다 분석
       lowThreshold: 0.4,             // 0.4 미만 → 폐기
@@ -380,7 +380,18 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       )}
 
       {showHelpModal &&
-        <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />
+        <HelpModal
+          onClose={() => {
+            setShowHelpModal(false);
+            // 도움말 닫으면 음성인식 재시작
+            setTimeout(() => {
+              if (startRecording) {
+                startRecording();
+              }
+            }, 500);
+          }}
+          onUseButtonClick={handleBorrowCupAction}
+        />
       }
 
       {showSettingsModal && (

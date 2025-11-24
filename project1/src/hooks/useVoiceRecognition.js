@@ -42,10 +42,27 @@ export const useVoiceRecognition = (
   // 녹음된 세그먼트들 저장 (Blob 배열)
   const segmentsRef = useRef([]); // [blob1, blob2, blob3, ...]
   const currentSegmentChunksRef = useRef([]);
+  const rmsValuesRef = useRef([]); // 각 세그먼트의 RMS 값 저장
 
   const segmentIntervalRef = useRef(null);
   const isAnalyzingRef = useRef(false);
   const isListeningRef = useRef(false);
+
+  // 초기 마이크 권한 확인 (새로고침 시에도 권한 유지)
+  useEffect(() => {
+    const checkExistingPermission = async () => {
+      try {
+        const result = await navigator.permissions.query({ name: 'microphone' });
+        if (result.state === 'granted') {
+          setHasPermission(true);
+        }
+      } catch (error) {
+        // permissions API 지원 안하는 브라우저는 무시
+        console.log('Permissions API not supported');
+      }
+    };
+    checkExistingPermission();
+  }, []);
 
   // 마이크 권한 요청
   const requestPermission = useCallback(async () => {
@@ -70,6 +87,12 @@ export const useVoiceRecognition = (
       if (!granted) return;
     }
 
+    // 이미 녹음 중이면 중복 시작 방지
+    if (isListeningRef.current && mediaRecorderRef.current) {
+      console.log('⚠️ 이미 녹음 중입니다. 중복 시작 방지.');
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -88,6 +111,7 @@ export const useVoiceRecognition = (
       mediaRecorderRef.current = mediaRecorder;
       segmentsRef.current = [];
       currentSegmentChunksRef.current = [];
+      rmsValuesRef.current = []; // RMS 값도 초기화
 
       // 데이터 수집: stop 시 완전한 세그먼트 수신
       mediaRecorder.ondataavailable = (event) => {
@@ -129,7 +153,7 @@ export const useVoiceRecognition = (
       setError('녹음을 시작할 수 없습니다.');
       setIsListening(false);
     }
-  }, [hasPermission, requestPermission]);
+  }, [hasPermission, requestPermission, scheduleSegmentProcessing]);
 
   // 5초마다 MediaRecorder stop (완전한 WebM 세그먼트 생성)
   const scheduleSegmentProcessing = useCallback(() => {
@@ -178,6 +202,7 @@ export const useVoiceRecognition = (
 
     // 음량 충분 → 세그먼트 저장 및 LLM 분석
     segmentsRef.current.push(segmentBlob);
+    rmsValuesRef.current.push(averageVolume); // RMS 값 저장
     const totalSegments = segmentsRef.current.length;
     setCurrentSegments(totalSegments);
 
@@ -185,7 +210,7 @@ export const useVoiceRecognition = (
 
     // LLM 분석 시작
     analyzeLLM();
-  }, [vadThreshold]);
+  }, [vadThreshold, analyzeLLM]);
 
   // AudioContext 싱글톤 (재사용)
   const audioContextRef = useRef(null);
@@ -355,12 +380,14 @@ export const useVoiceRecognition = (
     } finally {
       isAnalyzingRef.current = false;
     }
-  }, [segmentDuration, maxCumulativeDuration, windowSize, maxTotalDuration, lowThreshold, highThreshold, onTakeoutDetected]);
+  }, [segmentDuration, maxCumulativeDuration, windowSize, maxTotalDuration, lowThreshold, highThreshold, onTakeoutDetected, stopRecording, startRecording]);
 
   // API 호출
   const analyzeVoice = async (audioBlob) => {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
+    // RMS 값들을 JSON으로 전달
+    formData.append('rmsValues', JSON.stringify(rmsValuesRef.current));
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
     const url = `${apiBaseUrl}/voice/analyze`;
@@ -422,6 +449,7 @@ export const useVoiceRecognition = (
     setCurrentSegments(0);
     segmentsRef.current = [];
     currentSegmentChunksRef.current = [];
+    rmsValuesRef.current = []; // RMS 값도 초기화
     isAnalyzingRef.current = false;
   }, []);
 
@@ -445,5 +473,6 @@ export const useVoiceRecognition = (
     currentSegments,
     phase,
     stopRecording,
+    startRecording,  // 외부에서 재시작 가능하도록
   };
 };
