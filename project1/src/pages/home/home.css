@@ -116,29 +116,35 @@
   line-height: 1;
   display: block;
 }
-
 .flow-container {
-  overflow: hidden;
-  /* 필요하면 width 조정 가능 */
+  /* 기존: height: 39px; 대신 */
+  min-height: 46px;               /* 글자 + 이모지 여유 있게 들어가도록 */
+
   width: 100%;
-  /* 가운데 정렬 같은 거 하고 싶으면 */
   display: flex;
   justify-content: center;
+  align-items: center;            /* 세로 가운데 정렬 */
   margin-top: 8px;
   color: #6288A9;
-  height: 39px;
-  background-color: #FFFFFFB3;
-  border-radius: 40px;
 
+  background-color: #FFFFFFB3;    /* 기존 70% 투명 흰색 유지 */
+  border-radius: 40px;
+  overflow: hidden;
+
+  padding: 4px 16px;              /* 위아래 margin 대신 컨테이너 padding */
+  box-sizing: border-box;
 }
 
 .flow-text {
-  font-size: 24px;       /* 원하는 크기 */
-  line-height: 1.4;
-  margin: 5px;
-  align-items: flex-start;
+  /* 폰트 크기를 화면에 따라 살짝 조절 (모바일에서 잘림 방지) */
+  font-size: clamp(16px, 2.4vw, 22px);
+  line-height: 1.2;
+
+  /* 기존 margin: 5px; 제거 -> 컨테이너 padding으로 처리 */
+  margin: 0;
+
   font-weight: var(--pretendard-regular);
-  white-space: nowrap;   /* 한 줄로만 */
+  white-space: nowrap;            /* 한 줄 유지 */
   animation: slideFadeIn 0.5s ease;
 }
 
