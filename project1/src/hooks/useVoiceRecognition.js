@@ -27,7 +27,7 @@ export const useVoiceRecognition = (
     maxCumulativeDuration = 15000,  // 15초까지 누적 모드
     windowSize = 15000,             // 슬라이딩 윈도우 크기
     maxTotalDuration = 30000,       // 최대 총 녹음 시간 (30초)
-    vadThreshold = 40,              // VAD 음량 임계값 (0-255)
+    vadThreshold = 130,              // VAD 음량 임계값 (0-255)
   } = options;
 
   const [isListening, setIsListening] = useState(false);
@@ -133,11 +133,11 @@ export const useVoiceRecognition = (
     const segmentIndex = segmentsRef.current.length + 1;
     console.log(`\n💾 세그먼트 ${segmentIndex} 생성 (${(segmentBlob.size / 1024).toFixed(2)}KB)`);
 
-    // VAD 분석 (간단한 크기 기반 휴리스틱 사용)
-    const averageVolume = estimateVolumeFromSize(segmentBlob.size, segmentDuration);
+    // VAD 분석 (RMS 기반 실제 음압 측정)
+    const averageVolume = await analyzeAudioVolumeRMS(segmentBlob);
     const shouldStartRecognition = averageVolume >= vadThreshold;
 
-    console.log(`📊 세그먼트 분석: 예상 음량 ${averageVolume} (threshold: ${vadThreshold})`);
+    console.log(`📊 세그먼트 분석: 음량 ${averageVolume} (threshold: ${vadThreshold})`);
 
     if (!shouldStartRecognition) {
       // 음량 낮음 → 폐기하고 다음 세그먼트로
@@ -159,26 +159,51 @@ export const useVoiceRecognition = (
     analyzeLLM();
   }, [vadThreshold]);
 
-  // 크기 기반 음량 추정 (휴리스틱)
-  const estimateVolumeFromSize = (blobSize, duration) => {
-    // WebM 오디오는 보통 8-12 KB/s (64-96 kbps)
-    // 5초 = 40-60 KB (정상 음성)
-    // 5초 < 20 KB = 매우 조용함 또는 침묵
+  // AudioContext 싱글톤 (재사용)
+  const audioContextRef = useRef(null);
 
-    const bytesPerSecond = blobSize / (duration / 1000);
+  const getAudioContext = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioContextRef.current;
+  };
 
-    if (bytesPerSecond < 4000) {
-      // < 4 KB/s = 침묵 (음량 0-30)
-      return Math.round(bytesPerSecond / 200);
-    } else if (bytesPerSecond < 8000) {
-      // 4-8 KB/s = 낮은 음량 (음량 30-60)
-      return Math.round(30 + (bytesPerSecond - 4000) / 133);
-    } else if (bytesPerSecond < 16000) {
-      // 8-16 KB/s = 정상 음량 (음량 60-150)
-      return Math.round(60 + (bytesPerSecond - 8000) / 89);
-    } else {
-      // > 16 KB/s = 높은 음량 (음량 150-255)
-      return Math.min(255, Math.round(150 + (bytesPerSecond - 16000) / 200));
+  // RMS 기반 음량 분석 (실제 음압 측정)
+  const analyzeAudioVolumeRMS = async (blob) => {
+    try {
+      const startTime = Date.now();
+
+      // Blob → ArrayBuffer
+      const arrayBuffer = await blob.arrayBuffer();
+
+      // 오디오 디코딩
+      const audioContext = getAudioContext();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+      // 채널 데이터 추출 (모노 또는 첫 번째 채널)
+      const channelData = audioBuffer.getChannelData(0);
+
+      // RMS (Root Mean Square) 계산
+      let sum = 0;
+      for (let i = 0; i < channelData.length; i++) {
+        sum += channelData[i] * channelData[i];
+      }
+      const rms = Math.sqrt(sum / channelData.length);
+
+      // 0-255 스케일로 변환 (실제 음압에 비례)
+      // rms 범위: 0.0 (침묵) ~ 0.3 (매우 큰 소리)
+      // 스케일 팩터: 300 (경험적 최적값)
+      const volume = Math.min(255, Math.round(rms * 300));
+
+      const duration = Date.now() - startTime;
+      console.log(`   → RMS 분석: ${volume} (rms: ${rms.toFixed(4)}, ${duration}ms)`);
+
+      return volume;
+    } catch (error) {
+      console.error('❌ RMS 분석 실패:', error);
+      // 에러 시 기본값 반환 (중간값, 안전하게 통과)
+      return 50;
     }
   };
 
