@@ -157,7 +157,7 @@ export const useVoiceRecognition = (
 
     // LLM 분석 시작
     analyzeLLM();
-  }, [vadThreshold, analyzeLLM]);
+  }, [vadThreshold]);
 
   // AudioContext 싱글톤 (재사용)
   const audioContextRef = useRef(null);
