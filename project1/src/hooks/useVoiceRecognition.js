@@ -82,6 +82,44 @@ export const useVoiceRecognition = (
     }
   }, []);
 
+  // 녹음 중지
+  const stopRecording = useCallback(() => {
+    console.log('⏹️ 녹음 중지\n');
+
+    // 자동 재시작 방지
+    isListeningRef.current = false;
+    setIsListening(false);
+    setPhase('idle');
+
+    if (segmentIntervalRef.current) {
+      clearInterval(segmentIntervalRef.current);
+      segmentIntervalRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCurrentSegments(0);
+    segmentsRef.current = [];
+    currentSegmentChunksRef.current = [];
+    rmsValuesRef.current = []; // RMS 값도 초기화
+    isAnalyzingRef.current = false;
+  }, []);
+
+  // 5초마다 MediaRecorder stop (완전한 WebM 세그먼트 생성)
+  const scheduleSegmentProcessing = useCallback(() => {
+    segmentIntervalRef.current = setInterval(() => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop(); // onstop 이벤트에서 처리 + 자동 재시작
+      }
+    }, segmentDuration);
+  }, [segmentDuration]);
+
   // 연속 녹음 시작
   const startRecording = useCallback(async () => {
     if (!hasPermission) {
@@ -156,21 +194,6 @@ export const useVoiceRecognition = (
       setIsListening(false);
     }
   }, [hasPermission, requestPermission, scheduleSegmentProcessing]);
-
-  // Ref 업데이트 (순환 참조 방지)
-  useEffect(() => {
-    startRecordingRef.current = startRecording;
-    analyzeLLMRef.current = analyzeLLM;
-  }, [startRecording, analyzeLLM]);
-
-  // 5초마다 MediaRecorder stop (완전한 WebM 세그먼트 생성)
-  const scheduleSegmentProcessing = useCallback(() => {
-    segmentIntervalRef.current = setInterval(() => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop(); // onstop 이벤트에서 처리 + 자동 재시작
-      }
-    }, segmentDuration);
-  }, [segmentDuration]);
 
   // 현재 세그먼트 처리
   const processCurrentSegment = useCallback(async () => {
@@ -390,6 +413,12 @@ export const useVoiceRecognition = (
     }
   }, [segmentDuration, maxCumulativeDuration, windowSize, maxTotalDuration, lowThreshold, highThreshold, onTakeoutDetected, stopRecording]);
 
+  // Ref 업데이트 (순환 참조 방지)
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+    analyzeLLMRef.current = analyzeLLM;
+  }, [startRecording, analyzeLLM]);
+
   // API 호출
   const analyzeVoice = async (audioBlob) => {
     const formData = new FormData();
@@ -431,35 +460,6 @@ export const useVoiceRecognition = (
 
     return result;
   };
-
-  // 녹음 중지
-  const stopRecording = useCallback(() => {
-    console.log('⏹️ 녹음 중지\n');
-
-    // 자동 재시작 방지
-    isListeningRef.current = false;
-    setIsListening(false);
-    setPhase('idle');
-
-    if (segmentIntervalRef.current) {
-      clearInterval(segmentIntervalRef.current);
-      segmentIntervalRef.current = null;
-    }
-
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setCurrentSegments(0);
-    segmentsRef.current = [];
-    currentSegmentChunksRef.current = [];
-    rmsValuesRef.current = []; // RMS 값도 초기화
-    isAnalyzingRef.current = false;
-  }, []);
 
   // enabled=true일 때 자동 시작
   useEffect(() => {
