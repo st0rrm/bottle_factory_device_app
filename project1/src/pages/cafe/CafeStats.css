@@ -1,6 +1,6 @@
 .cafe-stats-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4481D1 0%, #5ba3f5 100%);
   padding: 20px;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #333;
@@ -61,7 +61,7 @@
 .card-value {
   font-size: 32px;
   font-weight: 700;
-  color: #667eea;
+  color: #4481D1;
 }
 
 .period-selector {
@@ -89,7 +89,7 @@
 
 .period-btn.active {
   background: white;
-  color: #667eea;
+  color: #4481D1;
   border-color: white;
 }
 
@@ -128,7 +128,7 @@
 
 .stats-table th {
   background: #f8f9fa;
-  color: #667eea;
+  color: #4481D1;
   font-weight: 600;
   font-size: 14px;
   position: sticky;
@@ -165,7 +165,7 @@
 
 .legend-label {
   font-weight: 600;
-  color: #667eea;
+  color: #4481D1;
   min-width: 100px;
 }
 
