@@ -14,6 +14,7 @@
   justify-content: center;
   background: linear-gradient(120deg, #312e81 0%, #4481D1 40%, #60a5fa 70%, #93c5fd 100%);
   padding: clamp(1rem, 3vw, 2rem);
+  padding-bottom: calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-bottom)); /* iOS home indicator */
   box-sizing: border-box;
   font-family: 'Pretendard', sans-serif;
 }
