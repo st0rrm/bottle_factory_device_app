@@ -1,7 +1,8 @@
 require('dotenv').config();
 const app = require('./src/app');
 const db = require('./src/config/database');
-const { startSMSNotificationScheduler } = require('./src/schedulers/smsNotificationScheduler');
+// SMS 알림은 Firebase Cloud Functions로 이관됨
+// const { startSMSNotificationScheduler } = require('./src/schedulers/smsNotificationScheduler');
 
 const PORT = process.env.PORT || 3000;
 
@@ -19,9 +20,11 @@ const server = app.listen(PORT, () => {
   console.log(`  POST http://localhost:${PORT}/api/cafe/login`);
   console.log(`  GET  http://localhost:${PORT}/api/cafe (admin only)`);
   console.log('='.repeat(50));
+  console.log('\n📱 SMS 알림: Firebase Cloud Functions에서 처리 (매일 12:00 KST)');
+  console.log('='.repeat(50));
 
-  // Start SMS notification scheduler
-  startSMSNotificationScheduler();
+  // SMS notification scheduler는 Firebase Cloud Functions로 이관됨
+  // startSMSNotificationScheduler();
 });
 
 // Graceful shutdown
