@@ -1,11 +1,11 @@
 {
-  "name": "Bottler",
-  "short_name": "Bottler",
+  "name": "보틀러",
+  "short_name": "보틀러",
   "description": "Bottle Club for Businesses",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4CAF50",
+  "theme_color": "#F8F8F7",
   "icons": [
     {
       "src": "/apple-touch-icon.png",
