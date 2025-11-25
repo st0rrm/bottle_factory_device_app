@@ -71,16 +71,6 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
     const startTime = Date.now();
 
-    // RMS 값 파싱 (프론트엔드에서 전달)
-    let rmsValues = [];
-    try {
-      if (req.body.rmsValues) {
-        rmsValues = JSON.parse(req.body.rmsValues);
-      }
-    } catch (e) {
-      console.log('⚠️ RMS 값 파싱 실패:', e.message);
-    }
-
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎙️ 음성 분석 시작:', {
       timestamp: new Date().toISOString(),
@@ -88,7 +78,6 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
       mimetype: req.file.mimetype,
       cafe: req.user.cafeName,
       cafeId: req.user.cafeId,
-      segmentCount: rmsValues.length,
     });
 
     // Step 1: OpenAI Whisper로 음성을 텍스트로 변환
@@ -231,7 +220,6 @@ JSON만 출력:
       try {
         // LLM API 호출 통계 기록
         await VoiceStats.addStat(req.user.id, 'llm_api_call', {
-          rmsCount: rmsValues.length,
           recognizedText: recognizedText,
           duration: totalDuration
         });
@@ -330,11 +318,12 @@ router.post('/log-rms', authenticateToken, async (req, res) => {
       segmentCount: rmsValues.length,
     });
 
-    // RMS 값 세그먼트별 출력
-    console.log('📊 세그먼트별 RMS 값:');
-    rmsValues.forEach((rms, index) => {
-      console.log(`   → 세그먼트 ${index + 1}: RMS ${rms}`);
-    });
+    // RMS 값 1줄에 10개씩 출력
+    console.log('📊 RMS 값:');
+    for (let i = 0; i < rmsValues.length; i += 10) {
+      const batch = rmsValues.slice(i, i + 10);
+      console.log(`   ${batch.join(', ')}`);
+    }
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     res.json({ success: true, logged: rmsValues.length });

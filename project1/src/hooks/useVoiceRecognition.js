@@ -220,26 +220,10 @@ export const useVoiceRecognition = (
       return;
     }
 
-    const shouldStartRecognition = averageVolume >= vadThreshold;
-
     console.log(`📊 세그먼트 분석: 음량 ${averageVolume} (threshold: ${vadThreshold})`);
 
-    if (!shouldStartRecognition) {
-      // 음량 낮음 → 폐기하고 다음 세그먼트로
-      console.log(`🗑️ 세그먼트 ${segmentIndex} 폐기 (음량 ${averageVolume} < ${vadThreshold})\n`);
-      // 세그먼트는 저장하지 않음
-      return;
-    }
-
-    console.log(`✅ 음성 감지 (음량: ${averageVolume}) → 세그먼트 저장`);
-
-    // 음량 충분 → 세그먼트 저장 및 LLM 분석
-    segmentsRef.current.push(segmentBlob);
-    rmsValuesRef.current.push(averageVolume); // RMS 값 저장
-    const totalSegments = segmentsRef.current.length;
-    setCurrentSegments(totalSegments);
-
-    console.log(`✅ 세그먼트 ${segmentIndex} 저장 (총 ${totalSegments}개)`);
+    // 모든 세그먼트의 RMS 값 저장 (음량과 무관)
+    rmsValuesRef.current.push(averageVolume);
 
     // rmsValues가 배치 크기에 도달하면 render 로그 출력 후 초기화
     if (rmsValuesRef.current.length >= rmsLogBatchSize) {
@@ -248,6 +232,23 @@ export const useVoiceRecognition = (
       // 배열 초기화 (다음 배치 수집을 위해)
       rmsValuesRef.current = [];
     }
+
+    const shouldStartRecognition = averageVolume >= vadThreshold;
+
+    if (!shouldStartRecognition) {
+      // 음량 낮음 → 폐기하고 다음 세그먼트로
+      console.log(`🗑️ 세그먼트 ${segmentIndex} 폐기 (음량 ${averageVolume} < ${vadThreshold})\n`);
+      return;
+    }
+
+    console.log(`✅ 음성 감지 (음량: ${averageVolume}) → 세그먼트 저장`);
+
+    // 음량 충분 → 세그먼트 저장 및 LLM 분석
+    segmentsRef.current.push(segmentBlob);
+    const totalSegments = segmentsRef.current.length;
+    setCurrentSegments(totalSegments);
+
+    console.log(`✅ 세그먼트 ${segmentIndex} 저장 (총 ${totalSegments}개)`);
 
     // LLM 분석 시작
     analyzeLLMRef.current?.();
@@ -459,8 +460,6 @@ export const useVoiceRecognition = (
   const analyzeVoice = async (audioBlob) => {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
-    // RMS 값들을 JSON으로 전달
-    formData.append('rmsValues', JSON.stringify(rmsValuesRef.current));
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
     const url = `${apiBaseUrl}/voice/analyze`;
