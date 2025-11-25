@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #4481D1 0%, #5ba3f5 100%);
+  background: linear-gradient(120deg, #312e81 0%, #4481D1 40%, #60a5fa 70%, #93c5fd 100%);
   padding: clamp(1rem, 3vw, 2rem);
   box-sizing: border-box;
   font-family: 'Pretendard', sans-serif;
