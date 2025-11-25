@@ -1,20 +1,13 @@
 /* Login Container */
 .login-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   width: 100%;
-  height: 100vh; /* Fallback for browsers that don't support Custom Properties */
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100%;
   overflow-y: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(120deg, #312e81 0%, #4481D1 40%, #60a5fa 70%, #93c5fd 100%);
   padding: clamp(1rem, 3vw, 2rem);
-  padding-bottom: calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-bottom)); /* iOS home indicator */
   box-sizing: border-box;
   font-family: 'Pretendard', sans-serif;
 }
