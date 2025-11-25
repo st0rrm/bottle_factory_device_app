@@ -55,14 +55,30 @@ export default function DoModal({ onClose, onSuccess }) {
 
     // 🔍 카페의 허용된 아이템 목록 가져오기
     const fetchAllowedItems = async () => {
+      console.log('🔍 카페 아이템 필터링 시작...');
       const shopInfo = await getDeviceShopIdAsync();
+
+      console.log('📍 Shop 정보:', {
+        shopId: shopInfo.shopId,
+        shopName: shopInfo.shopName,
+        hasShopData: !!shopInfo.shopData,
+        items: shopInfo.shopData?.items || 'items 필드 없음'
+      });
+
       if (shopInfo.shopData && shopInfo.shopData.items) {
         // Firebase의 item ID를 action ID로 변환
-        const allowedActions = shopInfo.shopData.items
-          .map(itemId => ITEM_ID_TO_ACTION[itemId])
+        const itemIds = shopInfo.shopData.items;
+        console.log('📋 Firebase items 배열:', itemIds);
+
+        const allowedActions = itemIds
+          .map(itemId => {
+            const actionId = ITEM_ID_TO_ACTION[itemId];
+            console.log(`  ${itemId} → ${actionId || '(매핑 없음)'}`);
+            return actionId;
+          })
           .filter(actionId => actionId); // undefined 제거
 
-        console.log('✅ 카페 허용 아이템:', allowedActions);
+        console.log('✅ 최종 허용 아이템:', allowedActions);
         setAllowedActionIds(allowedActions);
       } else {
         // items 필드가 없으면 모든 아이템 허용

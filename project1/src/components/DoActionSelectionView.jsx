@@ -35,6 +35,13 @@ export default function DoActionSelectionView({
     ? allActions.filter(action => allowedActionIds.includes(action.id))
     : allActions;
 
+  console.log('🎯 DoActionSelectionView 렌더링:', {
+    allowedActionIds,
+    전체아이템수: allActions.length,
+    표시할아이템수: actions.length,
+    표시할아이템: actions.map(a => a.label)
+  });
+
   // 체크마크용: 하나라도 있으면 선택 상태로 보기
   const isSelected = (actionId) => selectedActions.includes(actionId);
 
