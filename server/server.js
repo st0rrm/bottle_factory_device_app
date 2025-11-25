@@ -1,6 +1,7 @@
 require('dotenv').config();
 const app = require('./src/app');
 const db = require('./src/config/database');
+const { startSMSNotificationScheduler } = require('./src/schedulers/smsNotificationScheduler');
 
 const PORT = process.env.PORT || 3000;
 
@@ -18,6 +19,9 @@ const server = app.listen(PORT, () => {
   console.log(`  POST http://localhost:${PORT}/api/cafe/login`);
   console.log(`  GET  http://localhost:${PORT}/api/cafe (admin only)`);
   console.log('='.repeat(50));
+
+  // Start SMS notification scheduler
+  startSMSNotificationScheduler();
 });
 
 // Graceful shutdown
