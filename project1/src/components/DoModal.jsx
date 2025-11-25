@@ -37,6 +37,14 @@ export default function DoModal({ onClose, onSuccess }) {
     recycle: 'VjlasSJRJjC6cw8BItvS',
   };
 
+  // 아이템 ID -> 액션 ID 매핑
+  const ITEM_ID_TO_ACTION = {
+    'AESpVawGP202Tg4QOmvH': 'tumbler',
+    'hjzsUXGds7dcqJyQYQzr': 'container',
+    'r6V568cm0yGwDfQ8vooW': 'refill',
+    'VjlasSJRJjC6cw8BItvS': 'recycle',
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     trackBehavior('tab_switch', `${tab}_do`);
@@ -44,6 +52,26 @@ export default function DoModal({ onClose, onSuccess }) {
 
   useEffect(() => {
     trackBehavior('modal_open', 'do');
+
+    // 🔍 카페의 허용된 아이템 목록 가져오기
+    const fetchAllowedItems = async () => {
+      const shopInfo = await getDeviceShopIdAsync();
+      if (shopInfo.shopData && shopInfo.shopData.items) {
+        // Firebase의 item ID를 action ID로 변환
+        const allowedActions = shopInfo.shopData.items
+          .map(itemId => ITEM_ID_TO_ACTION[itemId])
+          .filter(actionId => actionId); // undefined 제거
+
+        console.log('✅ 카페 허용 아이템:', allowedActions);
+        setAllowedActionIds(allowedActions);
+      } else {
+        // items 필드가 없으면 모든 아이템 허용
+        console.log('⚠️ 카페에 items 필드가 없습니다. 모든 아이템 허용');
+        setAllowedActionIds(['tumbler', 'container', 'refill', 'recycle']);
+      }
+    };
+
+    fetchAllowedItems();
   }, []);
 
   const [phoneNumber, setPhoneNumber] = useState('010');
@@ -55,6 +83,9 @@ export default function DoModal({ onClose, onSuccess }) {
 
   // ✅ 선택된 행동들 (중복 허용)
   const [selectedActions, setSelectedActions] = useState([]);
+
+  // ✅ 카페에서 허용된 아이템 ID 목록
+  const [allowedActionIds, setAllowedActionIds] = useState(null);
 
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [timer, setTimer] = useState(180);
@@ -361,6 +392,7 @@ export default function DoModal({ onClose, onSuccess }) {
             onToggleAction={handleToggleAction}
             onRemoveSelectedIndex={handleRemoveSelectedIndex}
             onConfirm={handleActionConfirm}
+            allowedActionIds={allowedActionIds}
           />
         </div>
       </div>

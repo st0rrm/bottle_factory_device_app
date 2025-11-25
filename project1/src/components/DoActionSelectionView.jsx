@@ -21,16 +21,33 @@ export default function DoActionSelectionView({
   onToggleAction,
   onRemoveSelectedIndex,
   onConfirm,
+  allowedActionIds,
 }) {
-  const actions = [
+  const allActions = [
     { id: 'tumbler', label: '텀블러 사용', icon: cupImage, score: 30, miniicon: cupIcon },
     { id: 'container', label: '다회용기', icon: containerImage, score: 30, miniicon: containerIcon},
     { id: 'refill', label: '리필용기', icon: refillImage, score: 30, miniicon: refillIcon},
     { id: 'recycle', label: '자원 순환', icon: recycleImage, score: 5, miniicon: recycleIcon},
   ];
 
+  // ✅ 카페에서 허용된 아이템만 필터링
+  const actions = allowedActionIds
+    ? allActions.filter(action => allowedActionIds.includes(action.id))
+    : allActions;
+
   // 체크마크용: 하나라도 있으면 선택 상태로 보기
   const isSelected = (actionId) => selectedActions.includes(actionId);
+
+  // 로딩 중이면 표시하지 않음
+  if (!allowedActionIds) {
+    return (
+      <div className="do-action-selection-view">
+        <div className="do-action-title">
+          <h2 className="do-action-heading">로딩 중...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="do-action-selection-view">
@@ -66,7 +83,7 @@ export default function DoActionSelectionView({
         <div className="do-action-selected-row">
           {Array.from({ length: 5 }).map((_, index) => {
             const actionId = selectedActions[index];
-            const action = actions.find((a) => a.id === actionId);
+            const action = allActions.find((a) => a.id === actionId);
             const hasAction = !!action;
 
             return (
