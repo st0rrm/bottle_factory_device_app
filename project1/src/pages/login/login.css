@@ -3,6 +3,7 @@
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh; /* Dynamic viewport height for mobile */
+  min-height: -webkit-fill-available; /* iOS Safari fix */
   display: flex;
   align-items: center;
   justify-content: center;
