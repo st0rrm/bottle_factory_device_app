@@ -1,79 +1,112 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Vercel 환경 변수 설정 가이드
+📋 Render 환경 변수 설정 가이드 (서버)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Vercel 대시보드 → 프로젝트 선택 → Settings → Environment Variables
+Render 대시보드 → 서비스 선택 → Environment → Environment Variables
 
 아래 변수들을 하나씩 추가하세요:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_API_BASE_URL
-   Value: https://returnmecup-api-dev.onrender.com/api
-   Environment: Production
+🔹 Name: NODE_ENV
+   Value: production
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_API_KEY
-   Value: AIzaSyD2YCaz0uPDmtz5e3Jho9CIdaZ7uiBF_8k
-   Environment: Production
+🔹 Name: PORT
+   Value: 3000
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_AUTH_DOMAIN
-   Value: zero-club.firebaseapp.com
-   Environment: Production
+🔹 Name: JWT_SECRET
+   Value: returnmecup-secret-key-change-in-production-2024
+
+   ⚠️ 실제 운영에서는 강력한 랜덤 키로 변경하세요!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_DATABASE_URL
-   Value: https://zero-club.firebaseio.com
-   Environment: Production
+🔹 Name: CORS_ORIGIN
+   Value: https://returnme-cup-device-app.vercel.app
+
+   ⚠️ Vercel 배포 URL로 변경하세요!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_PROJECT_ID
-   Value: zero-club
-   Environment: Production
+🔹 Name: DB_USER
+   Value: returnmecup
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_STORAGE_BUCKET
-   Value: zero-club.appspot.com
-   Environment: Production
+🔹 Name: DB_HOST
+   Value: (PostgreSQL 호스트 주소)
+
+   예: returnmecup-db.postgres.database.azure.com
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_MESSAGING_SENDER_ID
-   Value: 617879114314
-   Environment: Production
+🔹 Name: DB_NAME
+   Value: returnmecup_db
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_APP_ID
-   Value: 1:617879114314:web:c54bab738b51f807b88cb3
-   Environment: Production
+🔹 Name: DB_PASSWORD
+   Value: (PostgreSQL 비밀번호)
+
+   ⚠️ 안전한 비밀번호로 설정하세요!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_FIREBASE_MEASUREMENT_ID
-   Value: G-N1ZRLWR8RW
-   Environment: Production
+🔹 Name: DB_PORT
+   Value: 5432
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Name: VITE_DEVICE_SHOP_ID
-   Value: test-cafe-01
-   Environment: Production
+🔥 중요: FIREBASE_SERVICE_ACCOUNT (zero-club)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-   ⚠️ 참고: Firestore 초기화 스크립트 실행 후 생성된 가게 ID입니다.
+🔹 Name: FIREBASE_SERVICE_ACCOUNT
+   Value: (아래 단계 참고)
+
+📝 설정 방법:
+
+1. scripts/service-account.json 파일 열기
+
+2. 전체 내용을 **한 줄로 압축** (공백 제거)
+
+   방법 A - 온라인 도구 사용:
+   https://codebeautify.org/jsonminifier
+
+   방법 B - VS Code에서:
+   - 전체 선택 (Ctrl+A)
+   - 복사 (Ctrl+C)
+   - 새 파일에 붙여넣기
+   - 모든 줄바꿈 제거
+
+3. 압축된 JSON을 Render 환경변수에 붙여넣기
+
+예시 (압축 전):
+{
+  "type": "service_account",
+  "project_id": "zero-club",
+  "private_key_id": "...",
+  ...
+}
+
+예시 (압축 후):
+{"type":"service_account","project_id":"zero-club","private_key_id":"...",...}
+
+⚠️ 주의:
+- 작은따옴표 말고 큰따옴표 사용
+- 줄바꿈 없이 한 줄로
+- 앞뒤 공백 없이
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✅ 모든 변수 추가 후:
 
-1. Vercel에서 자동으로 재배포됩니다 (또는 수동 재배포)
-2. 배포 완료 후 https://returnme-cup-device-app.vercel.app 접속
-3. 정상 작동 확인!
+1. Render에서 자동으로 재배포됩니다
+2. Logs 탭에서 확인:
+   ✅ Firebase initialized with environment variable
+3. 서버 정상 작동 확인!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
