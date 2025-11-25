@@ -50,6 +50,7 @@ export const useVoiceRecognition = (
   const isListeningRef = useRef(false);
   const startRecordingRef = useRef(null); // 순환 참조 방지
   const analyzeLLMRef = useRef(null); // 순환 참조 방지
+  const sendRMSLogRef = useRef(null); // 순환 참조 방지
 
   // 초기 마이크 권한 확인 (새로고침 시에도 권한 유지)
   useEffect(() => {
@@ -243,14 +244,14 @@ export const useVoiceRecognition = (
     // rmsValues가 배치 크기에 도달하면 render 로그 출력 후 초기화
     if (rmsValuesRef.current.length >= rmsLogBatchSize) {
       console.log(`📊 RMS 값 ${rmsLogBatchSize}개 도달 → render 로그 전송`);
-      sendRMSLog([...rmsValuesRef.current]); // 배열 복사하여 전송
+      sendRMSLogRef.current?.([...rmsValuesRef.current]); // 배열 복사하여 전송
       // 배열 초기화 (다음 배치 수집을 위해)
       rmsValuesRef.current = [];
     }
 
     // LLM 분석 시작
     analyzeLLMRef.current?.();
-  }, [vadThreshold, rmsLogBatchSize, sendRMSLog]);
+  }, [vadThreshold, rmsLogBatchSize]);
 
   // AudioContext 싱글톤 (재사용)
   const audioContextRef = useRef(null);
@@ -422,7 +423,7 @@ export const useVoiceRecognition = (
     }
   }, [segmentDuration, maxCumulativeDuration, windowSize, maxTotalDuration, lowThreshold, highThreshold, onTakeoutDetected, stopRecording]);
 
-  // RMS 로그 전송 (render 로그 출력용) - useCallback보다 먼저 정의
+  // RMS 로그 전송 (render 로그 출력용)
   const sendRMSLog = useCallback(async (rmsValues) => {
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -451,7 +452,8 @@ export const useVoiceRecognition = (
   useEffect(() => {
     startRecordingRef.current = startRecording;
     analyzeLLMRef.current = analyzeLLM;
-  }, [startRecording, analyzeLLM]);
+    sendRMSLogRef.current = sendRMSLog;
+  }, [startRecording, analyzeLLM, sendRMSLog]);
 
   // API 호출
   const analyzeVoice = async (audioBlob) => {
