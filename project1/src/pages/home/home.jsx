@@ -194,10 +194,6 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
     fetchStats();
 
-    if (!hasPermission) {
-      requestPermission();
-    }
-
     const handlePopState = () => {
       window.history.pushState(null, '', window.location.pathname);
     };
@@ -208,7 +204,15 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [navigate, hasPermission, requestPermission]);
+  }, [navigate]);
+
+  // 마이크 권한이 없을 때만 요청 (한 번만 실행)
+  useEffect(() => {
+    if (!hasPermission) {
+      console.log('⚠️ 마이크 권한이 없습니다. 권한을 요청합니다...');
+      requestPermission();
+    }
+  }, [hasPermission, requestPermission]);
 
   const fetchStats = async () => {
     try {

@@ -86,12 +86,9 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
     try {
       // OpenAI SDK를 위한 File 객체 생성
-      // mimetype에 맞는 확장자 사용 (Whisper는 확장자로 포맷 추론)
-      const extension = req.file.mimetype?.includes('mp4') ? 'mp4' :
-                        req.file.mimetype?.includes('mpeg') ? 'mp3' : 'webm';
       const audioFile = new File(
         [req.file.buffer],
-        `audio.${extension}`,
+        'audio.webm',
         { type: req.file.mimetype || 'audio/webm' }
       );
 
@@ -161,10 +158,10 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
             role: 'user',
             content: `카페 키오스크 발화: "${recognizedText}"
 
-일회용컵 포장 의도 판단:
-- true: 일회용컵을 사용하는 포장 (예: 포장/테이크아웃/가져갈게요)
-- false: 그 이외의 모든 경우
-중요: 포장 의도와 무관하면 'false'로 처리
+포장/테이크아웃 의도 판단:
+- true: 명시적으로 포장 의사를 밝히는 경우 (예: 포장/테이크아웃/가져갈게요)
+- false: 그 이외의 모든 경우. 매장 이용/주문과 무관한 대화
+중요: 포장 의도가 없다면 기본값은 false. 
 
 JSON만 출력:
 {"takeout":true|false,"confidence":0.0~1.0,"reason":"string"}`
