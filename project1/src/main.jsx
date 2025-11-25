@@ -21,12 +21,14 @@ const setViewportHeight = () => {
   document.documentElement.style.setProperty('--vh', `${vh}px`);
 };
 
-// Set initial viewport height
-setViewportHeight();
-
-// Update on resize and orientation change
-window.addEventListener('resize', setViewportHeight);
-window.addEventListener('orientationchange', setViewportHeight);
+// Set viewport height at multiple points to ensure it applies
+setViewportHeight(); // Immediate
+setTimeout(setViewportHeight, 0); // Next event loop
+setTimeout(setViewportHeight, 100); // After 100ms
+document.addEventListener('DOMContentLoaded', setViewportHeight); // DOM ready
+window.addEventListener('load', setViewportHeight); // All resources loaded
+window.addEventListener('resize', setViewportHeight); // Window resize
+window.addEventListener('orientationchange', setViewportHeight); // Screen rotation
 
 createRoot(document.getElementById('root')).render(
   <App />
