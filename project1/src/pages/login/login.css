@@ -1,9 +1,13 @@
 /* Login Container */
 .login-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height for mobile */
-  min-height: -webkit-fill-available; /* iOS Safari fix */
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   align-items: center;
   justify-content: center;
