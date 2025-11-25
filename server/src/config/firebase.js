@@ -30,7 +30,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 
 admin.initializeApp({
   credential: credential,
-  projectId: "bottler-project1"
+  projectId: "zero-club"
 });
 
 const db = admin.firestore();
