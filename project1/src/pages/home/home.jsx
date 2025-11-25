@@ -137,8 +137,26 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     };
   }, [cafeInfo]);
 
-  const handleWakeWordDetected = useCallback((keywordIndex) => {
+  const handleWakeWordDetected = useCallback(async (keywordIndex) => {
     setShowHelpModal(true);
+
+    // 도움말 모달 열림 통계 기록
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      await fetch(`${apiBaseUrl}/voice/log-stat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          statType: 'help_modal_opened',
+          metadata: { trigger: 'voice' }
+        })
+      });
+    } catch (error) {
+      console.error('통계 기록 실패:', error);
+    }
   }, []);
 
   // 음성 인식 방법 선택

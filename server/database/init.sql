@@ -39,11 +39,28 @@ CREATE TABLE IF NOT EXISTS user_behaviors (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create voice_recognition_stats table (음성인식 통계)
+CREATE TABLE IF NOT EXISTS voice_recognition_stats (
+  id SERIAL PRIMARY KEY,
+  cafe_id INTEGER NOT NULL REFERENCES cafes(id),
+  stat_type VARCHAR(50) NOT NULL CHECK(stat_type IN (
+    'llm_api_call',
+    'takeout_detected',
+    'help_modal_opened',
+    'returnmecup_menu_entered'
+  )),
+  metadata JSONB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_transactions_cafe_id ON transactions(cafe_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at);
 CREATE INDEX IF NOT EXISTS idx_user_behaviors_cafe_id ON user_behaviors(cafe_id);
 CREATE INDEX IF NOT EXISTS idx_user_behaviors_created_at ON user_behaviors(created_at);
+CREATE INDEX IF NOT EXISTS idx_voice_stats_cafe_id ON voice_recognition_stats(cafe_id);
+CREATE INDEX IF NOT EXISTS idx_voice_stats_type ON voice_recognition_stats(stat_type);
+CREATE INDEX IF NOT EXISTS idx_voice_stats_created_at ON voice_recognition_stats(created_at);
 
 -- Insert default admin account (password: admin1234)
 -- Password hash generated with bcryptjs, salt rounds: 10

@@ -6,7 +6,7 @@ bottle_factory_device_app은 2가지 음성 인식 방법을 지원합니다.
 
 ## 1. 지원하는 음성 인식 방법
 
-### 방법 1: Picovoice (기본값) ⭐ 현재 사용 중
+### 방법 1: Picovoice
 
 **기술**: 웨이크워드 기반 음성 인식 (로컬 처리)
 
@@ -19,11 +19,11 @@ bottle_factory_device_app은 2가지 음성 인식 방법을 지원합니다.
 
 ---
 
-### 방법 2: Whisper + Claude Haiku (LLM 기반) ⭐ 프로덕션 권장
+### 방법 2: Whisper + Claude Haiku (LLM 기반) ⭐ 현재 사용 중
 
 **기술**: OpenAI Whisper (음성→텍스트) + Anthropic Claude Haiku (의도 분석)
 **녹음 방식**: 5-30초 적응형 (15초 누적 + 슬라이딩 윈도우)
-**VAD**: 음량 기반 활성화 (브라우저 내장 Web Audio API)
+**VAD**: RMS 기반 음량 감지 (Web Audio API)
 
 **핵심 특징**:
 - ✅ **비용 최적화**: VAD로 95% 비용 절감 (음성 감지 시만 API 호출)
@@ -37,8 +37,8 @@ bottle_factory_device_app은 2가지 음성 인식 방법을 지원합니다.
 **동작 방식**:
 ```
 [VAD 계층] (항상 작동, 로컬, 무료)
-  마이크 음량 실시간 모니터링 (60fps)
-  ↓ 음량 > threshold (기본 40)
+  RMS 기반 음량 분석 (5초마다)
+  ↓ RMS > threshold (기본 10)
 
 [LLM 계층] (음성 감지 시만 작동)
 
@@ -67,10 +67,10 @@ bottle_factory_device_app은 2가지 음성 인식 방법을 지원합니다.
 4. **슬라이딩 윈도우**: 초반 노이즈 제거, 최신 정보 집중
 
 **VAD (Voice Activity Detection)**:
-- **기술**: 브라우저 내장 Web Audio API (외부 라이브러리 없음)
-- **동작**: 마이크 음량을 실시간 모니터링 (60fps)
-- **임계값**: 기본 40 (0-255 범위, 환경에 맞게 조정 가능)
-- **침묵 판정**: 2초간 임계값 미만이면 API 중지
+- **기술**: Web Audio API RMS 계산 (외부 라이브러리 없음)
+- **동작**: 5초 세그먼트마다 RMS 분석
+- **임계값**: 기본 10 (0-255 범위, 환경에 맞게 조정 가능)
+- **로그**: 20개 세그먼트마다 Render 로그 출력 (threshold 최적화용)
 - **iPad 지원**: iOS/iPadOS Safari 완벽 작동
 
 **다른 LLM 조합 참고**:
@@ -82,9 +82,9 @@ bottle_factory_device_app은 2가지 음성 인식 방법을 지원합니다.
 
 ## 2. 음성 인식 방법 전환하기
 
-### 현재 상태: Picovoice 사용 중
+### 현재 상태: Whisper + Haiku 사용 중
 
-Whisper + Haiku로 전환하려면 다음 단계를 따르세요.
+Picovoice로 전환하거나 설정을 변경하려면 다음을 참고하세요.
 
 ### Step 1: API 키 발급
 
@@ -133,26 +133,10 @@ npm install openai @anthropic-ai/sdk multer
 
 **파일**: `/project1/src/pages/home/home.jsx`
 
-**변경 전 (Picovoice)**:
+**현재 설정 (Whisper + Haiku)**:
 ```javascript
-// 16-17번 줄
-import { usePicovoice } from '../../hooks/usePicovoice';
-// import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
-
-// 128-130번 줄
-const { isListening, error: picoError, hasPermission, requestPermission } =
-  usePicovoice(true, handleWakeWordDetected);
-```
-
-**변경 후 (Whisper + Haiku)**:
-```javascript
-// 16-17번 줄 (import 주석 전환)
-// import { usePicovoice } from '../../hooks/usePicovoice';
+// home.jsx
 import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
-
-// 132-144번 줄 (hook 주석 전환)
-// const { isListening, error: picoError, hasPermission, requestPermission } =
-//   usePicovoice(true, handleWakeWordDetected);
 
 const { isListening, error: picoError, hasPermission, requestPermission } =
   useVoiceRecognition(true, handleWakeWordDetected, {
@@ -162,8 +146,22 @@ const { isListening, error: picoError, hasPermission, requestPermission } =
     maxCumulativeDuration: 15000,  // 15초까지 누적
     windowSize: 15000,             // 슬라이딩 윈도우 15초
     maxTotalDuration: 30000,       // 최대 30초
-    restartDelay: 1000,
+    vadThreshold: 10,              // RMS 임계값 (권장: 30-40)
+    rmsLogBatchSize: 20,           // RMS 로그 배치 크기 (권장: 10-50)
   });
+
+// ⚙️ 주요 파라미터 수정 방법:
+// - vadThreshold: 매장 소음에 맞게 조정 (조용한 실내: 30-40, 일반 카페: 40-50, 시끄러운 매장: 60-80)
+// - rmsLogBatchSize: 로그 출력 빈도 조정 (작을수록 자주 출력, 클수록 덜 자주 출력)
+```
+
+**Picovoice로 전환 시**:
+```javascript
+// home.jsx
+import { usePicovoice } from '../../hooks/usePicovoice';
+
+const { isListening, error: picoError, hasPermission, requestPermission } =
+  usePicovoice(true, handleWakeWordDetected);
 ```
 
 ### Step 5: 서버 재시작
@@ -294,23 +292,103 @@ const options = {
   // 기본값: 1000 (1초)
   // 권장 범위: 500-2000
 
-  vadThreshold: 40,
-  // VAD 음량 임계값 (0-255)
-  // 기본값: 40
-  // 조용한 실내: 30-40
-  // 일반 카페: 40-50
-  // 시끄러운 매장: 60-80
+  vadThreshold: 10,
+  // VAD 음량 임계값 (RMS 기반, 0-255)
+  // 기본값: 10
+  // 조용한 실내: 30-40 (권장)
+  // 일반 카페: 40-50 (권장)
+  // 시끄러운 매장: 60-80 (권장)
+  // Render 로그에서 배치 단위로 RMS 값 확인 가능
 
-  vadSilenceDuration: 2000,
-  // VAD 침묵 판정 시간 (밀리초)
-  // 기본값: 2000 (2초)
-  // 권장 범위: 1500-3000
+  rmsLogBatchSize: 20,
+  // RMS 로그 배치 크기 (N개 세그먼트마다 Render 로그 출력)
+  // 기본값: 20
+  // 권장 범위: 10-50
+  // 값이 작을수록 자주 로그 출력 (실시간 모니터링)
+  // 값이 클수록 덜 자주 로그 출력 (장기 분석)
 };
 ```
 
 ---
 
-## 5. 비용 분석
+## 5. 음성인식 통계 시스템
+
+### 5.1 통계 수집 항목
+
+음성인식 사용 현황은 PostgreSQL에 자동으로 기록됩니다.
+
+| **통계 타입** | **설명** | **수집 시점** |
+|-------------|---------|------------|
+| `llm_api_call` | LLM API 호출 횟수 | 매 API 호출 시 |
+| `takeout_detected` | 포장 의도 감지 횟수 | confidence ≥ 0.7 시 |
+| `help_modal_opened` | 도움말 모달 열림 | 포장 감지 후 모달 표시 |
+| `returnmecup_menu_entered` | 대여 메뉴 진입 | 사용자가 대여 시도 |
+
+### 5.2 RMS 로그 시스템
+
+**목적**: 최적 vadThreshold 설정
+
+**출력 방식**:
+- 배치 단위로 Render 로그 출력 (기본값: 20개 세그먼트마다)
+- `rmsLogBatchSize` 옵션으로 조절 가능 (10-50 권장)
+- 배치 출력 후 자동으로 배열 초기화하여 다음 배치 수집
+
+```
+세그먼트 20개 저장될 때마다 Render 로그 출력:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 RMS 로그 출력:
+   timestamp: 2025-11-25T12:34:56Z
+   cafe: 스타벅스 강남점
+   segmentCount: 20
+📊 세그먼트별 RMS 값:
+   → 세그먼트 1: RMS 12
+   → 세그먼트 2: RMS 25
+   → 세그먼트 3: RMS 8
+   ...
+   → 세그먼트 20: RMS 18
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[20개 후 배열 초기화, 다음 20개 수집 시작]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 RMS 로그 출력:
+   timestamp: 2025-11-25T12:36:23Z
+   cafe: 스타벅스 강남점
+   segmentCount: 20
+📊 세그먼트별 RMS 값:
+   → 세그먼트 1: RMS 15
+   ...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**활용 방법**:
+1. 1주일간 로그 수집
+2. 배경 소음 RMS 분포 확인 (예: 5-15)
+3. 음성 RMS 분포 확인 (예: 20-50)
+4. P95 값으로 vadThreshold 설정 (예: 30)
+
+**배치 크기 조정**:
+- `rmsLogBatchSize: 10` → 2배 자주 로그 (실시간 모니터링)
+- `rmsLogBatchSize: 50` → 1/2.5 덜 자주 로그 (장기 분석)
+
+### 5.3 통계 조회 방법
+
+```sql
+-- 카페별 전환율 분석
+SELECT
+  cafe_id,
+  COUNT(*) FILTER (WHERE stat_type = 'llm_api_call') as api_calls,
+  COUNT(*) FILTER (WHERE stat_type = 'takeout_detected') as detections,
+  COUNT(*) FILTER (WHERE stat_type = 'help_modal_opened') as modal_opens,
+  COUNT(*) FILTER (WHERE stat_type = 'returnmecup_menu_entered') as menu_entries
+FROM voice_recognition_stats
+WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY cafe_id;
+```
+
+---
+
+## 6. 비용 분석
 
 ### LLM 기반 방식 (5-30초 적응형)
 
@@ -353,7 +431,7 @@ const options = {
 
 ---
 
-## 6. 비교표
+## 7. 비교표
 
 | **항목**               | **Picovoice**        | **Whisper + Haiku (LLM)** ⭐ |
 |-----------------------|---------------------|-----------------------------------|
@@ -371,7 +449,7 @@ const options = {
 
 ---
 
-## 7. 문제 해결
+## 8. 문제 해결
 
 ### Whisper + Haiku 관련
 

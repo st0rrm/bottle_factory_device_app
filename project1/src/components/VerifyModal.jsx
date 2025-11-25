@@ -31,6 +31,28 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
   // 모달 열림 추적 (컴포넌트 마운트 시 1회만)
   useEffect(() => {
     trackBehavior('modal_open', 'borrow');
+
+    // 리턴미컵 메뉴 진입 통계 기록
+    const logMenuEntry = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+        await fetch(`${apiBaseUrl}/voice/log-stat`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            statType: 'returnmecup_menu_entered',
+            metadata: { menu: 'borrow' }
+          })
+        });
+      } catch (error) {
+        console.error('통계 기록 실패:', error);
+      }
+    };
+
+    logMenuEntry();
   }, []);
   const [phoneNumber, setPhoneNumber] = useState('010');
   const [verificationCode, setVerificationCode] = useState('');

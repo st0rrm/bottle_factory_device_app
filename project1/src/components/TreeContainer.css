@@ -46,7 +46,7 @@
   border: none;
   background-color: transparent;
   display: block;
-  zoom: 0.85;                     /* 나무 크기 조정 */
+  zoom: 1;                     /* 나무 크기 조정 */
   transform-origin: center center;
   position: absolute;
   /* left: 0; */

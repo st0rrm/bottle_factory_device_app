@@ -3,6 +3,7 @@ const multer = require('multer');
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { authenticateToken } = require('../middleware/auth');
+const VoiceStats = require('../models/VoiceStats');
 
 const router = express.Router();
 
@@ -87,8 +88,7 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
       mimetype: req.file.mimetype,
       cafe: req.user.cafeName,
       cafeId: req.user.cafeId,
-      rmsValues: rmsValues.length > 0 ? rmsValues : '(없음)',
-      avgRMS: rmsValues.length > 0 ? (rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length).toFixed(1) : 'N/A',
+      segmentCount: rmsValues.length,
     });
 
     // Step 1: OpenAI Whisper로 음성을 텍스트로 변환
@@ -226,6 +226,27 @@ JSON만 출력:
       console.log(`⏱️ 총 소요 시간: ${totalDuration}ms (Whisper: ${whisperDuration}ms, Claude: ${claudeDuration}ms)`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
+      // 음성인식 통계 기록
+      try {
+        // LLM API 호출 통계 기록
+        await VoiceStats.addStat(req.user.id, 'llm_api_call', {
+          rmsCount: rmsValues.length,
+          recognizedText: recognizedText,
+          duration: totalDuration
+        });
+
+        // 포장 의도 감지 시 통계 기록
+        if (response.takeout && response.confidence >= 0.7) {
+          await VoiceStats.addStat(req.user.id, 'takeout_detected', {
+            confidence: response.confidence,
+            text: response.text,
+            reason: response.reason
+          });
+        }
+      } catch (statsError) {
+        console.error('⚠️ 통계 기록 실패 (응답은 정상 처리):', statsError.message);
+      }
+
       res.json(response);
 
     } catch (innerError) {
@@ -285,6 +306,73 @@ JSON만 출력:
       code: 'INTERNAL_ERROR',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
+  }
+});
+
+/**
+ * POST /api/voice/log-rms
+ * RMS 값 로그 출력 전용 엔드포인트
+ */
+router.post('/log-rms', authenticateToken, async (req, res) => {
+  try {
+    const { rmsValues } = req.body;
+
+    if (!rmsValues || !Array.isArray(rmsValues)) {
+      return res.status(400).json({ error: 'rmsValues 배열이 필요합니다.' });
+    }
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 RMS 로그 출력:', {
+      timestamp: new Date().toISOString(),
+      cafe: req.user.cafeName,
+      cafeId: req.user.cafeId,
+      segmentCount: rmsValues.length,
+    });
+
+    // RMS 값 세그먼트별 출력
+    console.log('📊 세그먼트별 RMS 값:');
+    rmsValues.forEach((rms, index) => {
+      console.log(`   → 세그먼트 ${index + 1}: RMS ${rms}`);
+    });
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+    res.json({ success: true, logged: rmsValues.length });
+  } catch (error) {
+    console.error('❌ RMS 로그 출력 오류:', error);
+    res.status(500).json({ error: 'RMS 로그 출력 실패' });
+  }
+});
+
+/**
+ * POST /api/voice/log-stat
+ * 음성인식 통계 기록 (프론트엔드에서 호출)
+ *
+ * Request body:
+ *   - statType: 'help_modal_opened' | 'returnmecup_menu_entered'
+ *   - metadata: 추가 정보 (선택)
+ */
+router.post('/log-stat', authenticateToken, async (req, res) => {
+  try {
+    const { statType, metadata } = req.body;
+
+    if (!statType || !['help_modal_opened', 'returnmecup_menu_entered'].includes(statType)) {
+      return res.status(400).json({
+        error: 'Valid statType required (help_modal_opened or returnmecup_menu_entered)'
+      });
+    }
+
+    const result = await VoiceStats.addStat(req.user.id, statType, metadata || null);
+
+    console.log(`📊 음성인식 통계 기록: ${statType} (cafe: ${req.user.cafeName})`);
+
+    res.json({
+      success: true,
+      statId: result.id,
+      statType: statType
+    });
+  } catch (error) {
+    console.error('❌ 음성인식 통계 기록 오류:', error);
+    res.status(500).json({ error: '통계 기록 실패' });
   }
 });
 

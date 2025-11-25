@@ -27,7 +27,8 @@ export const useVoiceRecognition = (
     maxCumulativeDuration = 15000,  // 15초까지 누적 모드
     windowSize = 15000,             // 슬라이딩 윈도우 크기
     maxTotalDuration = 30000,       // 최대 총 녹음 시간 (30초)
-    vadThreshold = 130,              // VAD 음량 임계값 (0-255)
+    vadThreshold = 10,              // VAD 음량 임계값 (RMS 기반, 0-255)
+    rmsLogBatchSize = 20,           // RMS 로그 배치 크기 (N개마다 render 로그 출력)
   } = options;
 
   const [isListening, setIsListening] = useState(false);
@@ -239,9 +240,17 @@ export const useVoiceRecognition = (
 
     console.log(`✅ 세그먼트 ${segmentIndex} 저장 (총 ${totalSegments}개)`);
 
+    // rmsValues가 배치 크기에 도달하면 render 로그 출력 후 초기화
+    if (rmsValuesRef.current.length >= rmsLogBatchSize) {
+      console.log(`📊 RMS 값 ${rmsLogBatchSize}개 도달 → render 로그 전송`);
+      sendRMSLog(rmsValuesRef.current);
+      // 배열 초기화 (다음 배치 수집을 위해)
+      rmsValuesRef.current = [];
+    }
+
     // LLM 분석 시작
     analyzeLLMRef.current?.();
-  }, [vadThreshold]);
+  }, [vadThreshold, rmsLogBatchSize]);
 
   // AudioContext 싱글톤 (재사용)
   const audioContextRef = useRef(null);
@@ -418,6 +427,31 @@ export const useVoiceRecognition = (
     startRecordingRef.current = startRecording;
     analyzeLLMRef.current = analyzeLLM;
   }, [startRecording, analyzeLLM]);
+
+  // RMS 로그 전송 (render 로그 출력용)
+  const sendRMSLog = async (rmsValues) => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const url = `${apiBaseUrl}/voice/log-rms`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ rmsValues }),
+      });
+
+      if (response.ok) {
+        console.log('   → render 로그 전송 성공');
+      } else {
+        console.error('   → render 로그 전송 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('   → render 로그 전송 오류:', error);
+    }
+  };
 
   // API 호출
   const analyzeVoice = async (audioBlob) => {
