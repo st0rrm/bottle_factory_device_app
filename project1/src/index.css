@@ -38,6 +38,9 @@ html, body {
   padding: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  /* Disable pull-to-refresh and overscroll bounce */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 a {
@@ -55,6 +58,8 @@ a:hover {
   min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: auto;
+  /* Disable pull-to-refresh and overscroll bounce */
+  overscroll-behavior: none;
 }
 
 h1 {
