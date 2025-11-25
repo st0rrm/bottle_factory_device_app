@@ -94,7 +94,13 @@ function startSMSNotificationScheduler() {
       // 3. 각 대여건에 대해 알림 확인 및 발송
       for (const rentDoc of rentsSnapshot.docs) {
         const rentData = rentDoc.data();
-        const { uid, rented_date } = rentData;
+        const { uid, rented_date, source } = rentData;
+
+        // 웹에서 빌린 것만 SMS 발송 (앱 대여는 푸시 알림 사용)
+        if (source !== 'web') {
+          console.log(`⏭️  건너뜀: 앱 대여 (푸시 알림 사용) - ${uid}`);
+          continue;
+        }
 
         // 대여일로부터 경과일 계산
         const rentedMoment = moment(rented_date.toDate());

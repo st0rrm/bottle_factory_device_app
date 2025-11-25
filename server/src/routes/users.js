@@ -170,7 +170,8 @@ router.post('/rental', async (req, res) => {
         status: 'rent',
         balance_id: ticket.id,
         amount: ticket.amount || 4000,
-        division: shopDivision
+        division: shopDivision,
+        source: 'web'  // 웹 앱에서 대여 (SMS 알림용)
       };
 
       const rentRef = await db.collection('rents').add(rentalData);
