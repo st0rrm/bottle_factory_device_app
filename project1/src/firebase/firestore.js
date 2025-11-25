@@ -400,9 +400,10 @@ export const getUserTickets = async (uid) => {
  * @param {Array} tickets - 선택한 대여권 배열 (balances 문서들, create 순으로 정렬되어 있음)
  * @param {string} shopId - 가게 ID (디바이스의 shopId)
  * @param {string} shopName - 가게 이름
+ * @param {string} phoneNumber - 사용자 전화번호 (SMS 알림용)
  * @returns {Promise}
  */
-export const processRental = async (uid, tickets, shopId, shopName) => {
+export const processRental = async (uid, tickets, shopId, shopName, phoneNumber) => {
   try {
     // 백엔드 API를 통해 대여 처리
     const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -415,7 +416,8 @@ export const processRental = async (uid, tickets, shopId, shopName) => {
         uid,
         tickets,
         shopId,
-        shopName
+        shopName,
+        phoneNumber
       })
     });
 

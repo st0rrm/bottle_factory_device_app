@@ -66,7 +66,6 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [confirmationResult, setConfirmationResult] = useState(null);
-  const [smsNotification, setSmsNotification] = useState(true);
   const [timer, setTimer] = useState(180);
   const [attempts, setAttempts] = useState(0);
   const [isError, setIsError] = useState(false);
@@ -337,8 +336,8 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
         return;
       }
 
-      // Firebase에 대여 처리 (개수만큼 대여권 배열 전달)
-      const result = await processRental(currentUser.uid, selectedTickets, shopId, shopName);
+      // Firebase에 대여 처리 (개수만큼 대여권 배열 전달, phoneNumber 포함)
+      const result = await processRental(currentUser.uid, selectedTickets, shopId, shopName, phoneNumber);
 
       if (result.success) {
         console.log(`✅ 대여 완료: ${result.count}개 대여권 사용, ${result.count}개 컵 대여`);
@@ -431,8 +430,6 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
         {showConfirmation ? (
           <RentalConfirmationView
             quantity={quantity}
-            smsNotification={smsNotification}
-            onToggleSms={() => setSmsNotification(!smsNotification)}
             onCancel={handleConfirmationCancel}
             onConfirm={handleFinalConfirm}
           />

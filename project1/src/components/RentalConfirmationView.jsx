@@ -4,8 +4,6 @@ import returnmecup from '../assets/images/returnmecup.svg';
 
 export default function RentalConfirmationView({
   quantity,
-  smsNotification,
-  onToggleSms,
   onCancel,
   onConfirm,
 }) {
@@ -77,23 +75,11 @@ export default function RentalConfirmationView({
         </div>
       </div>
 
-      {/* SMS Notification Checkbox */}
+      {/* Info Text */}
       <div className="sms-notification-container">
-        <button
-          onClick={onToggleSms}
-          className={`sms-toggle-button ${smsNotification ? 'sms-active' : 'sms-inactive'}`}
-        >
-          <div className={`checkbox-circle ${smsNotification ? 'checkbox-checked' : 'checkbox-unchecked'}`}>
-            {smsNotification && (
-              <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <polyline points="20 6 9 17 4 12" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </div>
-          <span className={`sms-text ${smsNotification ? 'sms-text-active' : 'sms-text-inactive'}`}>
-            반납일자 알림 문자를 받겠습니다.
-          </span>
-        </button>
+        <div className="sms-info-text">
+          반납일자 알림 문자가 자동으로 발송됩니다.
+        </div>
       </div>
 
       {/* Action Buttons */}

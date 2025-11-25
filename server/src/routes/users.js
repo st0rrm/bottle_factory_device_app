@@ -121,17 +121,18 @@ async function addStatistics(statisticsRef, items) {
  *   uid: string,              // User ID
  *   tickets: [{ id, amount }], // Tickets to use for rental
  *   shopId: string,           // Shop ID where cups are rented
- *   shopName: string          // Shop name
+ *   shopName: string,         // Shop name
+ *   phoneNumber: string       // User phone number for SMS notification
  * }
  */
 router.post('/rental', async (req, res) => {
   try {
-    const { uid, tickets, shopId, shopName } = req.body;
+    const { uid, tickets, shopId, shopName, phoneNumber } = req.body;
 
     // Validate required fields
-    if (!uid || !tickets || !shopId || !shopName) {
+    if (!uid || !tickets || !shopId || !shopName || !phoneNumber) {
       return res.status(400).json({
-        error: 'Missing required fields: uid, tickets, shopId, shopName'
+        error: 'Missing required fields: uid, tickets, shopId, shopName, phoneNumber'
       });
     }
 
@@ -170,7 +171,8 @@ router.post('/rental', async (req, res) => {
         status: 'rent',
         balance_id: ticket.id,
         amount: ticket.amount || 4000,
-        division: shopDivision
+        division: shopDivision,
+        phone_number: phoneNumber  // SMS 알림용 전화번호
       };
 
       const rentRef = await db.collection('rents').add(rentalData);
