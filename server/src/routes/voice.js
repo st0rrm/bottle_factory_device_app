@@ -86,9 +86,12 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
     try {
       // OpenAI SDK를 위한 File 객체 생성
+      // mimetype에 맞는 확장자 사용 (Whisper는 확장자로 포맷 추론)
+      const extension = req.file.mimetype?.includes('mp4') ? 'mp4' :
+                        req.file.mimetype?.includes('mpeg') ? 'mp3' : 'webm';
       const audioFile = new File(
         [req.file.buffer],
-        'audio.webm',
+        `audio.${extension}`,
         { type: req.file.mimetype || 'audio/webm' }
       );
 

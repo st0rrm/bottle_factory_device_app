@@ -39,6 +39,7 @@ export const useVoiceRecognition = (
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
+  const recordingMimeTypeRef = useRef('audio/webm'); // 녹음 포맷 저장
 
   // 녹음된 세그먼트들 저장 (Blob 배열)
   const segmentsRef = useRef([]); // [blob1, blob2, blob3, ...]
@@ -146,9 +147,27 @@ export const useVoiceRecognition = (
 
       streamRef.current = stream;
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
-      });
+      // iOS/Safari 호환성: 지원되는 mimeType 자동 선택
+      let mimeType = 'audio/webm';
+      if (!MediaRecorder.isTypeSupported('audio/webm')) {
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else {
+          // 기본값 사용 (mimeType 지정 안함)
+          mimeType = null;
+        }
+      }
+
+      console.log(`🎙️ 녹음 포맷: ${mimeType || '기본값(브라우저 자동)'}`);
+
+      // mimeType 저장 (Blob 생성 시 재사용)
+      recordingMimeTypeRef.current = mimeType || 'audio/webm';
+
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
 
       mediaRecorderRef.current = mediaRecorder;
       segmentsRef.current = [];
@@ -204,8 +223,8 @@ export const useVoiceRecognition = (
       return;
     }
 
-    // 세그먼트 Blob 생성
-    const segmentBlob = new Blob(currentSegmentChunksRef.current, { type: 'audio/webm' });
+    // 세그먼트 Blob 생성 (녹음 시 사용한 mimeType 사용)
+    const segmentBlob = new Blob(currentSegmentChunksRef.current, { type: recordingMimeTypeRef.current });
     currentSegmentChunksRef.current = [];
 
     const segmentIndex = segmentsRef.current.length + 1;
@@ -343,7 +362,7 @@ export const useVoiceRecognition = (
       }
 
       // 세그먼트들을 하나의 Blob으로 병합
-      const mergedBlob = new Blob(blobsToAnalyze, { type: 'audio/webm' });
+      const mergedBlob = new Blob(blobsToAnalyze, { type: recordingMimeTypeRef.current });
 
       console.log(`📦 병합된 오디오: ${(mergedBlob.size / 1024).toFixed(2)}KB`);
       console.log(`🌐 API 호출 준비:`);
@@ -458,8 +477,12 @@ export const useVoiceRecognition = (
 
   // API 호출
   const analyzeVoice = async (audioBlob) => {
+    // 파일 확장자를 mimeType에 맞게 설정
+    const extension = recordingMimeTypeRef.current.includes('mp4') ? 'mp4' : 'webm';
+    const fileName = `recording.${extension}`;
+
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
+    formData.append('audio', audioBlob, fileName);
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
     const url = `${apiBaseUrl}/voice/analyze`;
