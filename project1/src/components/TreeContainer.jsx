@@ -138,14 +138,14 @@ function TreeContainer({
   }, [isReady, cafeId, type, score, totalScore, totalCount]);
 
   return (
-    <div className="tree-container">
-      {/* 배경 레이어 1: 메인 배경 이미지 */}
+    <>
+      {/* 배경 레이어 1: 메인 배경 이미지 (화면 전체) */}
       <div
         className="tree-background"
         style={{ backgroundImage: `url(${backgroundImage})` }}
       />
 
-      {/* 배경 레이어 2: 오브젝트 이미지 (선택) */}
+      {/* 배경 레이어 2: 오브젝트 이미지 (화면 전체) */}
       {objectImage && (
         <div
           className="tree-objects"
@@ -153,16 +153,19 @@ function TreeContainer({
         />
       )}
 
-      {/* 전경: 투명 배경의 나무 iframe */}
-      <iframe
-        ref={iframeRef}
-        src={treeUrlWithParams}
-        title="보틀 나무"
-        className="tree-iframe"
-        sandbox="allow-scripts allow-same-origin allow-forms"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; storage-access"
-      />
-    </div>
+      {/* tree-container: iframe만 포함 (크기 조정 가능) */}
+      <div className="tree-container">
+        {/* 전경: 투명 배경의 나무 iframe */}
+        <iframe
+          ref={iframeRef}
+          src={treeUrlWithParams}
+          title="보틀 나무"
+          className="tree-iframe"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; storage-access"
+        />
+      </div>
+    </>
   );
 }
 

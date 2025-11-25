@@ -14,6 +14,7 @@ import TreeContainer from '../../components/TreeContainer';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
 import { usePicovoice } from '../../hooks/usePicovoice';
+import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (Whisper + Claude)
 import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
 
 function HomeScreen() {
@@ -98,23 +99,41 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   // --------------------------------------------------------------------
 
 
-  // action-bar bottom padding dynamic adjustment
+  // action-bar bottom padding and tree-container positioning adjustment
   useEffect(() => {
-    const updateTreeSectionPadding = () => {
+    const updateTreeLayout = () => {
       const actionBar = document.querySelector('.action-bar');
       const treeSection = document.querySelector('.tree-section');
+      const flowContainer = document.querySelector('.flow-container');
+      const treeContainer = document.querySelector('.tree-container');
 
       if (actionBar && treeSection) {
         treeSection.style.paddingBottom = `${actionBar.offsetHeight}px`;
       }
+
+      if (flowContainer && actionBar && treeContainer) {
+        const flowRect = flowContainer.getBoundingClientRect();
+        const actionBarRect = actionBar.getBoundingClientRect();
+
+        const topPosition = flowRect.bottom;
+        const bottomPosition = actionBarRect.top;
+        const height = bottomPosition - topPosition;
+
+        // tree-container의 위치와 크기 설정
+        treeContainer.style.position = 'fixed';
+        treeContainer.style.top = `${topPosition}px`;
+        treeContainer.style.left = '0';
+        treeContainer.style.width = '100%';
+        treeContainer.style.height = `${height}px`;
+      }
     };
 
-    const timer = setTimeout(updateTreeSectionPadding, 100);
-    window.addEventListener('resize', updateTreeSectionPadding);
+    const timer = setTimeout(updateTreeLayout, 100);
+    window.addEventListener('resize', updateTreeLayout);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updateTreeSectionPadding);
+      window.removeEventListener('resize', updateTreeLayout);
     };
   }, [cafeInfo]);
 
@@ -122,8 +141,24 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     setShowHelpModal(true);
   }, []);
 
-  const { isListening, error: picoError, hasPermission, requestPermission } =
-    usePicovoice(true, handleWakeWordDetected);
+  // 음성 인식 방법 선택
+
+  // 방법 1: Picovoice (현재 사용 중)
+  // const { isListening, error: picoError, hasPermission, requestPermission } =
+  //   usePicovoice(true, handleWakeWordDetected);
+
+  // 방법 2: LLM 기반 (Whisper + Claude)
+  const { isListening, error: picoError, hasPermission, requestPermission, startRecording } =
+    useVoiceRecognition(true, handleWakeWordDetected, {
+      segmentDuration: 5000,         // 5초마다 분석
+      lowThreshold: 0.4,             // 0.4 미만 → 폐기
+      highThreshold: 0.7,            // 0.7 이상 → 확정
+      maxCumulativeDuration: 15000,  // 최대 15초 누적
+      windowSize: 15000,             // 슬라이딩 윈도우 15초
+      maxTotalDuration: 30000,       // 최대 30초
+      vadThreshold: 10,              // VAD 음량 임계값 (RMS 기반, 0-255)
+                                     // 15 = 배경 소음 차단, 정상 대화 감지
+    });
 
   // load café info
   useEffect(() => {
@@ -345,7 +380,18 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       )}
 
       {showHelpModal &&
-        <HelpModal onClose={() => setShowHelpModal(false)} onUseButtonClick={handleBorrowCupAction} />
+        <HelpModal
+          onClose={() => {
+            setShowHelpModal(false);
+            // 도움말 닫으면 음성인식 재시작
+            setTimeout(() => {
+              if (startRecording) {
+                startRecording();
+              }
+            }, 500);
+          }}
+          onUseButtonClick={handleBorrowCupAction}
+        />
       }
 
       {showSettingsModal && (
