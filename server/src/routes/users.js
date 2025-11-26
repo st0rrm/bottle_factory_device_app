@@ -398,7 +398,8 @@ router.post('/do-actions', async (req, res) => {
       uid,
       shop_id: shopId,
       score: totalScore,
-      create: FieldValue.serverTimestamp()
+      create: FieldValue.serverTimestamp(),
+      source: 'web'  // 웹 실천으로 적립
     });
 
     const collectHistoryId = collectHistoryRef.id;

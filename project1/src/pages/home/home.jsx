@@ -18,6 +18,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { usePicovoice } from '../../hooks/usePicovoice';
 import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (Whisper + Claude)
 import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
+import { getShopByName } from '../../firebase/firestore';
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ function HomeScreen() {
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [cafeInfo, setCafeInfo] = useState(null);
+  const [firebaseShopId, setFirebaseShopId] = useState(null); // Firebase shops document ID
 
   const [stats, setStats] = useState({
     totalScore: 0,
@@ -194,6 +196,23 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     const cafe = JSON.parse(userData);
     setCafeInfo(cafe);
 
+    // Firebase shops document ID 조회 (실시간 리스너용)
+    const fetchFirebaseShopId = async () => {
+      try {
+        const shopResult = await getShopByName(cafe.cafeName);
+        if (shopResult.success) {
+          const shopId = shopResult.data.id;
+          setFirebaseShopId(shopId);
+          console.log('🔑 Firebase shopId 설정:', shopId);
+        } else {
+          console.warn('⚠️ Firebase shops에서 카페를 찾을 수 없음:', cafe.cafeName);
+        }
+      } catch (error) {
+        console.error('❌ Firebase shopId 조회 실패:', error);
+      }
+    };
+
+    fetchFirebaseShopId();
     fetchStats();
 
     const handlePopState = () => {
@@ -218,13 +237,13 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   // Firebase 실시간 리스너: QR 적립 즉시 반영
   useEffect(() => {
-    if (!cafeInfo?.cafeId) return;
+    if (!firebaseShopId) return;
 
-    console.log('🔥 Firebase 실시간 리스너 시작:', cafeInfo.cafeId);
+    console.log('🔥 Firebase 실시간 리스너 시작:', firebaseShopId);
 
     const q = query(
       collection(db, 'collect_history'),
-      where('shop_id', '==', cafeInfo.cafeId)
+      where('shop_id', '==', firebaseShopId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -246,7 +265,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       console.log('🔥 Firebase 리스너 종료');
       unsubscribe();
     };
-  }, [cafeInfo?.cafeId]);
+  }, [firebaseShopId]);
 
   const fetchStats = async () => {
     try {
