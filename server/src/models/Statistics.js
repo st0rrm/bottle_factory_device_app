@@ -3,12 +3,20 @@ const { db } = require('../config/firebase');
 
 class Statistics {
   // Firebase에서 QR 적립 통계 가져오기 (기존 앱)
-  static async getFirebaseQRStats(shopId) {
+  static async getFirebaseQRStats(shopId, cafeCreatedAt) {
     try {
       // source 필드가 없는 것만 = 기존 앱 QR 적립
-      const snapshot = await db.collection('collect_history')
-        .where('shop_id', '==', shopId)
-        .get();
+      // 카페 생성일 이후만 집계 (웹 앱 등록일 기준)
+      let query = db.collection('collect_history')
+        .where('shop_id', '==', shopId);
+
+      // 카페 생성일이 있으면 그 이후만 필터링
+      if (cafeCreatedAt) {
+        const cutoffDate = new Date(cafeCreatedAt);
+        query = query.where('create', '>=', cutoffDate);
+      }
+
+      const snapshot = await query.get();
 
       let totalScore = 0;
       let totalCount = 0;
@@ -128,9 +136,9 @@ class Statistics {
         weekly: parseInt(pgResult.rows[0].weekly) || 0
       };
 
-      // 2. Firebase shopId 조회
+      // 2. Firebase shopId와 웹 카페 생성일 조회
       const cafeResult = await pool.query(
-        'SELECT cafe_id FROM cafes WHERE id = $1',
+        'SELECT cafe_id, created_at FROM cafes WHERE id = $1',
         [cafeId]
       );
 
@@ -139,9 +147,10 @@ class Statistics {
       }
 
       const shopId = cafeResult.rows[0].cafe_id;
+      const cafeCreatedAt = cafeResult.rows[0].created_at; // 웹에서 계정 생성한 날짜
 
-      // 3. Firebase QR 적립 통계 (기존 앱)
-      const firebaseStats = await this.getFirebaseQRStats(shopId);
+      // 3. Firebase QR 적립 통계 (웹 계정 생성일 이후만)
+      const firebaseStats = await this.getFirebaseQRStats(shopId, cafeCreatedAt);
 
       // 4. 합산
       return {
