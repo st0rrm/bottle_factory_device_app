@@ -221,6 +221,20 @@ export const createNewUser = async (user) => {
     try {
       console.log('🎫 무료 대여권 지급 시작...');
 
+      // 🔍 중복 방지: 이미 무료 대여권이 있는지 확인
+      const existingVouchersQuery = query(
+        collection(db, 'balances'),
+        where('user_id', '==', user.uid),
+        where('pgcode', '==', 'bottleclub')
+      );
+      const existingVouchers = await getDocs(existingVouchersQuery);
+
+      if (!existingVouchers.empty) {
+        console.log('⚠️ 이미 무료 대여권이 존재합니다. 중복 지급을 건너뜁니다.');
+        console.log('   기존 대여권 개수:', existingVouchers.size);
+        return { success: true, isNew: true, nickname };
+      }
+
       // tid 생성: 0_bottleclub_free-YYYYMMDDHHMMSS 형식
       const now = new Date();
 

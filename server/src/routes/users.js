@@ -570,11 +570,19 @@ router.get('/:uid/tickets', async (req, res) => {
   try {
     const { uid } = req.params;
 
-    // Get all balances for user
+    // Get all balances for user (개인 대여권만, group_id 제외)
     const allBalancesSnapshot = await db.collection('balances')
       .where('user_id', '==', uid)
       .get();
-    const totalCount = allBalancesSnapshot.size;
+
+    // Count only non-group tickets for totalCount
+    let totalCount = 0;
+    allBalancesSnapshot.forEach(doc => {
+      const data = doc.data();
+      if (!data.group_id) {  // group_id가 없는 대여권만 카운트
+        totalCount++;
+      }
+    });
 
     // Get available tickets (status === 'charge')
     const balancesSnapshot = await db.collection('balances')
