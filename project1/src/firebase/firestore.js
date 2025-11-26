@@ -591,9 +591,8 @@ export const processReturn = async (uid, rentals, shopId, shopName) => {
 
     return {
       success: true,
-      score: result.data.totalScore,  // 백엔드에서 계산된 실제 점수
+      score: result.data.totalScore,  // 백엔드에서 계산된 실제 점수 (모든 반납)
       count: result.data.returnCount,
-      webRentalCount: result.data.webRentalCount,  // 웹 대여 개수
       collectHistoryId: result.data.collectHistoryId
     };
 

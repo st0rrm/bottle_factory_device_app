@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, FieldValue } = require('../config/firebase');
+const Statistics = require('../models/Statistics');
 
 /**
  * Get server date in KST (Korea Standard Time)
@@ -186,12 +187,40 @@ router.post('/rental', async (req, res) => {
       saving_all: userData.saving_all + rentalCount
     });
 
+    // 4. Award points for web rental (30 points per cup)
+    const rentalScorePerCup = 30;
+    const rentalScore = rentalScorePerCup * rentalCount;
+
+    // Update user score
+    await db.collection('users').doc(uid).update({
+      score: FieldValue.increment(rentalScore),
+      coin: FieldValue.increment(rentalScore)
+    });
+
+    // Record transaction in PostgreSQL for cafe statistics
+    try {
+      const cafeId = req.user?.id; // From JWT token
+      if (cafeId) {
+        await Statistics.addTransaction(
+          cafeId,
+          'borrow',
+          null, // No phone number needed
+          rentalCount,
+          rentalScore
+        );
+      }
+    } catch (statsError) {
+      console.error('⚠️ Failed to record rental statistics:', statsError);
+      // Continue even if statistics recording fails
+    }
+
     res.json({
       success: true,
       message: 'Cup rental processed successfully',
       data: {
         rentalIds,
-        count: rentalCount
+        count: rentalCount,
+        rentalScore // Return awarded score
       }
     });
 
@@ -235,20 +264,8 @@ router.post('/return', async (req, res) => {
     const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH';
     const scorePerCup = 10;
 
-    // 웹 대여 개수 확인 (보틀 점수 적립용)
-    let webRentalCount = 0;
-
     // 1. Update rents documents: status 'rent' → 'return'
     for (const rental of rentals) {
-      // rent 문서 조회 (source 확인용)
-      const rentDoc = await db.collection('rents').doc(rental.id).get();
-      const rentData = rentDoc.data();
-
-      // 웹 대여인지 확인
-      if (rentData && rentData.source === 'web') {
-        webRentalCount++;
-      }
-
       await db.collection('rents').doc(rental.id).update({
         status: 'return',
         returned_date: FieldValue.serverTimestamp(),
@@ -274,49 +291,44 @@ router.post('/return', async (req, res) => {
       restoredCount++;
     }
 
-    // 3. Process scoring and savings (웹 대여만 점수 적립)
-    const totalScore = scorePerCup * webRentalCount;  // 웹 대여 개수만 점수 계산
+    // 3. Process scoring and savings (모든 반납에 점수 적립)
+    const totalScore = scorePerCup * returnCount;  // 모든 반납에 대해 점수 계산
 
-    let collectHistoryId = null;
+    // Update user document (score, coin)
+    await db.collection('users').doc(uid).update({
+      score: FieldValue.increment(totalScore),
+      coin: FieldValue.increment(totalScore)
+    });
 
-    // 웹 대여가 있는 경우에만 보틀 점수 적립
-    if (webRentalCount > 0) {
-      // Update user document (score, coin)
-      await db.collection('users').doc(uid).update({
-        score: FieldValue.increment(totalScore),
-        coin: FieldValue.increment(totalScore)
-      });
+    // Create collect_history document
+    const collectHistoryRef = await db.collection('collect_history').add({
+      uid,
+      shop_id: shopId,
+      score: totalScore,
+      create: FieldValue.serverTimestamp(),
+      source: 'web'  // 웹 반납으로 적립
+    });
 
-      // Create collect_history document
-      const collectHistoryRef = await db.collection('collect_history').add({
-        uid,
-        shop_id: shopId,
-        score: totalScore,
-        create: FieldValue.serverTimestamp(),
-        source: 'web'  // 웹 반납으로 적립
-      });
+    const collectHistoryId = collectHistoryRef.id;
 
-      collectHistoryId = collectHistoryRef.id;
+    // Add collect_items subcollection
+    const items = { [RETURNMECUP_ITEM_ID]: returnCount };  // 모든 반납 개수
+    await addSavedItems(collectHistoryId, items);
 
-      // Add collect_items subcollection
-      const items = { [RETURNMECUP_ITEM_ID]: webRentalCount };  // 웹 대여 개수만
-      await addSavedItems(collectHistoryId, items);
+    // Add reference to users/{uid}/collect subcollection
+    await addUserCollect(uid, collectHistoryId);
 
-      // Add reference to users/{uid}/collect subcollection
-      await addUserCollect(uid, collectHistoryId);
+    // Update statistics: users/{uid}/savings
+    const userSavingsRef = db.collection('users').doc(uid).collection('savings');
+    await addStatistics(userSavingsRef, items);
 
-      // Update statistics: users/{uid}/savings
-      const userSavingsRef = db.collection('users').doc(uid).collection('savings');
-      await addStatistics(userSavingsRef, items);
+    // Update statistics: shops/{shopId}/savings
+    const shopSavingsRef = db.collection('shops').doc(shopId).collection('savings');
+    await addStatistics(shopSavingsRef, items);
 
-      // Update statistics: shops/{shopId}/savings
-      const shopSavingsRef = db.collection('shops').doc(shopId).collection('savings');
-      await addStatistics(shopSavingsRef, items);
-
-      // Update global savings collection
-      const globalSavingsRef = db.collection('savings');
-      await addStatistics(globalSavingsRef, items);
-    }
+    // Update global savings collection
+    const globalSavingsRef = db.collection('savings');
+    await addStatistics(globalSavingsRef, items);
 
     res.json({
       success: true,
@@ -324,8 +336,7 @@ router.post('/return', async (req, res) => {
       data: {
         returnCount,
         restoredCount,
-        webRentalCount,  // 웹 대여 개수 (점수 적립 대상)
-        totalScore,
+        totalScore,  // 모든 반납에 대한 점수
         collectHistoryId
       }
     });
