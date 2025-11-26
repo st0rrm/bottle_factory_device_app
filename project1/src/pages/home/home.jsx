@@ -241,12 +241,22 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
     console.log('🔥 Firebase 실시간 리스너 시작:', firebaseShopId);
 
+    let isInitialLoad = true; // 초기 로드 플래그
+
     const q = query(
       collection(db, 'collect_history'),
       where('shop_id', '==', firebaseShopId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      // 초기 로드는 무시 (기존 문서들이 모두 'added'로 감지됨)
+      if (isInitialLoad) {
+        isInitialLoad = false;
+        console.log('📚 초기 데이터 로드 완료 (기존 문서 무시)');
+        return;
+      }
+
+      // 실제 새로운 변경사항만 처리
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const data = change.doc.data();
