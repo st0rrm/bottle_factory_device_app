@@ -115,11 +115,26 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
       console.log('   → 텍스트 길이:', recognizedText.length, '자');
 
       // 프롬프트 반환 감지 (빈 음성일 때 발생)
-      const isPromptEcho = recognizedText === TRANSCRIPTION_PROMPT ||
-                          recognizedText.includes(TRANSCRIPTION_PROMPT);
+      // 공백, 특수문자, 구두점 제거 후 비교
+      const normalizeText = (text) => {
+        return text
+          .replace(/[\s\.,;:!?。，、；：！？]/g, '') // 공백 및 모든 구두점 제거
+          .toLowerCase();
+      };
+
+      const normalizedPrompt = normalizeText(TRANSCRIPTION_PROMPT);
+      const normalizedRecognized = normalizeText(recognizedText);
+
+      // 정규화된 프롬프트에 정규화된 인식 텍스트가 포함되거나 그 반대인 경우
+      const isPromptEcho =
+        normalizedPrompt.includes(normalizedRecognized) ||
+        normalizedRecognized.includes(normalizedPrompt) ||
+        normalizedRecognized.length > 5 && normalizedPrompt.includes(normalizedRecognized.substring(0, 10));
 
       if (isPromptEcho) {
-        console.log('⚠️ 프롬프트 반환 감지 (빈 음성):', recognizedText);
+        console.log('⚠️ 프롬프트 반환 감지 (빈 음성)');
+        console.log('   → 원본:', recognizedText);
+        console.log('   → 정규화:', normalizedRecognized);
         const totalDuration = Date.now() - startTime;
         console.log(`⏱️ 총 소요 시간: ${totalDuration}ms`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
