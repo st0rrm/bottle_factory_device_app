@@ -153,27 +153,41 @@ class Statistics {
       };
       console.log('  ✅ PostgreSQL 통계:', pgStats);
 
-      // 2. Firebase shopId와 웹 카페 생성일 조회
+      // 2. 웹 카페명과 생성일 조회
       const cafeResult = await pool.query(
-        'SELECT cafe_id, created_at FROM cafes WHERE id = $1',
+        'SELECT cafe_name, created_at FROM cafes WHERE id = $1',
         [cafeId]
       );
 
       if (cafeResult.rows.length === 0) {
-        console.log('  ⚠️ cafe_id 없음 - PostgreSQL만 반환');
-        return pgStats; // cafe_id 없으면 PostgreSQL만
+        console.log('  ⚠️ 카페 정보 없음 - PostgreSQL만 반환');
+        return pgStats;
       }
 
-      const shopId = cafeResult.rows[0].cafe_id;
-      const cafeCreatedAt = cafeResult.rows[0].created_at; // 웹에서 계정 생성한 날짜
-      console.log('  🔑 shopId:', shopId);
+      const cafeName = cafeResult.rows[0].cafe_name;
+      const cafeCreatedAt = cafeResult.rows[0].created_at;
+      console.log('  🏪 웹 카페명:', cafeName);
       console.log('  📅 카페 생성일:', cafeCreatedAt);
 
-      // 3. Firebase QR 적립 통계 (웹 계정 생성일 이후만)
+      // 3. Firebase shops 컬렉션에서 카페명으로 shop document ID 찾기
+      const shopsSnapshot = await db.collection('shops')
+        .where('name', '==', cafeName)
+        .limit(1)
+        .get();
+
+      if (shopsSnapshot.empty) {
+        console.log('  ⚠️ Firebase shops에 일치하는 카페 없음 - PostgreSQL만 반환');
+        return pgStats;
+      }
+
+      const shopId = shopsSnapshot.docs[0].id;  // document ID 사용
+      console.log('  🔑 Firebase shopId (document ID):', shopId);
+
+      // 4. Firebase QR 적립 통계 (웹 계정 생성일 이후만)
       const firebaseStats = await this.getFirebaseQRStats(shopId, cafeCreatedAt);
       console.log('  🔥 Firebase 통계:', firebaseStats);
 
-      // 4. 합산
+      // 5. 합산
       const combined = {
         totalScore: pgStats.totalScore + firebaseStats.totalScore,
         totalCount: pgStats.totalCount + firebaseStats.totalCount,
