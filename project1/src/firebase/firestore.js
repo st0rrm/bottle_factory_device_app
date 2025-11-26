@@ -208,6 +208,11 @@ export const createNewUser = async (user) => {
     await setDoc(userRef, userData);
     console.log('✅ 사용자 문서 저장 완료');
 
+    // 🔑 Firebase Auth displayName 설정 (bottleclub 앱 연동용)
+    console.log('🔑 Firebase Auth displayName 설정 중...');
+    await user.updateProfile({ displayName: nickname });
+    console.log('✅ displayName 설정 완료:', nickname);
+
     // 저장 확인
     console.log('🔍 저장된 문서 확인 중...');
     const verifyDoc = await getDoc(userRef);
