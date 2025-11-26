@@ -13,8 +13,8 @@
 
 .settings-modal {
   background: white;
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(16px, 3vw, 24px);
   max-width: 600px;
   width: 90%;
   max-height: 80vh;
@@ -22,15 +22,15 @@
 }
 
 .settings-modal h2 {
-  margin: 0 0 24px 0;
-  font-size: 24px;
+  margin: 0 0 clamp(16px, 3vh, 24px) 0;
+  font-size: clamp(20px, 4vw, 24px);
   font-weight: 600;
   color: #333;
 }
 
 .settings-section {
-  margin: 24px 0;
-  padding-bottom: 24px;
+  margin: clamp(16px, 3vh, 24px) 0;
+  padding-bottom: clamp(16px, 3vh, 24px);
   border-bottom: 1px solid #eee;
 }
 
@@ -39,19 +39,19 @@
 }
 
 .settings-section h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
+  margin: 0 0 clamp(12px, 2vh, 16px) 0;
+  font-size: clamp(16px, 3vw, 18px);
   font-weight: 600;
   color: #555;
 }
 
 .background-grid {
   display: flex;
-  gap: 16px;
-  margin-top: 16px;
+  gap: clamp(12px, 2vw, 16px);
+  margin-top: clamp(12px, 2vh, 16px);
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 8px;
+  padding-bottom: clamp(6px, 1vh, 8px);
   /* 스크롤바 스타일링 */
   scrollbar-width: thin;
   scrollbar-color: #ccc #f9f9f9;
@@ -78,11 +78,11 @@
 .background-option {
   cursor: pointer;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: clamp(6px, 1vw, 8px);
   overflow: hidden;
   transition: all 0.2s;
   flex-shrink: 0;
-  width: 180px;
+  width: clamp(140px, 25vw, 180px);
 }
 
 .background-option:hover {
@@ -99,27 +99,27 @@
   aspect-ratio: 16/9;
   object-fit: cover;
   display: block;
-  border-radius: 6px 6px 0 0; /* 상단 모서리만 둥글게 */
+  border-radius: clamp(4px, 0.8vw, 6px) clamp(4px, 0.8vw, 6px) 0 0; /* 상단 모서리만 둥글게 */
 }
 
 .background-option span {
   display: block;
-  padding: 8px;
+  padding: clamp(6px, 1.2vh, 8px);
   text-align: center;
-  font-size: 14px;
+  font-size: clamp(12px, 2vw, 14px);
   color: #000;
   background: #f9f9f9;
-  border-radius: 0 0 6px 6px; /* 하단 모서리만 둥글게 */
+  border-radius: 0 0 clamp(4px, 0.8vw, 6px) clamp(4px, 0.8vw, 6px); /* 하단 모서리만 둥글게 */
 }
 
 .logout-btn {
   background: #f44336;
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
+  padding: clamp(10px, 1.8vh, 12px) clamp(18px, 3vw, 24px);
+  border-radius: clamp(6px, 1vw, 8px);
   cursor: pointer;
-  font-size: 16px;
+  font-size: clamp(14px, 2.5vw, 16px);
   font-weight: 500;
   transition: background 0.2s;
 }
@@ -133,12 +133,12 @@
   background: #4CAF50;
   color: white;
   border: none;
-  padding: 16px;
-  border-radius: 8px;
+  padding: clamp(12px, 2.5vh, 16px);
+  border-radius: clamp(6px, 1vw, 8px);
   cursor: pointer;
-  font-size: 16px;
+  font-size: clamp(14px, 2.5vw, 16px);
   font-weight: 600;
-  margin-top: 16px;
+  margin-top: clamp(12px, 2vh, 16px);
   transition: background 0.2s;
 }
 
@@ -150,14 +150,14 @@
 .toggle-option {
   display: flex;
   align-items: center;
-  padding: 12px 0;
+  padding: clamp(10px, 1.8vh, 12px) 0;
 }
 
 .toggle-label {
   display: flex;
   align-items: center;
   cursor: pointer;
-  gap: 12px;
+  gap: clamp(10px, 1.8vw, 12px);
 }
 
 .toggle-checkbox {
@@ -166,10 +166,10 @@
 
 .toggle-slider {
   position: relative;
-  width: 48px;
-  height: 24px;
+  width: clamp(40px, 6vw, 48px);
+  height: clamp(20px, 3vh, 24px);
   background: #ccc;
-  border-radius: 24px;
+  border-radius: clamp(20px, 3vh, 24px);
   transition: background 0.3s;
 }
 
@@ -182,19 +182,19 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 20px;
-  height: 20px;
+  width: clamp(16px, 2.5vw, 20px);
+  height: clamp(16px, 2.5vh, 20px);
   background: white;
   border-radius: 50%;
   transition: transform 0.3s;
 }
 
 .toggle-checkbox:checked + .toggle-slider::after {
-  transform: translateX(24px);
+  transform: translateX(clamp(20px, 3vw, 24px));
 }
 
 .toggle-text {
-  font-size: 14px;
+  font-size: clamp(12px, 2vw, 14px);
   color: #333;
   font-weight: 500;
 }
