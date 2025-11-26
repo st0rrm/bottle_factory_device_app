@@ -226,7 +226,7 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
 
     // 모든 사용자에게 SMS 인증 진행 (보안을 위해)
     console.log('📱 SMS 인증번호 전송 중...');
-    const result = await sendVerificationCode(phoneNumber);
+    const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-verify');
 
     if (result.success) {
       console.log('✅ SMS 전송 성공');

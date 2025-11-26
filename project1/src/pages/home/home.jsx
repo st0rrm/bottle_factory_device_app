@@ -142,6 +142,13 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   }, [cafeInfo]);
 
   const handleWakeWordDetected = useCallback(async (keywordIndex) => {
+    // 다른 모달이 이미 열려있으면 무시
+    const isModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal;
+    if (isModalOpen) {
+      console.log('⚠️ 다른 모달이 열려있어 도움말 모달 열기 무시');
+      return;
+    }
+
     setShowHelpModal(true);
 
     // 도움말 모달 열림 통계 기록
@@ -161,17 +168,20 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     } catch (error) {
       console.error('통계 기록 실패:', error);
     }
-  }, []);
+  }, [showVerifyModal, showReturnModal, showDoModal, showHelpModal, showSettingsModal]);
+
+  // 모달이 열려있는지 확인 (모달이 열려있으면 음성인식 비활성화)
+  const isAnyModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal;
 
   // 음성 인식 방법 선택
 
   // 방법 1: Picovoice (현재 사용 중)
   // const { isListening, error: picoError, hasPermission, requestPermission } =
-  //   usePicovoice(true, handleWakeWordDetected);
+  //   usePicovoice(!isAnyModalOpen, handleWakeWordDetected);
 
   // 방법 2: LLM 기반 (Whisper + Claude)
   const { isListening, error: picoError, hasPermission, requestPermission, startRecording } =
-    useVoiceRecognition(true, handleWakeWordDetected, {
+    useVoiceRecognition(!isAnyModalOpen, handleWakeWordDetected, {
       segmentDuration: 5000,         // 5초마다 분석
       lowThreshold: 0.4,             // 0.4 미만 → 폐기
       highThreshold: 0.7,            // 0.7 이상 → 확정

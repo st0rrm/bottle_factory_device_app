@@ -14,12 +14,48 @@ export const clearRecaptcha = () => {
     try {
       window.recaptchaVerifier.clear();
       window.recaptchaVerifier = null;
-      console.log('reCAPTCHA 정리 완료');
+      window.recaptchaWidgetId = undefined;
+      window.recaptchaButtonId = undefined;
+      console.log('✅ reCAPTCHA 정리 완료');
     } catch (error) {
-      console.error('reCAPTCHA 정리 실패:', error);
+      console.error('❌ reCAPTCHA 정리 실패:', error);
       // 에러가 발생해도 강제로 null 설정
       window.recaptchaVerifier = null;
+      window.recaptchaWidgetId = undefined;
+      window.recaptchaButtonId = undefined;
     }
+  }
+
+  // DOM에서 grecaptcha 위젯 제거 (안전한 정리)
+  try {
+    const containers = [
+      'recaptcha-container-verify',
+      'recaptcha-container-return',
+      'recaptcha-container-do'
+    ];
+
+    containers.forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (container) {
+        // grecaptcha iframe 및 관련 요소만 제거 (컨테이너는 유지)
+        const iframes = container.getElementsByTagName('iframe');
+        const divs = container.getElementsByTagName('div');
+
+        // iframe 제거
+        while (iframes.length > 0) {
+          iframes[0].remove();
+        }
+
+        // grecaptcha 관련 div만 제거
+        Array.from(divs).forEach(div => {
+          if (div.id && div.id.includes('recaptcha')) {
+            div.remove();
+          }
+        });
+      }
+    });
+  } catch (error) {
+    console.error('❌ reCAPTCHA DOM 정리 실패:', error);
   }
 };
 
@@ -28,21 +64,58 @@ export const clearRecaptcha = () => {
  * @param {string} buttonId - reCAPTCHA를 적용할 버튼 ID
  */
 export const initRecaptcha = (buttonId = 'recaptcha-container') => {
-  // 기존 verifier가 있으면 먼저 정리
-  clearRecaptcha();
+  // 이미 동일한 buttonId로 초기화된 verifier가 있으면 재사용
+  if (window.recaptchaVerifier &&
+      window.recaptchaButtonId === buttonId &&
+      window.recaptchaWidgetId !== undefined) {
+    console.log('✅ 기존 reCAPTCHA 재사용 (buttonId:', buttonId + ')');
+    return window.recaptchaVerifier;
+  }
 
-  // 새로운 verifier 생성
-  window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
-    'size': 'invisible',
-    'callback': (response) => {
-      console.log('reCAPTCHA 검증 완료');
-    },
-    'expired-callback': () => {
-      console.log('reCAPTCHA 만료됨');
-    }
-  });
+  // 다른 buttonId의 verifier가 있으면 정리
+  if (window.recaptchaVerifier && window.recaptchaButtonId !== buttonId) {
+    console.log('🔄 다른 컨테이너의 reCAPTCHA 정리 (이전:', window.recaptchaButtonId, '→ 새:', buttonId + ')');
+    clearRecaptcha();
+  }
 
-  return window.recaptchaVerifier;
+  try {
+    // 새로운 verifier 생성
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
+      'size': 'invisible',
+      'callback': (response) => {
+        console.log('✅ reCAPTCHA 검증 완료');
+      },
+      'expired-callback': () => {
+        console.log('⚠️ reCAPTCHA 만료됨 - 재초기화 필요');
+        clearRecaptcha();
+      }
+    });
+
+    // buttonId 저장 (재사용 판단용)
+    window.recaptchaButtonId = buttonId;
+    console.log('✅ reCAPTCHA 초기화 성공:', buttonId);
+    return window.recaptchaVerifier;
+  } catch (error) {
+    console.error('❌ reCAPTCHA 초기화 실패:', error);
+    // 에러 발생 시 DOM 정리 후 재시도
+    clearRecaptcha();
+
+    // 재시도
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
+      'size': 'invisible',
+      'callback': (response) => {
+        console.log('✅ reCAPTCHA 검증 완료 (재시도)');
+      },
+      'expired-callback': () => {
+        console.log('⚠️ reCAPTCHA 만료됨');
+        clearRecaptcha();
+      }
+    });
+
+    // buttonId 저장 (재시도 성공 시)
+    window.recaptchaButtonId = buttonId;
+    return window.recaptchaVerifier;
+  }
 };
 
 /**
@@ -58,19 +131,28 @@ export const sendVerificationCode = async (phoneNumber, containerId = 'recaptcha
       ? phoneNumber
       : `+82${phoneNumber.startsWith('0') ? phoneNumber.slice(1) : phoneNumber}`;
 
-    console.log('SMS 전송 중:', formattedNumber);
+    console.log('📱 SMS 전송 시작:', formattedNumber);
+    console.log('🔐 reCAPTCHA 컨테이너:', containerId);
 
     // reCAPTCHA 초기화
-    const appVerifier = initRecaptcha(containerId);
+    let appVerifier;
+    try {
+      appVerifier = initRecaptcha(containerId);
+      console.log('✅ reCAPTCHA 준비 완료');
+    } catch (recaptchaError) {
+      console.error('❌ reCAPTCHA 초기화 실패:', recaptchaError);
+      throw new Error('reCAPTCHA 초기화 실패. 페이지를 새로고침해주세요.');
+    }
 
     // SMS 전송
+    console.log('📤 Firebase SMS 요청 중...');
     const confirmationResult = await signInWithPhoneNumber(
       auth,
       formattedNumber,
       appVerifier
     );
 
-    console.log('SMS 전송 성공');
+    console.log('✅ SMS 전송 성공');
     return { success: true, confirmationResult };
 
   } catch (error) {
