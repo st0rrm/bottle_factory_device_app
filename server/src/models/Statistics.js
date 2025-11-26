@@ -253,19 +253,17 @@ class Statistics {
       console.log('  🔑 Firebase shopId (document ID):', shopId);
 
       // 4. Firebase QR 적립 통계 (웹 계정 생성일 이후만)
+      // 주의: QR 대여는 스케줄러가 자동으로 PostgreSQL에 동기화하므로 여기서 조회하지 않음
       const firebaseStats = await this.getFirebaseQRStats(shopId, cafeCreatedAt);
       console.log('  🔥 Firebase QR 적립 통계:', firebaseStats);
 
-      // 5. Firebase QR 대여 통계 (웹 계정 생성일 이후만)
-      const qrRentalStats = await this.getFirebaseQRRentals(shopId, cafeCreatedAt);
-      console.log('  📱 Firebase QR 대여 통계:', qrRentalStats);
-
-      // 6. 합산 (PostgreSQL + Firebase QR 적립 + Firebase QR 대여)
+      // 5. 합산 (PostgreSQL + Firebase QR 적립)
+      // PostgreSQL에는 웹 대여/반납/실천 + QR 대여(스케줄러가 동기화)가 포함됨
       const combined = {
-        totalScore: pgStats.totalScore + firebaseStats.totalScore + qrRentalStats.totalScore,
-        totalCount: pgStats.totalCount + firebaseStats.totalCount + qrRentalStats.totalCount,
-        today: pgStats.today + firebaseStats.today + qrRentalStats.today,
-        weekly: pgStats.weekly + firebaseStats.weekly + qrRentalStats.weekly
+        totalScore: pgStats.totalScore + firebaseStats.totalScore,
+        totalCount: pgStats.totalCount + firebaseStats.totalCount,
+        today: pgStats.today + firebaseStats.today,
+        weekly: pgStats.weekly + firebaseStats.weekly
       };
       console.log('  ✨ 최종 합산 결과:', combined);
 

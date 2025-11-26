@@ -3,6 +3,7 @@ const app = require('./src/app');
 const db = require('./src/config/database');
 // SMS 알림은 Firebase Cloud Functions로 이관됨
 // const { startSMSNotificationScheduler } = require('./src/schedulers/smsNotificationScheduler');
+const { startScheduler } = require('./src/schedulers/syncQRRentals');
 
 const PORT = process.env.PORT || 3000;
 
@@ -25,6 +26,9 @@ const server = app.listen(PORT, () => {
 
   // SMS notification scheduler는 Firebase Cloud Functions로 이관됨
   // startSMSNotificationScheduler();
+
+  // QR 대여 동기화 스케줄러 시작 (1분마다)
+  startScheduler();
 });
 
 // Graceful shutdown
