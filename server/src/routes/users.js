@@ -408,15 +408,15 @@ router.post('/do-actions', async (req, res) => {
 
     // Calculate total score based on item counts
     const itemScores = {
-      'AESpVawGP202Tg4QOmvH': 10, // 텀블러
-      'hjzsUXGds7dcqJyQYQzr': 10, // 다회용기
-      'r6V568cm0yGwDfQ8vooW': 10, // 리필용기
+      'AESpVawGP202Tg4QOmvH': 30, // 텀블러
+      'hjzsUXGds7dcqJyQYQzr': 30, // 다회용기
+      'r6V568cm0yGwDfQ8vooW': 30, // 리필용기
       'VjlasSJRJjC6cw8BItvS': 5,  // 자원순환
     };
 
     let totalScore = 0;
     for (const [itemId, count] of Object.entries(items)) {
-      const scorePerItem = itemScores[itemId] || 10; // Default 10 if not found
+      const scorePerItem = itemScores[itemId] || 30; // Default 30 if not found
       totalScore += scorePerItem * count;
     }
 
