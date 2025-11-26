@@ -1,6 +1,55 @@
 const pool = require('../config/database');
+const { db } = require('../config/firebase');
 
 class Statistics {
+  // Firebase에서 QR 적립 통계 가져오기 (기존 앱)
+  static async getFirebaseQRStats(shopId) {
+    try {
+      // source 필드가 없는 것만 = 기존 앱 QR 적립
+      const snapshot = await db.collection('collect_history')
+        .where('shop_id', '==', shopId)
+        .get();
+
+      let totalScore = 0;
+      let totalCount = 0;
+      let today = 0;
+      let weekly = 0;
+
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+
+        // source가 'web'인 것은 제외 (이미 PostgreSQL에 있음)
+        if (data.source === 'web') {
+          return;
+        }
+
+        // QR 적립만 집계
+        const score = data.score || 0;
+        const createdAt = data.create?.toDate();
+
+        totalScore += score;
+        totalCount += 1;
+
+        if (createdAt) {
+          if (createdAt >= todayStart) {
+            today += 1;
+          }
+          if (createdAt >= weekAgo) {
+            weekly += 1;
+          }
+        }
+      });
+
+      return { totalScore, totalCount, today, weekly };
+    } catch (error) {
+      console.error('Firebase QR stats error:', error);
+      return { totalScore: 0, totalCount: 0, today: 0, weekly: 0 };
+    }
+  }
   // 거래 기록 추가 (대여, 반납, 또는 실천)
   static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0) {
     try {
@@ -57,10 +106,11 @@ class Statistics {
     }
   }
 
-  // 카페별 전체 통계 한번에 가져오기
+  // 카페별 전체 통계 한번에 가져오기 (PostgreSQL + Firebase 합산)
   static async getCafeStats(cafeId) {
     try {
-      const result = await pool.query(
+      // 1. PostgreSQL 통계 (웹 앱)
+      const pgResult = await pool.query(
         `SELECT
           COALESCE(SUM(score), 0) as total_score,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do')), 0) as total_count,
@@ -71,11 +121,34 @@ class Statistics {
         [cafeId]
       );
 
+      const pgStats = {
+        totalScore: parseInt(pgResult.rows[0].total_score) || 0,
+        totalCount: parseInt(pgResult.rows[0].total_count) || 0,
+        today: parseInt(pgResult.rows[0].today) || 0,
+        weekly: parseInt(pgResult.rows[0].weekly) || 0
+      };
+
+      // 2. Firebase shopId 조회
+      const cafeResult = await pool.query(
+        'SELECT cafe_id FROM cafes WHERE id = $1',
+        [cafeId]
+      );
+
+      if (cafeResult.rows.length === 0) {
+        return pgStats; // cafe_id 없으면 PostgreSQL만
+      }
+
+      const shopId = cafeResult.rows[0].cafe_id;
+
+      // 3. Firebase QR 적립 통계 (기존 앱)
+      const firebaseStats = await this.getFirebaseQRStats(shopId);
+
+      // 4. 합산
       return {
-        totalScore: parseInt(result.rows[0].total_score) || 0,
-        totalCount: parseInt(result.rows[0].total_count) || 0,
-        today: parseInt(result.rows[0].today) || 0,
-        weekly: parseInt(result.rows[0].weekly) || 0
+        totalScore: pgStats.totalScore + firebaseStats.totalScore,
+        totalCount: pgStats.totalCount + firebaseStats.totalCount,
+        today: pgStats.today + firebaseStats.today,
+        weekly: pgStats.weekly + firebaseStats.weekly
       };
     } catch (err) {
       throw err;
