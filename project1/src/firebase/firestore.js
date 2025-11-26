@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import { db } from './config';
 
 /**
@@ -210,7 +211,7 @@ export const createNewUser = async (user) => {
 
     // 🔑 Firebase Auth displayName 설정 (bottleclub 앱 연동용)
     console.log('🔑 Firebase Auth displayName 설정 중...');
-    await user.updateProfile({ displayName: nickname });
+    await updateProfile(user, { displayName: nickname });
     console.log('✅ displayName 설정 완료:', nickname);
 
     // 저장 확인
