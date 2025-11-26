@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { db, FieldValue } = require('../config/firebase');
 const Statistics = require('../models/Statistics');
+const pool = require('../config/database');
 
 /**
  * Get server date in KST (Korea Standard Time)
@@ -195,15 +196,25 @@ router.post('/rental', async (req, res) => {
 
     // Record transaction in PostgreSQL for cafe statistics
     try {
-      const cafeId = req.user?.id; // From JWT token
-      if (cafeId) {
-        await Statistics.addTransaction(
-          cafeId,
-          'borrow',
-          null, // No phone number needed
-          rentalCount,
-          rentalScore
+      // Look up cafe by shop name
+      const shopDoc = await db.collection('shops').doc(shopId).get();
+      if (shopDoc.exists) {
+        const shopName = shopDoc.data().name;
+        const cafeResult = await pool.query(
+          'SELECT id FROM cafes WHERE cafe_name = $1',
+          [shopName]
         );
+
+        if (cafeResult.rows.length > 0) {
+          const cafeId = cafeResult.rows[0].id;
+          await Statistics.addTransaction(
+            cafeId,
+            'borrow',
+            null,
+            rentalCount,
+            rentalScore
+          );
+        }
       }
     } catch (statsError) {
       console.error('⚠️ Failed to record rental statistics:', statsError);
@@ -325,6 +336,33 @@ router.post('/return', async (req, res) => {
     // Update global savings collection
     const globalSavingsRef = db.collection('savings');
     await addStatistics(globalSavingsRef, items);
+
+    // Record transaction in PostgreSQL for cafe statistics
+    try {
+      // Look up cafe by shop name
+      const shopDoc = await db.collection('shops').doc(shopId).get();
+      if (shopDoc.exists) {
+        const shopName = shopDoc.data().name;
+        const cafeResult = await pool.query(
+          'SELECT id FROM cafes WHERE cafe_name = $1',
+          [shopName]
+        );
+
+        if (cafeResult.rows.length > 0) {
+          const cafeId = cafeResult.rows[0].id;
+          await Statistics.addTransaction(
+            cafeId,
+            'return',
+            null,
+            returnCount,
+            totalScore
+          );
+        }
+      }
+    } catch (statsError) {
+      console.error('⚠️ Failed to record return statistics:', statsError);
+      // Continue even if statistics recording fails
+    }
 
     res.json({
       success: true,
