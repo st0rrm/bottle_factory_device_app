@@ -546,12 +546,31 @@ router.get('/phone/:phone', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Return first user (phone should be unique)
+    // Get first user (phone should be unique)
     const userDoc = usersSnapshot.docs[0];
-    res.json({
-      uid: userDoc.id,
-      ...userDoc.data()
-    });
+    const userId = userDoc.id;
+
+    // ✅ Check if user still exists in Firebase Auth (not deleted)
+    try {
+      const { auth } = require('../config/firebase');
+      await auth.getUser(userId);
+
+      // User exists in Firebase Auth → valid user
+      res.json({
+        uid: userId,
+        ...userDoc.data()
+      });
+    } catch (authError) {
+      if (authError.code === 'auth/user-not-found') {
+        // User deleted from Firebase Auth but Firestore doc remains
+        console.log('User deleted from Auth, treating as new user:', userId);
+        return res.status(404).json({
+          error: 'User not found',
+          message: 'User account has been deleted'
+        });
+      }
+      throw authError;
+    }
 
   } catch (error) {
     console.error('Get user by phone error:', error);
