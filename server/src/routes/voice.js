@@ -15,15 +15,15 @@ const upload = multer({
   },
 });
 
-// OpenAI 클라이언트 초기화
-const openai = new OpenAI({
+// OpenAI 클라이언트 초기화 (API 키가 있을 때만)
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
+}) : null;
 
-// Anthropic 클라이언트 초기화
-const anthropic = new Anthropic({
+// Anthropic 클라이언트 초기화 (API 키가 있을 때만)
+const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-});
+}) : null;
 
 // 서버 시작 시 API 키 상태 확인
 console.log('🔑 API 키 상태 확인:');

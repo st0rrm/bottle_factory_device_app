@@ -3,7 +3,8 @@ const app = require('./src/app');
 const db = require('./src/config/database');
 // SMS 알림은 Firebase Cloud Functions로 이관됨
 // const { startSMSNotificationScheduler } = require('./src/schedulers/smsNotificationScheduler');
-const { startScheduler } = require('./src/schedulers/syncQRRentals');
+const { startScheduler: startQRRentalsSync } = require('./src/schedulers/syncQRRentals');
+const { startScheduler: startQRCollectionsSync } = require('./src/schedulers/syncQRCollections');
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,13 +23,17 @@ const server = app.listen(PORT, () => {
   console.log(`  GET  http://localhost:${PORT}/api/cafe (admin only)`);
   console.log('='.repeat(50));
   console.log('\n📱 SMS 알림: Firebase Cloud Functions에서 처리 (매일 12:00 KST)');
+  console.log('\n🔥 Firebase → PostgreSQL 실시간 동기화:');
+  console.log('   - QR 대여 (rents)');
+  console.log('   - QR 적립 (collect_history)');
   console.log('='.repeat(50));
 
   // SMS notification scheduler는 Firebase Cloud Functions로 이관됨
   // startSMSNotificationScheduler();
 
-  // QR 대여 동기화 스케줄러 시작 (1분마다)
-  startScheduler();
+  // Firebase → PostgreSQL 실시간 동기화 시작
+  startQRRentalsSync();      // QR 대여 동기화
+  startQRCollectionsSync();  // QR 적립 동기화
 });
 
 // Graceful shutdown

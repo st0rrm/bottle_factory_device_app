@@ -249,7 +249,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   useEffect(() => {
     if (!firebaseShopId) return;
 
-    console.log('🔥 Firebase 실시간 리스너 시작:', firebaseShopId);
+    console.log('🔥 Firebase 실시간 리스너 시작 (collect_history):', firebaseShopId);
 
     let isInitialLoad = true; // 초기 로드 플래그
 
@@ -278,11 +278,53 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
         }
       });
     }, (error) => {
-      console.error('❌ Firebase 리스너 에러:', error);
+      console.error('❌ Firebase 리스너 에러 (collect_history):', error);
     });
 
     return () => {
-      console.log('🔥 Firebase 리스너 종료');
+      console.log('🔥 Firebase 리스너 종료 (collect_history)');
+      unsubscribe();
+    };
+  }, [firebaseShopId]);
+
+  // Firebase 실시간 리스너: QR 대여 즉시 반영
+  useEffect(() => {
+    if (!firebaseShopId) return;
+
+    console.log('🔥 Firebase 실시간 리스너 시작 (rents):', firebaseShopId);
+
+    let isInitialLoad = true; // 초기 로드 플래그
+
+    const q = query(
+      collection(db, 'rents'),
+      where('rented_shop_id', '==', firebaseShopId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      // 초기 로드는 무시 (기존 문서들이 모두 'added'로 감지됨)
+      if (isInitialLoad) {
+        isInitialLoad = false;
+        console.log('📱 초기 대여 데이터 로드 완료 (기존 문서 무시)');
+        return;
+      }
+
+      // 실제 새로운 변경사항만 처리
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          // source가 'web'이 아니면 = bottleclub 앱 QR 대여
+          if (data.source !== 'web') {
+            console.log('📱 bottleclub 앱 QR 대여 감지! 통계 업데이트... (+30점)');
+            fetchStats();
+          }
+        }
+      });
+    }, (error) => {
+      console.error('❌ Firebase 리스너 에러 (rents):', error);
+    });
+
+    return () => {
+      console.log('🔥 Firebase 리스너 종료 (rents)');
       unsubscribe();
     };
   }, [firebaseShopId]);

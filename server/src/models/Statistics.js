@@ -197,12 +197,13 @@ class Statistics {
     }
   }
 
-  // 카페별 전체 통계 한번에 가져오기 (PostgreSQL + Firebase 합산)
+  // 카페별 전체 통계 한번에 가져오기 (PostgreSQL만 조회 - 효율적!)
+  // Firebase 데이터는 실시간 리스너가 PostgreSQL에 자동 동기화함
   static async getCafeStats(cafeId) {
     try {
       console.log('📊 [getCafeStats] cafeId:', cafeId);
 
-      // 1. PostgreSQL 통계 (웹 앱)
+      // PostgreSQL 통계 (웹 앱 + QR 대여 + QR 적립 모두 포함)
       const pgResult = await pool.query(
         `SELECT
           COALESCE(SUM(score), 0) as total_score,
@@ -214,60 +215,16 @@ class Statistics {
         [cafeId]
       );
 
-      const pgStats = {
+      const stats = {
         totalScore: parseInt(pgResult.rows[0].total_score) || 0,
         totalCount: parseInt(pgResult.rows[0].total_count) || 0,
         today: parseInt(pgResult.rows[0].today) || 0,
         weekly: parseInt(pgResult.rows[0].weekly) || 0
       };
-      console.log('  ✅ PostgreSQL 통계:', pgStats);
 
-      // 2. 웹 카페명과 생성일 조회
-      const cafeResult = await pool.query(
-        'SELECT cafe_name, created_at FROM cafes WHERE id = $1',
-        [cafeId]
-      );
+      console.log('  ✅ PostgreSQL 통계 (웹 + QR 대여 + QR 적립):', stats);
 
-      if (cafeResult.rows.length === 0) {
-        console.log('  ⚠️ 카페 정보 없음 - PostgreSQL만 반환');
-        return pgStats;
-      }
-
-      const cafeName = cafeResult.rows[0].cafe_name;
-      const cafeCreatedAt = cafeResult.rows[0].created_at;
-      console.log('  🏪 웹 카페명:', cafeName);
-      console.log('  📅 카페 생성일:', cafeCreatedAt);
-
-      // 3. Firebase shops 컬렉션에서 카페명으로 shop document ID 찾기
-      const shopsSnapshot = await db.collection('shops')
-        .where('name', '==', cafeName)
-        .limit(1)
-        .get();
-
-      if (shopsSnapshot.empty) {
-        console.log('  ⚠️ Firebase shops에 일치하는 카페 없음 - PostgreSQL만 반환');
-        return pgStats;
-      }
-
-      const shopId = shopsSnapshot.docs[0].id;  // document ID 사용
-      console.log('  🔑 Firebase shopId (document ID):', shopId);
-
-      // 4. Firebase QR 적립 통계 (웹 계정 생성일 이후만)
-      // 주의: QR 대여는 스케줄러가 자동으로 PostgreSQL에 동기화하므로 여기서 조회하지 않음
-      const firebaseStats = await this.getFirebaseQRStats(shopId, cafeCreatedAt);
-      console.log('  🔥 Firebase QR 적립 통계:', firebaseStats);
-
-      // 5. 합산 (PostgreSQL + Firebase QR 적립)
-      // PostgreSQL에는 웹 대여/반납/실천 + QR 대여(스케줄러가 동기화)가 포함됨
-      const combined = {
-        totalScore: pgStats.totalScore + firebaseStats.totalScore,
-        totalCount: pgStats.totalCount + firebaseStats.totalCount,
-        today: pgStats.today + firebaseStats.today,
-        weekly: pgStats.weekly + firebaseStats.weekly
-      };
-      console.log('  ✨ 최종 합산 결과:', combined);
-
-      return combined;
+      return stats;
     } catch (err) {
       console.error('❌ [getCafeStats] 에러:', err);
       throw err;
