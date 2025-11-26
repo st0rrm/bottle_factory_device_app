@@ -465,7 +465,8 @@ router.post('/return-cup', async (req, res) => {
       uid,
       shop_id: shopId,
       score: totalScore,
-      create: FieldValue.serverTimestamp()
+      create: FieldValue.serverTimestamp(),
+      source: 'web'  // 웹 앱에서 생성됨 (기존 앱 QR 적립과 구분)
     });
 
     const collectHistoryId = collectHistoryRef.id;
