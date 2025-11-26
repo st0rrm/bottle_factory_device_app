@@ -131,19 +131,8 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
           // 사용자 대여권 조회 (effectiveUser UID 사용)
           const ticketsResult = await getUserTickets(effectiveUser.uid);
           if (ticketsResult.success) {
-            let tickets = ticketsResult.tickets;
+            const tickets = ticketsResult.tickets;
             const { totalCount, availableCount } = ticketsResult;
-
-            // 개발 환경에서 대여권이 없으면 테스트용 대여권 추가
-            if (tickets.length === 0 && import.meta.env.DEV) {
-              console.log('⚠️ 대여권이 없습니다. 개발 모드: 테스트용 대여권 생성');
-              tickets = [{
-                id: 'test_voucher_dev',
-                type: 'goods',
-                name: '테스트 대여권 (개발 전용)',
-                unlimited: false
-              }];
-            }
 
             setUserTickets(tickets);
             setAvailableVouchers(tickets.length);
