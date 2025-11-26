@@ -285,7 +285,10 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
       const result = await processReturn(currentUser.uid, selectedRentals, shopId, shopName);
 
       if (result.success) {
-        console.log('✅ 반납 완료:', result.score, '점 적립, 컵', result.count, '개');
+        const scoreMsg = result.score > 0
+          ? `${result.score}점 적립 (웹 대여 ${result.webRentalCount}개)`
+          : `0점 적립 (앱 대여 ${result.count - result.webRentalCount}개, 웹 대여 ${result.webRentalCount}개)`;
+        console.log(`✅ 반납 완료: ${scoreMsg}, 총 ${result.count}개 반납`);
 
         // PostgreSQL에 거래 기록 추가 (카페 통계 업데이트)
         try {

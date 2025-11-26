@@ -426,7 +426,6 @@ export const processRental = async (uid, tickets, shopId, shopName) => {
 
     const data = await response.json();
 
-    console.log(`✅ 대여 완료: ${data.data.count}개 대여권 사용, ${data.data.count}개 컵 대여`);
     return {
       success: true,
       rentalIds: data.data.rentalIds,
@@ -572,8 +571,10 @@ export const processReturn = async (uid, rentals, shopId, shopName) => {
 
     return {
       success: true,
-      score: scorePerCup * returnCount,
-      count: returnCount
+      score: result.data.totalScore,  // 백엔드에서 계산된 실제 점수
+      count: result.data.returnCount,
+      webRentalCount: result.data.webRentalCount,  // 웹 대여 개수
+      collectHistoryId: result.data.collectHistoryId
     };
 
   } catch (error) {
