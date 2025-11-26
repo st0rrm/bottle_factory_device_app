@@ -134,9 +134,9 @@ export const createNewUser = async (user) => {
 
     console.log('📝 새 사용자 문서 생성 중...');
 
-    // 닉네임 생성 (휴대폰 뒤 7자리)
-    // 예: 01012345678 → 2345678
-    const nickname = phoneNumber.slice(-7);
+    // 닉네임 생성 (휴대폰 뒤 8자리)
+    // 예: 01012345678 → 12345678
+    const nickname = phoneNumber.slice(-8);
 
     console.log('📱 전화번호:', phoneNumber);
     console.log('👤 닉네임:', nickname);
