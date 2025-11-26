@@ -13,6 +13,8 @@ import SuccessSnackbar from '../../components/SuccessSnackbar';
 import TreeContainer from '../../components/TreeContainer';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
+import { db } from '../../firebase/config';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { usePicovoice } from '../../hooks/usePicovoice';
 import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (Whisper + Claude)
 import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
@@ -213,6 +215,38 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       requestPermission();
     }
   }, [hasPermission, requestPermission]);
+
+  // Firebase 실시간 리스너: QR 적립 즉시 반영
+  useEffect(() => {
+    if (!cafeInfo?.cafeId) return;
+
+    console.log('🔥 Firebase 실시간 리스너 시작:', cafeInfo.cafeId);
+
+    const q = query(
+      collection(db, 'collect_history'),
+      where('shop_id', '==', cafeInfo.cafeId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          // source가 없으면 = 기존 앱 QR 적립
+          if (!data.source) {
+            console.log('✨ 기존 앱 QR 적립 감지! 통계 업데이트...');
+            fetchStats();
+          }
+        }
+      });
+    }, (error) => {
+      console.error('❌ Firebase 리스너 에러:', error);
+    });
+
+    return () => {
+      console.log('🔥 Firebase 리스너 종료');
+      unsubscribe();
+    };
+  }, [cafeInfo?.cafeId]);
 
   const fetchStats = async () => {
     try {
