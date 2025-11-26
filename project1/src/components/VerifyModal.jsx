@@ -331,14 +331,8 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
       if (result.success) {
         console.log(`✅ 대여 완료: ${result.count}개 대여권 사용, ${result.count}개 컵 대여`);
 
-        // PostgreSQL에 거래 기록 추가 (카페 통계 업데이트)
-        try {
-          await addTransaction('borrow', phoneNumber, quantity);
-          console.log(`📊 거래 기록 완료: ${quantity}개 대여`);
-        } catch (error) {
-          console.error('거래 기록 실패 (통계는 업데이트되지 않음):', error);
-          // 거래 기록 실패해도 대여는 완료되었으므로 계속 진행
-        }
+        // PostgreSQL 거래 기록은 백엔드(users.js)에서 자동으로 처리됨 (30점)
+        // 프론트엔드에서 중복 호출하지 않음
 
         setIsLoading(false);
 
