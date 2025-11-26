@@ -184,14 +184,34 @@ router.post('/rental', async (req, res) => {
     const rentalScorePerCup = 30;
     const rentalScore = rentalScorePerCup * rentalCount;
 
+    console.log('🎯 대여 점수 계산:', {
+      rentalCount,
+      rentalScorePerCup,
+      rentalScore,
+      calculation: `${rentalCount} * ${rentalScorePerCup} = ${rentalScore}`
+    });
+
     // 4. Update user stats (bottle_all, saving_all, score, coin)
     const userDoc = await db.collection('users').doc(uid).get();
     const userData = userDoc.data();
+
+    console.log('📊 대여 전 사용자 점수:', {
+      uid,
+      currentScore: userData.score,
+      currentCoin: userData.coin,
+      willAdd: rentalScore
+    });
+
     await db.collection('users').doc(uid).update({
       bottle_all: userData.bottle_all + rentalCount,
       saving_all: userData.saving_all + rentalCount,
       score: FieldValue.increment(rentalScore),
       coin: FieldValue.increment(rentalScore)
+    });
+
+    console.log('✅ 대여 점수 업데이트 완료:', {
+      addedScore: rentalScore,
+      expectedNewScore: userData.score + rentalScore
     });
 
     // Record transaction in PostgreSQL for cafe statistics
