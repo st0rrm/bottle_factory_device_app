@@ -80,9 +80,9 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
       cafeId: req.user.cafeId,
     });
 
-    // Step 1: OpenAI GPT-4o-mini-transcribe로 음성을 텍스트로 변환
-    console.log('🎤 [1/2] GPT-4o-mini-transcribe API 호출 시작...');
-    const transcribeStartTime = Date.now();
+    // Step 1: OpenAI Whisper로 음성을 텍스트로 변환
+    console.log('🎤 [1/2] Whisper API 호출 시작...');
+    const whisperStartTime = Date.now();
 
     try {
       // OpenAI SDK를 위한 File 객체 생성
@@ -100,15 +100,15 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
       const transcription = await openai.audio.transcriptions.create({
         file: audioFile,
-        model: 'gpt-4o-mini-transcribe',
+        model: 'whisper-1',
         language: 'ko',
         response_format: 'text',
         prompt: '카페 키오스크 주문: 포장, 테이크아웃, 매장 이용, 가져갈게요, 들고갈게요',
       });
 
       const recognizedText = transcription.trim();
-      const transcribeDuration = Date.now() - transcribeStartTime;
-      console.log(`✅ GPT-4o-mini-transcribe 완료 (${transcribeDuration}ms)`);
+      const whisperDuration = Date.now() - whisperStartTime;
+      console.log(`✅ Whisper 완료 (${whisperDuration}ms)`);
       console.log('   → 인식된 텍스트:', recognizedText || '(없음)');
       console.log('   → 텍스트 길이:', recognizedText.length, '자');
 
@@ -130,7 +130,7 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
       if (!recognizedText || isHallucination) {
         if (isHallucination) {
-          console.log('⚠️ GPT-4o-mini-transcribe 환각 패턴 감지:', recognizedText);
+          console.log('⚠️ Whisper 환각 패턴 감지:', recognizedText);
         } else {
           console.log('⚠️ 음성이 인식되지 않음.');
         }
@@ -151,35 +151,20 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
 
       const message = await anthropic.messages.create({
         model: 'claude-3-5-haiku-20241022',
-        max_tokens: 150,
-        temperature: 0.1,
+        max_tokens: 100,
+        temperature: 0.0,
         messages: [
           {
             role: 'user',
-            content: `당신은 카페 키오스크 음성 분석 전문가입니다.
+            content: `카페 키오스크 발화: "${recognizedText}"
 
-고객 발화: "${recognizedText}"
-
-작업: 위 발화에서 "포장/테이크아웃 의도"가 있는지 판단하세요.
-
-판단 기준:
-✅ TRUE인 경우 (포장 의도 명확):
-- "포장이요", "포장해주세요", "포장으로"
-- "테이크아웃이요", "테이크아웃으로", "테이크아웃 해주세요"
-- "가져갈게요", "들고갈게요", "가지고 갈게요"
-- "싸주세요", "싸서 주세요", "포장해 주세요"
-
-❌ FALSE인 경우 (포장 의도 없음):
-- "매장에서요", "여기서요", "여기서 먹을게요"
-- 인사말 ("안녕하세요", "감사합니다", "좋은 하루 되세요")
-- 주문과 무관한 대화 ("화장실 어디예요?", "메뉴판 보여주세요")
-- 메뉴 문의 ("뭐가 있어요?", "추천 메뉴는?")
-- 불명확하거나 침묵/소음
-
-중요: 명시적 컨텍스트가 없는 애매한 경우는 모두 false로 판단 (오탐 방지)
+포장/테이크아웃 의도 판단:
+- true: 명시적으로 포장 의사를 밝히는 경우 (예: 포장/테이크아웃/가져갈게요)
+- false: 그 이외의 모든 경우. 매장 이용/주문과 무관한 대화
+중요: 포장 의도가 없다면 기본값은 false. 
 
 JSON만 출력:
-{"takeout":true|false,"confidence":0.0~1.0,"reason":"한국어로 간단히"}`
+{"takeout":true|false,"confidence":0.0~1.0,"reason":"string"}`
           }
         ]
       });
@@ -228,7 +213,7 @@ JSON만 출력:
         confidence: response.confidence,
         reason: response.reason,
       });
-      console.log(`⏱️ 총 소요 시간: ${totalDuration}ms (GPT-4o-mini-transcribe: ${transcribeDuration}ms, Claude: ${claudeDuration}ms)`);
+      console.log(`⏱️ 총 소요 시간: ${totalDuration}ms (Whisper: ${whisperDuration}ms, Claude: ${claudeDuration}ms)`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
       // 음성인식 통계 기록
@@ -254,7 +239,7 @@ JSON만 출력:
       res.json(response);
 
     } catch (innerError) {
-      // GPT-4o-mini-transcribe 또는 Claude API 호출 중 에러
+      // Whisper 또는 Claude API 호출 중 에러
       throw innerError;
     }
 
@@ -388,7 +373,7 @@ router.post('/log-stat', authenticateToken, async (req, res) => {
 router.get('/status', authenticateToken, async (req, res) => {
   try {
     const status = {
-      transcribe: !!process.env.OPENAI_API_KEY,
+      whisper: !!process.env.OPENAI_API_KEY,
       claude: !!process.env.ANTHROPIC_API_KEY,
       enabled: !!(process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY),
     };
