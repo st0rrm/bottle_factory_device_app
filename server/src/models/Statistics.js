@@ -72,6 +72,75 @@ class Statistics {
       return { totalScore: 0, totalCount: 0, today: 0, weekly: 0 };
     }
   }
+
+  // Firebase에서 QR 대여 통계 가져오기 (기존 앱)
+  static async getFirebaseQRRentals(shopId, cafeCreatedAt) {
+    try {
+      console.log('📱 [getFirebaseQRRentals] shopId:', shopId);
+      console.log('📱 [getFirebaseQRRentals] cafeCreatedAt:', cafeCreatedAt);
+
+      // rents 컬렉션에서 QR 대여만 조회 (source가 'web'이 아닌 것)
+      let query = db.collection('rents')
+        .where('rented_shop_id', '==', shopId);
+
+      const snapshot = await query.get();
+      console.log('📱 [getFirebaseQRRentals] 총 대여 문서 수:', snapshot.size);
+
+      let totalScore = 0;
+      let totalCount = 0;
+      let today = 0;
+      let weekly = 0;
+
+      let webRentalCount = 0;
+      let qrRentalCount = 0;
+
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const cutoffDate = cafeCreatedAt ? new Date(cafeCreatedAt) : null;
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const rentedDate = data.rented_date?.toDate();
+
+        // 카페 생성일 이전 대여는 제외
+        if (cutoffDate && rentedDate && rentedDate < cutoffDate) {
+          return;
+        }
+
+        // source가 'web'인 것은 제외 (이미 PostgreSQL에 있음)
+        if (data.source === 'web') {
+          webRentalCount++;
+          return;
+        }
+
+        // QR 대여만 집계 (대여 1개당 30점)
+        qrRentalCount++;
+        const score = 30;
+
+        totalScore += score;
+        totalCount += 1;
+
+        if (rentedDate) {
+          if (rentedDate >= todayStart) {
+            today += 1;
+          }
+          if (rentedDate >= weekAgo) {
+            weekly += 1;
+          }
+        }
+      });
+
+      console.log('📱 [getFirebaseQRRentals] 웹 대여 제외:', webRentalCount);
+      console.log('📱 [getFirebaseQRRentals] QR 대여 집계:', qrRentalCount);
+      console.log('📱 [getFirebaseQRRentals] 결과:', { totalScore, totalCount, today, weekly });
+
+      return { totalScore, totalCount, today, weekly };
+    } catch (error) {
+      console.error('❌ Firebase QR rentals error:', error);
+      return { totalScore: 0, totalCount: 0, today: 0, weekly: 0 };
+    }
+  }
   // 거래 기록 추가 (대여, 반납, 또는 실천)
   static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0) {
     try {
@@ -185,16 +254,20 @@ class Statistics {
 
       // 4. Firebase QR 적립 통계 (웹 계정 생성일 이후만)
       const firebaseStats = await this.getFirebaseQRStats(shopId, cafeCreatedAt);
-      console.log('  🔥 Firebase 통계:', firebaseStats);
+      console.log('  🔥 Firebase QR 적립 통계:', firebaseStats);
 
-      // 5. 합산
+      // 5. Firebase QR 대여 통계 (웹 계정 생성일 이후만)
+      const qrRentalStats = await this.getFirebaseQRRentals(shopId, cafeCreatedAt);
+      console.log('  📱 Firebase QR 대여 통계:', qrRentalStats);
+
+      // 6. 합산 (PostgreSQL + Firebase QR 적립 + Firebase QR 대여)
       const combined = {
-        totalScore: pgStats.totalScore + firebaseStats.totalScore,
-        totalCount: pgStats.totalCount + firebaseStats.totalCount,
-        today: pgStats.today + firebaseStats.today,
-        weekly: pgStats.weekly + firebaseStats.weekly
+        totalScore: pgStats.totalScore + firebaseStats.totalScore + qrRentalStats.totalScore,
+        totalCount: pgStats.totalCount + firebaseStats.totalCount + qrRentalStats.totalCount,
+        today: pgStats.today + firebaseStats.today + qrRentalStats.today,
+        weekly: pgStats.weekly + firebaseStats.weekly + qrRentalStats.weekly
       };
-      console.log('  ✨ 합산 결과:', combined);
+      console.log('  ✨ 최종 합산 결과:', combined);
 
       return combined;
     } catch (err) {
