@@ -5,6 +5,9 @@ class Statistics {
   // Firebase에서 QR 적립 통계 가져오기 (기존 앱)
   static async getFirebaseQRStats(shopId, cafeCreatedAt) {
     try {
+      console.log('🔥 [getFirebaseQRStats] shopId:', shopId);
+      console.log('🔥 [getFirebaseQRStats] cafeCreatedAt:', cafeCreatedAt);
+
       // source 필드가 없는 것만 = 기존 앱 QR 적립
       // 카페 생성일 이후만 집계 (웹 앱 등록일 기준)
       let query = db.collection('collect_history')
@@ -13,15 +16,20 @@ class Statistics {
       // 카페 생성일이 있으면 그 이후만 필터링
       if (cafeCreatedAt) {
         const cutoffDate = new Date(cafeCreatedAt);
+        console.log('🔥 [getFirebaseQRStats] cutoffDate:', cutoffDate);
         query = query.where('create', '>=', cutoffDate);
       }
 
       const snapshot = await query.get();
+      console.log('🔥 [getFirebaseQRStats] 총 문서 수:', snapshot.size);
 
       let totalScore = 0;
       let totalCount = 0;
       let today = 0;
       let weekly = 0;
+
+      let webSourceCount = 0;
+      let qrCollectCount = 0;
 
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -32,10 +40,12 @@ class Statistics {
 
         // source가 'web'인 것은 제외 (이미 PostgreSQL에 있음)
         if (data.source === 'web') {
+          webSourceCount++;
           return;
         }
 
         // QR 적립만 집계
+        qrCollectCount++;
         const score = data.score || 0;
         const createdAt = data.create?.toDate();
 
@@ -52,9 +62,13 @@ class Statistics {
         }
       });
 
+      console.log('🔥 [getFirebaseQRStats] 웹 source 제외:', webSourceCount);
+      console.log('🔥 [getFirebaseQRStats] QR 적립 집계:', qrCollectCount);
+      console.log('🔥 [getFirebaseQRStats] 결과:', { totalScore, totalCount, today, weekly });
+
       return { totalScore, totalCount, today, weekly };
     } catch (error) {
-      console.error('Firebase QR stats error:', error);
+      console.error('❌ Firebase QR stats error:', error);
       return { totalScore: 0, totalCount: 0, today: 0, weekly: 0 };
     }
   }
@@ -117,6 +131,8 @@ class Statistics {
   // 카페별 전체 통계 한번에 가져오기 (PostgreSQL + Firebase 합산)
   static async getCafeStats(cafeId) {
     try {
+      console.log('📊 [getCafeStats] cafeId:', cafeId);
+
       // 1. PostgreSQL 통계 (웹 앱)
       const pgResult = await pool.query(
         `SELECT
@@ -135,6 +151,7 @@ class Statistics {
         today: parseInt(pgResult.rows[0].today) || 0,
         weekly: parseInt(pgResult.rows[0].weekly) || 0
       };
+      console.log('  ✅ PostgreSQL 통계:', pgStats);
 
       // 2. Firebase shopId와 웹 카페 생성일 조회
       const cafeResult = await pool.query(
@@ -143,23 +160,31 @@ class Statistics {
       );
 
       if (cafeResult.rows.length === 0) {
+        console.log('  ⚠️ cafe_id 없음 - PostgreSQL만 반환');
         return pgStats; // cafe_id 없으면 PostgreSQL만
       }
 
       const shopId = cafeResult.rows[0].cafe_id;
       const cafeCreatedAt = cafeResult.rows[0].created_at; // 웹에서 계정 생성한 날짜
+      console.log('  🔑 shopId:', shopId);
+      console.log('  📅 카페 생성일:', cafeCreatedAt);
 
       // 3. Firebase QR 적립 통계 (웹 계정 생성일 이후만)
       const firebaseStats = await this.getFirebaseQRStats(shopId, cafeCreatedAt);
+      console.log('  🔥 Firebase 통계:', firebaseStats);
 
       // 4. 합산
-      return {
+      const combined = {
         totalScore: pgStats.totalScore + firebaseStats.totalScore,
         totalCount: pgStats.totalCount + firebaseStats.totalCount,
         today: pgStats.today + firebaseStats.today,
         weekly: pgStats.weekly + firebaseStats.weekly
       };
+      console.log('  ✨ 합산 결과:', combined);
+
+      return combined;
     } catch (err) {
+      console.error('❌ [getCafeStats] 에러:', err);
       throw err;
     }
   }
