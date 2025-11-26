@@ -32,10 +32,12 @@
 }
 
 .phone-input-notice {
-  font-size: clamp(0.75rem, 1.5vw + 0.75vh, 1.125rem);
+  font-size: clamp(0.7rem, 1.4vw + 0.7vh, 1.125rem);
   color: #9c9c9c;
   text-align: center;
   letter-spacing: -0.009em;
+  line-height: 1.5;
+  word-break: keep-all;
 }
 
 .notice-link {

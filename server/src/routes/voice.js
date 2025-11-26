@@ -98,12 +98,14 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
         type: audioFile.type,
       });
 
+      const TRANSCRIPTION_PROMPT = '카페 키오스크 주문: 포장, 테이크아웃, 매장 이용, 가져갈게요, 들고갈게요';
+
       const transcription = await openai.audio.transcriptions.create({
         file: audioFile,
         model: 'gpt-4o-mini-transcribe',
         language: 'ko',
         response_format: 'text',
-        prompt: '카페 키오스크 주문: 포장, 테이크아웃, 매장 이용, 가져갈게요, 들고갈게요',
+        prompt: TRANSCRIPTION_PROMPT,
       });
 
       const recognizedText = transcription.trim();
@@ -111,6 +113,23 @@ router.post('/analyze', authenticateToken, upload.single('audio'), async (req, r
       console.log(`✅ GPT-4o-mini-transcribe 완료 (${transcribeDuration}ms)`);
       console.log('   → 인식된 텍스트:', recognizedText || '(없음)');
       console.log('   → 텍스트 길이:', recognizedText.length, '자');
+
+      // 프롬프트 반환 감지 (빈 음성일 때 발생)
+      const isPromptEcho = recognizedText === TRANSCRIPTION_PROMPT ||
+                          recognizedText.includes(TRANSCRIPTION_PROMPT);
+
+      if (isPromptEcho) {
+        console.log('⚠️ 프롬프트 반환 감지 (빈 음성):', recognizedText);
+        const totalDuration = Date.now() - startTime;
+        console.log(`⏱️ 총 소요 시간: ${totalDuration}ms`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        return res.json({
+          text: '',
+          takeout: false,
+          confidence: 0,
+          reason: '음성이 인식되지 않았습니다.',
+        });
+      }
 
       // 환각(hallucination) 패턴 감지
       const hallucinationPatterns = [

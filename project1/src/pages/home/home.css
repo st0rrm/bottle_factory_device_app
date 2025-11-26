@@ -51,7 +51,7 @@
 .cafe-name {
   font-size: clamp(20px, 4vw, 32px);
   font-weight: var(--pretendard-light);
-  color: #A2A2A2;
+  color: #666666;
   letter-spacing: 0;
   text-align: center;
 }
