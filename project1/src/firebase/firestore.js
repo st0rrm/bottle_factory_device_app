@@ -563,7 +563,7 @@ export const getUserActiveRentals = async (uid, shopId) => {
 export const processReturn = async (uid, rentals, shopId, shopName) => {
   try {
     const returnCount = rentals.length;
-    const scorePerCup = 30;  // 컵 1개당 30점
+    const scorePerCup = 10;  // 컵 1개당 10점
 
     // 백엔드 API 호출하여 전체 반납 프로세스 처리
     const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';

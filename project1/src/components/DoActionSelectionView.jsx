@@ -24,9 +24,9 @@ export default function DoActionSelectionView({
   allowedActionIds,
 }) {
   const allActions = [
-    { id: 'tumbler', label: '텀블러 사용', icon: cupImage, score: 30, miniicon: cupIcon },
-    { id: 'container', label: '다회용기', icon: containerImage, score: 30, miniicon: containerIcon},
-    { id: 'refill', label: '리필용기', icon: refillImage, score: 30, miniicon: refillIcon},
+    { id: 'tumbler', label: '텀블러 사용', icon: cupImage, score: 10, miniicon: cupIcon },
+    { id: 'container', label: '다회용기', icon: containerImage, score: 10, miniicon: containerIcon},
+    { id: 'refill', label: '리필용기', icon: refillImage, score: 10, miniicon: refillIcon},
     { id: 'recycle', label: '자원 순환', icon: recycleImage, score: 5, miniicon: recycleIcon},
   ];
 

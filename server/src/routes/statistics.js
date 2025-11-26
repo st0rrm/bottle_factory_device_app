@@ -19,7 +19,7 @@ router.post('/transaction', authenticateToken, async (req, res) => {
     // Calculate score if not provided
     let calculatedScore = score || 0;
     if (!score && transactionType === 'borrow') {
-      calculatedScore = (quantity || 1) * 30;
+      calculatedScore = (quantity || 1) * 10;
     }
 
     const result = await Statistics.addTransaction(
