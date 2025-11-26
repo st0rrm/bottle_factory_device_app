@@ -179,20 +179,16 @@ router.post('/rental', async (req, res) => {
       rentalIds.push(rentRef.id);
     }
 
-    // 3. Update user stats (bottle_all, saving_all)
+    // 3. Award points for web rental (30 points per cup)
+    const rentalScorePerCup = 30;
+    const rentalScore = rentalScorePerCup * rentalCount;
+
+    // 4. Update user stats (bottle_all, saving_all, score, coin)
     const userDoc = await db.collection('users').doc(uid).get();
     const userData = userDoc.data();
     await db.collection('users').doc(uid).update({
       bottle_all: userData.bottle_all + rentalCount,
-      saving_all: userData.saving_all + rentalCount
-    });
-
-    // 4. Award points for web rental (30 points per cup)
-    const rentalScorePerCup = 30;
-    const rentalScore = rentalScorePerCup * rentalCount;
-
-    // Update user score
-    await db.collection('users').doc(uid).update({
+      saving_all: userData.saving_all + rentalCount,
       score: FieldValue.increment(rentalScore),
       coin: FieldValue.increment(rentalScore)
     });
