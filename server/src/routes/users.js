@@ -180,15 +180,16 @@ router.post('/rental', async (req, res) => {
       rentalIds.push(rentRef.id);
     }
 
-    // 3. Award points for web rental (30 points per cup)
-    const rentalScorePerCup = 30;
+    // 3. Award points for web rental (0 points per cup)
+    // 대여 시 포인트 부여 없음. 반납 시 10점 적립
+    const rentalScorePerCup = 0;
     const rentalScore = rentalScorePerCup * rentalCount;
 
     console.log('🎯 대여 점수 계산:', {
       rentalCount,
       rentalScorePerCup,
       rentalScore,
-      calculation: `${rentalCount} * ${rentalScorePerCup} = ${rentalScore}`
+      calculation: `${rentalCount} * ${rentalScorePerCup} = ${rentalScore} (점수 적립 없음)`
     });
 
     // 4. Update user stats (bottle_all, saving_all, score, coin)

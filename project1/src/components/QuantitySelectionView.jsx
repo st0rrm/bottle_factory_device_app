@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './QuantitySelectionView.css';
 import returnmecup from '../assets/images/returnmecup.svg';
+import BottleClubDownloadModal from './BottleClubDownloadModal';
 
 export default function QuantitySelectionView({
   quantity,
@@ -78,10 +79,7 @@ export default function QuantitySelectionView({
       </button>
 
       {showDownloadModal && (
-        <div className="download-modal-placeholder">
-          <p>BottleClubDownloadModal 구현 필요</p>
-          <button onClick={() => setShowDownloadModal(false)}>닫기</button>
-        </div>
+        <BottleClubDownloadModal onClose={() => setShowDownloadModal(false)} />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './RentalConfirmationView.css';
 import returnmecup from '../assets/images/returnmecup.svg';
+import RewardsInfoModal from './RewardsInfoModal';
 
 export default function RentalConfirmationView({
   quantity,
@@ -13,7 +14,7 @@ export default function RentalConfirmationView({
   const returnDate = new Date(today);
   returnDate.setDate(returnDate.getDate() + 14);
 
-  const rewardPoints = quantity * 30; // 30 bottles per cup
+  const rewardPoints = quantity * 10; // 10 bottles per cup (반납 시 지급)
 
   const formatDate = (date) => {
     const year = date.getFullYear();
@@ -78,6 +79,9 @@ export default function RentalConfirmationView({
       {/* Info Text */}
       <div className="sms-notification-container">
         <div className="sms-info-text">
+          보상은 리턴미컵을 반납한 이후 적립됩니다.
+        </div>
+        <div className="sms-info-text">
           반납일자 알림 문자가 자동으로 발송됩니다.
         </div>
       </div>
@@ -93,10 +97,7 @@ export default function RentalConfirmationView({
       </div>
 
       {showRewardsInfo && (
-        <div className="rewards-modal-placeholder">
-          <p>RewardsInfoModal 구현 필요</p>
-          <button onClick={() => setShowRewardsInfo(false)}>닫기</button>
-        </div>
+        <RewardsInfoModal onClose={() => setShowRewardsInfo(false)} />
       )}
     </div>
   );
