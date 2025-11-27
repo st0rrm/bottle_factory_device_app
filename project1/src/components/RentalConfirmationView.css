@@ -168,7 +168,9 @@
 /* SMS Notification Info */
 .sms-notification-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1vh, 1rem);
+  align-items: center;
   margin-bottom: clamp(0.75rem, 2vh, 2.5rem);
 }
 
