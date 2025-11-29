@@ -559,7 +559,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
         <SuccessSnackbar
           message={snackbarMessage}
           onClose={() => setShowSuccessSnackbar(false)}
-          duration={500}
+          duration={800}
         />
       )}
 
