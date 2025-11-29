@@ -10,6 +10,7 @@ import hillImage from '../../assets/images/front_hills_new 2.png'
 import Waterpoint from '../../assets/images/waterpoint.png'
 import HelpModal from '../../components/HelpModal';
 import SuccessSnackbar from '../../components/SuccessSnackbar';
+import SurveyQRModal from '../../components/SurveyQRModal';
 import TreeContainer from '../../components/TreeContainer';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
@@ -30,6 +31,7 @@ function HomeScreen() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const [showSurveyQRModal, setShowSurveyQRModal] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [cafeInfo, setCafeInfo] = useState(null);
   const [firebaseShopId, setFirebaseShopId] = useState(null); // Firebase shops document ID
@@ -143,7 +145,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const handleWakeWordDetected = useCallback(async (keywordIndex) => {
     // 다른 모달이 이미 열려있으면 무시
-    const isModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal;
+    const isModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
     if (isModalOpen) {
       console.log('⚠️ 다른 모달이 열려있어 도움말 모달 열기 무시');
       return;
@@ -168,10 +170,10 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     } catch (error) {
       console.error('통계 기록 실패:', error);
     }
-  }, [showVerifyModal, showReturnModal, showDoModal, showHelpModal, showSettingsModal]);
+  }, [showVerifyModal, showReturnModal, showDoModal, showHelpModal, showSettingsModal, showSurveyQRModal]);
 
   // 모달이 열려있는지 확인 (모달이 열려있으면 음성인식 비활성화)
-  const isAnyModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal;
+  const isAnyModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
 
   // 음성 인식 방법 선택
 
@@ -360,6 +362,11 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       setTreeType('init');
       setTreeScore(0);
     }, 3000);
+
+    // 스낵바 종료(1초) + 2초 대기 = 총 3초 후 설문 QR 모달 표시
+    setTimeout(() => {
+      setShowSurveyQRModal(true);
+    }, 3000);
   };
 
   const handleReturnSuccess = () => {
@@ -372,6 +379,11 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       setTreeType('init');
       setTreeScore(0);
     }, 3000);
+
+    // 스낵바 종료(1초) + 2초 대기 = 총 3초 후 설문 QR 모달 표시
+    setTimeout(() => {
+      setShowSurveyQRModal(true);
+    }, 3000);
   };
 
   const handleDoSuccess = (score) => {
@@ -383,6 +395,11 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     setTimeout(() => {
       setTreeType('init');
       setTreeScore(0);
+    }, 3000);
+
+    // 스낵바 종료(1초) + 2초 대기 = 총 3초 후 설문 QR 모달 표시
+    setTimeout(() => {
+      setShowSurveyQRModal(true);
     }, 3000);
   };
 
@@ -542,7 +559,14 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
         <SuccessSnackbar
           message={snackbarMessage}
           onClose={() => setShowSuccessSnackbar(false)}
-          duration={3000}
+          duration={500}
+        />
+      )}
+
+      {showSurveyQRModal && (
+        <SurveyQRModal
+          onClose={() => setShowSurveyQRModal(false)}
+          autoCloseDuration={15000}
         />
       )}
     </div>
