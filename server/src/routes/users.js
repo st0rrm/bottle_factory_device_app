@@ -601,9 +601,24 @@ router.post('/return-cup', async (req, res) => {
  */
 router.get('/phone/:phone', async (req, res) => {
   try {
-    const { phone } = req.params;
+    let { phone } = req.params;
 
-    // Query users by mobile field
+    // // Query users by mobile field
+    // const usersSnapshot = await db.collection('users')
+    //   .where('mobile', '==', phone)
+    //   .get();
+
+    // // If not found, return 404
+    // if (usersSnapshot.empty) {
+    //   return res.status(404).json({ error: 'User not found' });
+    // }
+
+    // 전화번호 형식 변환: +82 → 010
+    if (phone.startsWith('+82')) {
+      phone = '0' + phone.slice(3);
+    }
+
+    // 변환된 전화번호로 검색
     const usersSnapshot = await db.collection('users')
       .where('mobile', '==', phone)
       .get();
