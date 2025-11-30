@@ -15,7 +15,7 @@ import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
-import { getUserActiveRentals, processReturn, createNewUser } from '../firebase/firestore';
+import { getUserActiveRentals, processReturn, createNewUser, getUserByPhone } from '../firebase/firestore';
 import { getDeviceShopIdAsync } from '../config/device';
 
 export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
@@ -94,8 +94,45 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
     // 인증 시도 추적
     trackBehavior('verification_attempt', `phone_return_${phoneNumber.slice(-4)}`);
 
-    // SMS 인증번호 전송
-    console.log('📱 SMS 인증번호 전송 중...');
+    // ✨ 1단계: 전화번호로 기존 사용자 확인 (SMS 인증 전)
+    console.log('🔍 전화번호로 기존 사용자 확인 중:', phoneNumber);
+    const existingUserResult = await getUserByPhone(phoneNumber);
+
+    if (existingUserResult.success) {
+      // ✅ 기존 사용자 발견! SMS 인증 건너뛰고 바로 반납 가능한 대여 기록 조회
+      console.log('✅ 기존 사용자 확인 완료! SMS 인증 건너뜀');
+      console.log('   UID:', existingUserResult.user.uid);
+      console.log('   이름:', existingUserResult.user.name);
+
+      const effectiveUser = {
+        uid: existingUserResult.user.uid,
+        phoneNumber: existingUserResult.user.mobile
+      };
+      setCurrentUser(effectiveUser);
+
+      // 반납 가능한 대여 기록 조회
+      const shopInfo = await getDeviceShopIdAsync();
+      const rentalsResult = await getUserActiveRentals(effectiveUser.uid, shopInfo.shopId);
+
+      if (rentalsResult.success) {
+        const rentals = rentalsResult.rentals;
+
+        if (rentals.length === 0) {
+          console.log('❌ 반납 가능한 대여 기록이 없습니다.');
+          setShowNoRentalsType('unavailable');
+        } else {
+          console.log(`✅ 반납 가능한 컵 ${rentals.length}개 발견`);
+          setUserRentals(rentals);
+          setShowQuantitySelection(true);
+        }
+      }
+
+      setIsLoading(false);
+      return;
+    }
+
+    // ✨ 2단계: 신규 사용자 → SMS 인증 진행
+    console.log('📱 신규 사용자입니다. SMS 인증번호 전송 중...');
     const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-return');
 
     if (result.success) {
