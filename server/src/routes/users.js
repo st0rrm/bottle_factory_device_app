@@ -601,24 +601,10 @@ router.post('/return-cup', async (req, res) => {
  */
 router.get('/phone/:phone', async (req, res) => {
   try {
-    let { phone } = req.params;
+    const { phone } = req.params;
 
-    // // Query users by mobile field
-    // const usersSnapshot = await db.collection('users')
-    //   .where('mobile', '==', phone)
-    //   .get();
-
-    // // If not found, return 404
-    // if (usersSnapshot.empty) {
-    //   return res.status(404).json({ error: 'User not found' });
-    // }
-
-    // 전화번호 형식 변환: +82 → 010
-    if (phone.startsWith('+82')) {
-      phone = '0' + phone.slice(3);
-    }
-
-    // 변환된 전화번호로 검색
+    // Query users by mobile field
+    // Frontend에서 이미 +82 → 010 형식 변환을 완료했으므로 그대로 사용
     const usersSnapshot = await db.collection('users')
       .where('mobile', '==', phone)
       .get();
