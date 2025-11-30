@@ -86,6 +86,9 @@ class Cafe {
       // Delete transactions
       await pool.query('DELETE FROM transactions WHERE cafe_id = $1', [id]);
 
+      // Delete voice recognition stats
+      await pool.query('DELETE FROM voice_recognition_stats WHERE cafe_id = $1', [id]);
+
       // Finally delete the cafe
       await pool.query('DELETE FROM cafes WHERE id = $1', [id]);
     } catch (err) {
