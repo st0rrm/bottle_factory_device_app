@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './HelpModal.css';
 
 // ⚠️ 이미지 파일 이름은 예시입니다. 실제 파일 이름으로 대체하세요.
@@ -11,6 +11,17 @@ import returnmecupimg from '../assets/images/1_recommendation_what.jpg';
 
 export default function HelpModal({ onClose, onUseButtonClick }) {
   const [activeTab, setActiveTab] = useState('howToUse'); // 'whatIsIt' 또는 'howToUse'
+
+  // ✅ 30초 후 자동 닫기
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('⏰ 도움말 모달 30초 경과 → 자동 닫기');
+      onClose();
+    }, 30000); // 30초
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
   const whatIsItContent = (
     <div className="modal-content-placeholder">

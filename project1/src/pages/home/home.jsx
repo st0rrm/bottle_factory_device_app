@@ -192,6 +192,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       maxTotalDuration: 30000,       // 최대 30초
       vadThreshold: 10,              // VAD 음량 임계값 (RMS 기반, 0-255)
                                      // 15 = 배경 소음 차단, 정상 대화 감지
+      rmsLogBatchSize: 60,           // RMS 로그 배치 크기 (60개마다 전송)
     });
 
   // load café info
@@ -246,6 +247,40 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       requestPermission();
     }
   }, [hasPermission, requestPermission]);
+
+  // iOS Safari: 첫 번째 사용자 터치 시 AudioContext 활성화
+  useEffect(() => {
+    const handleFirstTouch = () => {
+      console.log('👆 첫 번째 사용자 터치 감지 (iOS AudioContext 활성화)');
+
+      // AudioContext resume 시도 (iOS Safari 호환)
+      if (window.AudioContext || window.webkitAudioContext) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const tempContext = new AudioContextClass();
+
+        if (tempContext.state === 'suspended') {
+          tempContext.resume().then(() => {
+            console.log('✅ 전역 AudioContext resumed');
+          }).catch(err => {
+            console.warn('⚠️ 전역 AudioContext resume 실패:', err);
+          });
+        }
+      }
+
+      // 한 번만 실행하고 리스너 제거
+      document.removeEventListener('touchstart', handleFirstTouch);
+      document.removeEventListener('click', handleFirstTouch);
+    };
+
+    // iOS에서는 touchstart, 데스크톱에서는 click
+    document.addEventListener('touchstart', handleFirstTouch, { once: true, passive: true });
+    document.addEventListener('click', handleFirstTouch, { once: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleFirstTouch);
+      document.removeEventListener('click', handleFirstTouch);
+    };
+  }, []);
 
   // Firebase 실시간 리스너: QR 적립 즉시 반영
   useEffect(() => {

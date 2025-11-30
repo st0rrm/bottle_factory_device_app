@@ -145,6 +145,11 @@ export const useVoiceRecognition = (
     }
 
     try {
+      // ✅ iOS Safari: AudioContext를 미리 생성하고 resume 시도
+      // getUserMedia 호출 전에 AudioContext를 초기화하여 사용자 인터랙션 컨텍스트 활용
+      const audioContext = getAudioContext();
+      console.log(`🎧 AudioContext 상태: ${audioContext.state}`);
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -288,6 +293,17 @@ export const useVoiceRecognition = (
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
+
+    // ✅ iOS Safari 호환: AudioContext가 suspended 상태면 resume
+    // iOS에서는 사용자 인터랙션 후에만 AudioContext를 시작할 수 있음
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().then(() => {
+        console.log('✅ AudioContext resumed (iOS Safari 호환)');
+      }).catch(err => {
+        console.warn('⚠️ AudioContext resume 실패:', err);
+      });
+    }
+
     return audioContextRef.current;
   };
 
@@ -390,6 +406,28 @@ export const useVoiceRecognition = (
         console.log(`   → 확신도: ${result.confidence} (${(result.confidence * 100).toFixed(0)}%)`);
         console.log(`   → 이유: ${result.reason}`);
 
+        // ✅ LLM API 호출 기록을 DB에 저장 (결과 처리 전에 로그)
+        let actionTaken = '';
+        if (result.confidence >= highThreshold && result.takeout) {
+          actionTaken = 'confirmed';
+        } else if (result.confidence >= lowThreshold && result.confidence < highThreshold && result.takeout) {
+          actionTaken = totalDuration >= maxTotalDuration ? 'restart' : 'continue';
+        } else {
+          actionTaken = 'restart';
+        }
+
+        logApiCall({
+          audioSizeKb: (mergedBlob.size / 1024).toFixed(2),
+          segmentCount: blobsToAnalyze.length,
+          analysisMode,
+          transcribedText: result.text || '',
+          takeoutDetected: result.takeout,
+          confidence: result.confidence,
+          reason: result.reason,
+          apiDurationMs: analysisTime,
+          action: actionTaken
+        }).catch(err => console.error('API 호출 로그 저장 실패:', err));
+
         // 결과 처리
         if (result.confidence >= highThreshold && result.takeout) {
           // 확정 → 포장 감지
@@ -451,7 +489,7 @@ export const useVoiceRecognition = (
     }
   }, [segmentDuration, maxCumulativeDuration, windowSize, maxTotalDuration, lowThreshold, highThreshold, onTakeoutDetected, stopRecording]);
 
-  // RMS 로그 전송 (render 로그 출력용)
+  // RMS 로그 전송 (DB 저장용)
   const sendRMSLog = useCallback(async (rmsValues) => {
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -467,12 +505,37 @@ export const useVoiceRecognition = (
       });
 
       if (response.ok) {
-        console.log('   → render 로그 전송 성공');
+        console.log('   → RMS 로그 DB 저장 성공');
       } else {
-        console.error('   → render 로그 전송 실패:', response.status);
+        console.error('   → RMS 로그 DB 저장 실패:', response.status);
       }
     } catch (error) {
-      console.error('   → render 로그 전송 오류:', error);
+      console.error('   → RMS 로그 DB 저장 오류:', error);
+    }
+  }, []);
+
+  // LLM API 호출 기록 전송 (DB 저장용)
+  const logApiCall = useCallback(async (apiData) => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const url = `${apiBaseUrl}/voice/log-api-call`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      });
+
+      if (response.ok) {
+        console.log('   → API 호출 기록 DB 저장 성공');
+      } else {
+        console.error('   → API 호출 기록 DB 저장 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('   → API 호출 기록 DB 저장 오류:', error);
     }
   }, []);
 

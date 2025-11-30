@@ -359,26 +359,101 @@ router.post('/log-rms', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'rmsValues 배열이 필요합니다.' });
     }
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 RMS 로그 출력:', {
-      timestamp: new Date().toISOString(),
-      cafe: req.user.cafeName,
-      cafeId: req.user.cafeId,
-      segmentCount: rmsValues.length,
-    });
+    // ✅ PostgreSQL에 저장
+    const pool = require('../config/database');
+    await pool.query(
+      `INSERT INTO voice_rms_logs
+       (cafe_id, cafe_name, rms_values, segment_count)
+       VALUES ($1, $2, $3, $4)`,
+      [
+        req.user.id,
+        req.user.cafeName,
+        rmsValues,  // PostgreSQL INTEGER[] 타입
+        rmsValues.length
+      ]
+    );
 
-    // RMS 값 1줄에 10개씩 출력
-    console.log('📊 RMS 값:');
-    for (let i = 0; i < rmsValues.length; i += 10) {
-      const batch = rmsValues.slice(i, i + 10);
-      console.log(`   ${batch.join(', ')}`);
-    }
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('📊 RMS 로그 DB 저장 완료:', {
+      cafe: req.user.cafeName,
+      count: rmsValues.length
+    });
 
     res.json({ success: true, logged: rmsValues.length });
   } catch (error) {
-    console.error('❌ RMS 로그 출력 오류:', error);
-    res.status(500).json({ error: 'RMS 로그 출력 실패' });
+    console.error('❌ RMS 로그 저장 오류:', error);
+    res.status(500).json({ error: 'RMS 로그 저장 실패' });
+  }
+});
+
+/**
+ * POST /api/voice/log-api-call
+ * LLM API 호출 기록 저장
+ *
+ * Request body:
+ *   - audioSizeKb: 오디오 크기 (KB)
+ *   - segmentCount: 세그먼트 개수
+ *   - analysisMode: 'cumulative' | 'sliding'
+ *   - transcribedText: 변환된 텍스트
+ *   - takeoutDetected: 테이크아웃 감지 여부
+ *   - confidence: 신뢰도 (0-1)
+ *   - reason: 판단 이유
+ *   - apiDurationMs: API 응답 시간 (ms)
+ *   - action: 'confirmed' | 'continue' | 'restart'
+ */
+router.post('/log-api-call', authenticateToken, async (req, res) => {
+  try {
+    const {
+      audioSizeKb,
+      segmentCount,
+      analysisMode,
+      transcribedText,
+      takeoutDetected,
+      confidence,
+      reason,
+      apiDurationMs,
+      action
+    } = req.body;
+
+    if (!audioSizeKb || !segmentCount || !analysisMode || !action) {
+      return res.status(400).json({
+        error: 'audioSizeKb, segmentCount, analysisMode, action 필드가 필요합니다.'
+      });
+    }
+
+    // ✅ PostgreSQL에 저장
+    const pool = require('../config/database');
+    await pool.query(
+      `INSERT INTO voice_api_calls
+       (cafe_id, cafe_name, audio_size_kb, segment_count, analysis_mode,
+        transcribed_text, takeout_detected, confidence, reason,
+        api_duration_ms, action)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        req.user.id,
+        req.user.cafeName,
+        parseFloat(audioSizeKb),
+        parseInt(segmentCount),
+        analysisMode,
+        transcribedText || '',
+        takeoutDetected || false,
+        confidence ? parseFloat(confidence) : null,
+        reason || '',
+        apiDurationMs ? parseInt(apiDurationMs) : null,
+        action
+      ]
+    );
+
+    console.log('📊 LLM API 호출 기록 DB 저장 완료:', {
+      cafe: req.user.cafeName,
+      action,
+      takeout: takeoutDetected,
+      confidence
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ LLM API 호출 기록 저장 오류:', error);
+    res.status(500).json({ error: 'LLM API 호출 기록 저장 실패' });
   }
 });
 
