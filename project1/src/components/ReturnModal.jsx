@@ -15,7 +15,7 @@ import xIcon from '../assets/images/x_icon.svg';
 import { trackBehavior } from '../api/behaviors';
 import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
-import { getUserActiveRentals, processReturn, createNewUser, getUserByPhone } from '../firebase/firestore';
+import { getUserActiveRentals, processReturn, createNewUser } from '../firebase/firestore';
 import { getDeviceShopIdAsync } from '../config/device';
 
 export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
@@ -94,45 +94,8 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
     // 인증 시도 추적
     trackBehavior('verification_attempt', `phone_return_${phoneNumber.slice(-4)}`);
 
-    // ✨ 1단계: 기존 사용자 확인 (SMS 인증 전)
-    console.log('🔍 기존 사용자 확인 중...');
-    const existingUserResult = await getUserByPhone(phoneNumber);
-
-    if (existingUserResult.success) {
-      // ✅ 기존 사용자 발견! SMS 인증 건너뛰고 바로 반납 가능한 대여 기록 조회
-      console.log('✅ 기존 사용자 확인 완료! SMS 인증 건너뜀');
-      console.log('   UID:', existingUserResult.user.uid);
-      console.log('   이름:', existingUserResult.user.name);
-
-      const effectiveUser = {
-        uid: existingUserResult.user.uid,
-        phoneNumber: existingUserResult.user.mobile
-      };
-      setCurrentUser(effectiveUser);
-
-      // 반납 가능한 대여 기록 조회
-      const shopInfo = await getDeviceShopIdAsync();
-      const rentalsResult = await getUserActiveRentals(effectiveUser.uid, shopInfo.shopId);
-
-      if (rentalsResult.success) {
-        const rentals = rentalsResult.rentals;
-
-        if (rentals.length === 0) {
-          console.log('❌ 반납 가능한 대여 기록이 없습니다.');
-          setShowNoRentalsType('unavailable');
-        } else {
-          console.log(`✅ 반납 가능한 컵 ${rentals.length}개 발견`);
-          setUserRentals(rentals);
-          setShowQuantitySelection(true);
-        }
-      }
-
-      setIsLoading(false);
-      return;
-    }
-
-    // ✨ 2단계: 신규 사용자 → SMS 인증 진행
-    console.log('📱 신규 사용자입니다. SMS 인증번호 전송 중...');
+    // SMS 인증번호 전송
+    console.log('📱 SMS 인증번호 전송 중...');
     const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-return');
 
     if (result.success) {
@@ -218,33 +181,29 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
 
     // 인증 성공
     console.log('✅ 인증 성공:', result.user.uid);
+    console.log('📊 신규 사용자 여부:', result.isNewUser);
 
-    // 전화번호로 기존 사용자 확인/생성
-    console.log('사용자 문서 확인/생성 중...');
-    const createResult = await createNewUser(result.user);
+    // ✨ 신규 사용자인 경우에만 Firestore 문서 생성
+    if (result.isNewUser) {
+      console.log('🆕 신규 사용자 - Firestore 문서 생성 중...');
+      const createResult = await createNewUser(result.user);
 
-    // 사용할 UID 결정
-    let effectiveUser = result.user;
-    if (createResult.existingUser) {
-      // 기존 사용자가 있으면 그 UID 사용
-      console.log('⚠️ 기존 사용자 발견! UID 전환:');
-      console.log('   Firebase Auth UID:', result.user.uid);
-      console.log('   기존 Firestore UID:', createResult.existingUser.uid);
-      effectiveUser = {
-        ...result.user,
-        uid: createResult.existingUser.uid
-      };
-    } else if (createResult.success && createResult.isNew) {
-      console.log('신규 사용자 생성 완료:', createResult.nickname);
-    } else if (createResult.success && !createResult.isNew) {
-      console.log('기존 사용자 확인 완료 (UID 일치)');
+      if (!createResult.success) {
+        console.error('❌ 사용자 생성 실패:', createResult.error);
+        setErrorMessage('사용자 정보 생성에 실패했습니다.');
+        setIsError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('✅ 신규 사용자 생성 완료:', createResult.nickname);
     } else {
-      console.error('사용자 생성 실패:', createResult.error);
+      console.log('👤 기존 사용자 - SMS 인증 완료');
     }
 
     const authenticatedUser = {
-      uid: effectiveUser.uid,
-      phoneNumber: effectiveUser.phoneNumber,
+      uid: result.user.uid,
+      phoneNumber: result.user.phoneNumber,
       mobile: phoneNumber
     };
 

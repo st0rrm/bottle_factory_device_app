@@ -17,7 +17,7 @@ import { trackBehavior } from '../api/behaviors';
 import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { getDeviceShopIdAsync } from '../config/device';
-import { createNewUser, getUserByPhone } from '../firebase/firestore';
+import { createNewUser } from '../firebase/firestore';
 
 export default function DoModal({ onClose, onSuccess }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -154,29 +154,8 @@ export default function DoModal({ onClose, onSuccess }) {
 
     trackBehavior('verification_attempt', `phone_do_${phoneNumber.slice(-4)}`);
 
-    // ✨ 1단계: 기존 사용자 확인 (SMS 인증 전)
-    console.log('🔍 기존 사용자 확인 중...');
-    const existingUserResult = await getUserByPhone(phoneNumber);
-
-    if (existingUserResult.success) {
-      // ✅ 기존 사용자 발견! SMS 인증 건너뛰고 바로 실천 항목 선택 화면으로
-      console.log('✅ 기존 사용자 확인 완료! SMS 인증 건너뜀');
-      console.log('   UID:', existingUserResult.user.uid);
-      console.log('   이름:', existingUserResult.user.name);
-
-      const effectiveUser = {
-        uid: existingUserResult.user.uid,
-        phoneNumber: existingUserResult.user.mobile
-      };
-      setCurrentUser(effectiveUser);
-      setShowActionSelection(true);
-
-      setIsLoading(false);
-      return;
-    }
-
-    // ✨ 2단계: 신규 사용자 → SMS 인증 진행
-    console.log('📱 신규 사용자입니다. SMS 인증번호 전송 중...');
+    // SMS 인증번호 전송
+    console.log('📱 SMS 인증번호 전송 중...');
     const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-do');
 
     if (result.success) {
@@ -259,28 +238,29 @@ export default function DoModal({ onClose, onSuccess }) {
 
     // 인증 성공
     console.log('✅ 인증 성공:', result.user.uid);
+    console.log('📊 신규 사용자 여부:', result.isNewUser);
 
-    // 신규/기존 사용자 확인 및 UID 전환
-    const createResult = await createNewUser(result.user);
-    let effectiveUser = result.user;
+    // ✨ 신규 사용자인 경우에만 Firestore 문서 생성
+    if (result.isNewUser) {
+      console.log('🆕 신규 사용자 - Firestore 문서 생성 중...');
+      const createResult = await createNewUser(result.user);
 
-    if (createResult.existingUser) {
-      console.log('⚠️ 기존 사용자 발견! UID 전환:');
-      console.log('  Firebase Auth UID:', result.user.uid);
-      console.log('  Firestore 기존 UID:', createResult.existingUser.uid);
-      effectiveUser = {
-        ...result.user,
-        uid: createResult.existingUser.uid
-      };
-    } else if (createResult.isNew) {
-      console.log('✅ 신규 사용자 생성 완료');
-    } else if (createResult.success) {
-      console.log('✅ 기존 사용자 확인 완료');
+      if (!createResult.success) {
+        console.error('❌ 사용자 생성 실패:', createResult.error);
+        setErrorMessage('사용자 정보 생성에 실패했습니다.');
+        setIsError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('✅ 신규 사용자 생성 완료:', createResult.nickname);
+    } else {
+      console.log('👤 기존 사용자 - SMS 인증 완료');
     }
 
     const authenticatedUser = {
-      uid: effectiveUser.uid,
-      phoneNumber: effectiveUser.phoneNumber,
+      uid: result.user.uid,
+      phoneNumber: result.user.phoneNumber,
       mobile: phoneNumber,
     };
 

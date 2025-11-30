@@ -101,31 +101,28 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
         const result = await verifyCode(confirmationResult, verificationCode);
 
         if (result.success) {
-          console.log('인증 성공:', result.user.uid);
+          console.log('✅ 인증 성공:', result.user.uid);
+          console.log('📊 신규 사용자 여부:', result.isNewUser);
 
-          // 항상 users 컬렉션 확인 후 없으면 생성 (isNewUser에 의존하지 않음)
-          console.log('사용자 문서 확인/생성 중...');
-          const createResult = await createNewUser(result.user);
+          // ✨ 신규 사용자인 경우에만 Firestore 문서 생성
+          if (result.isNewUser) {
+            console.log('🆕 신규 사용자 - Firestore 문서 생성 중...');
+            const createResult = await createNewUser(result.user);
 
-          // 사용할 UID 결정
-          let effectiveUser = result.user;
-          if (createResult.existingUser) {
-            // 기존 사용자가 있으면 그 UID 사용
-            console.log('⚠️ 기존 사용자 발견! UID 전환:');
-            console.log('   Firebase Auth UID:', result.user.uid);
-            console.log('   기존 Firestore UID:', createResult.existingUser.uid);
-            effectiveUser = {
-              ...result.user,
-              uid: createResult.existingUser.uid
-            };
-          } else if (createResult.success && createResult.isNew) {
-            console.log('신규 사용자 생성 완료:', createResult.nickname);
-          } else if (createResult.success && !createResult.isNew) {
-            console.log('기존 사용자 확인 완료 (UID 일치)');
+            if (!createResult.success) {
+              console.error('❌ 사용자 생성 실패:', createResult.error);
+              setErrorMessage('사용자 정보 생성에 실패했습니다.');
+              setIsError(true);
+              setIsLoading(false);
+              return;
+            }
+
+            console.log('✅ 신규 사용자 생성 완료:', createResult.nickname);
           } else {
-            console.error('사용자 생성 실패:', createResult.error);
+            console.log('👤 기존 사용자 - SMS 인증 완료');
           }
 
+          const effectiveUser = result.user;
           setCurrentUser(effectiveUser);
 
           // 사용자 대여권 조회 (effectiveUser UID 사용)
@@ -224,53 +221,8 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
     // 인증 시도 추적
     trackBehavior('verification_attempt', `phone_borrow_${phoneNumber.slice(-4)}`);
 
-    // ✨ 1단계: 기존 사용자 확인 (SMS 인증 전)
-    console.log('🔍 기존 사용자 확인 중...');
-    const existingUserResult = await getUserByPhone(phoneNumber);
-
-    if (existingUserResult.success) {
-      // ✅ 기존 사용자 발견! SMS 인증 건너뛰고 바로 대여권 조회
-      console.log('✅ 기존 사용자 확인 완료! SMS 인증 건너뜀');
-      console.log('   UID:', existingUserResult.user.uid);
-      console.log('   이름:', existingUserResult.user.name);
-
-      const effectiveUser = {
-        uid: existingUserResult.user.uid,
-        phoneNumber: existingUserResult.user.mobile
-      };
-      setCurrentUser(effectiveUser);
-
-      // 대여권 조회
-      const ticketsResult = await getUserTickets(effectiveUser.uid);
-      if (ticketsResult.success) {
-        const tickets = ticketsResult.tickets;
-        const { totalCount } = ticketsResult;
-
-        setUserTickets(tickets);
-        setAvailableVouchers(tickets.length);
-
-        if (tickets.length > 0) {
-          // 첫 번째 티켓을 기본 선택
-          setSelectedTicket(tickets[0]);
-          setShowQuantitySelection(true);
-        } else {
-          // 대여권이 없거나 모두 사용중인 경우
-          if (totalCount === 0) {
-            console.log('❌ 보유한 대여권이 없습니다.');
-            setShowNoTicketsType('impossible');
-          } else {
-            console.log('❌ 사용 가능한 대여권이 없습니다. (모두 사용중)');
-            setShowNoTicketsType('unavailable');
-          }
-        }
-      }
-
-      setIsLoading(false);
-      return;
-    }
-
-    // ✨ 2단계: 신규 사용자 → SMS 인증 진행
-    console.log('📱 신규 사용자입니다. SMS 인증번호 전송 중...');
+    // SMS 인증번호 전송
+    console.log('📱 SMS 인증번호 전송 중...');
     const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-verify');
 
     if (result.success) {
