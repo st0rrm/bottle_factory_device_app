@@ -79,3 +79,13 @@ export const getAllCafesStats = async () => {
     throw error.response?.data || { error: '전체 통계를 가져오는 중 오류가 발생했습니다.' };
   }
 };
+
+// 특정 카페의 통계 초기화 (관리자 전용)
+export const resetCafeStats = async (cafeId) => {
+  try {
+    const response = await apiClient.delete(`/statistics/cafe/${cafeId}/reset`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '카페 통계 초기화 중 오류가 발생했습니다.' };
+  }
+};

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import { getCafes, createCafe, updateCafe, updateCafePassword, deleteCafe } from '../../api/cafe';
 import { logout } from '../../api/auth';
-import { getAllCafesStats } from '../../api/statistics';
+import { getAllCafesStats, resetCafeStats } from '../../api/statistics';
 import { getAllCafesBehaviorStats, getAllCafesDailyStats } from '../../api/behaviors';
 import * as XLSX from 'xlsx';
 
@@ -217,6 +217,24 @@ function AdminDashboard() {
       loadCafes();
     } catch (error) {
       alert(error.error || '카페 삭제에 실패했습니다.');
+    }
+  };
+
+  // 카페별 통계 초기화
+  const handleResetCafeStats = async (cafeId, cafeName) => {
+    if (!confirm(`"${cafeName}" 카페의 모든 통계 데이터가 삭제됩니다.\n(거래 기록, 행동 데이터, 음성 인식 통계)\n정말 초기화하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const result = await resetCafeStats(cafeId);
+      alert(`카페 통계가 초기화되었습니다.\n- 행동 데이터: ${result.deletedBehaviors}개\n- 거래 기록: ${result.deletedTransactions}개\n- 음성 통계: ${result.deletedVoiceStats}개\n총 ${result.deletedCount}개 삭제`);
+
+      // 통계 다시 불러오기
+      loadStats();
+    } catch (error) {
+      console.error('카페 통계 초기화 오류:', error);
+      alert(error.error || '카페 통계 초기화 중 오류가 발생했습니다.');
     }
   };
 
@@ -709,6 +727,13 @@ function AdminDashboard() {
                               onClick={() => handleChangePassword(cafe.id)}
                             >
                               비밀번호
+                            </button>
+                            <button
+                              className="btn-reset"
+                              onClick={() => handleResetCafeStats(cafe.id, cafe.cafe_name)}
+                              title="이 카페의 통계 데이터 초기화"
+                            >
+                              통계 초기화
                             </button>
                             <button
                               className="btn-delete"

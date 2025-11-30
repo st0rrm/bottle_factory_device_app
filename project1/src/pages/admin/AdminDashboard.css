@@ -309,6 +309,15 @@
   background-color: #c0392b;
 }
 
+.btn-reset {
+  background-color: #ff9800;
+  color: white;
+}
+
+.btn-reset:hover {
+  background-color: #e68900;
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;

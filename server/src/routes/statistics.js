@@ -125,4 +125,22 @@ router.delete('/reset', authenticateAdmin, async (req, res) => {
   }
 });
 
+// 특정 카페의 통계 초기화 (관리자 전용)
+router.delete('/cafe/:cafeId/reset', authenticateAdmin, async (req, res) => {
+  try {
+    const cafeId = req.params.cafeId;
+    const result = await Statistics.resetCafeStats(cafeId);
+    res.json({
+      message: 'Cafe statistics have been reset',
+      deletedCount: result.deletedCount,
+      deletedBehaviors: result.deletedBehaviors,
+      deletedTransactions: result.deletedTransactions,
+      deletedVoiceStats: result.deletedVoiceStats
+    });
+  } catch (err) {
+    console.error('Reset cafe stats error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

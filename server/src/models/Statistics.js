@@ -299,6 +299,41 @@ class Statistics {
       throw err;
     }
   }
+
+  // 관리자용: 특정 카페의 통계 초기화
+  static async resetCafeStats(cafeId) {
+    try {
+      // Delete user behaviors for this cafe
+      const behaviorsResult = await pool.query(
+        'DELETE FROM user_behaviors WHERE cafe_id = $1',
+        [cafeId]
+      );
+
+      // Delete transactions for this cafe
+      const transactionsResult = await pool.query(
+        'DELETE FROM transactions WHERE cafe_id = $1',
+        [cafeId]
+      );
+
+      // Delete voice recognition stats for this cafe
+      const voiceStatsResult = await pool.query(
+        'DELETE FROM voice_recognition_stats WHERE cafe_id = $1',
+        [cafeId]
+      );
+
+      const totalDeleted = behaviorsResult.rowCount + transactionsResult.rowCount + voiceStatsResult.rowCount;
+
+      return {
+        success: true,
+        deletedCount: totalDeleted,
+        deletedBehaviors: behaviorsResult.rowCount,
+        deletedTransactions: transactionsResult.rowCount,
+        deletedVoiceStats: voiceStatsResult.rowCount
+      };
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 module.exports = Statistics;
