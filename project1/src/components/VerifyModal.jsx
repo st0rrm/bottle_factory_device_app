@@ -224,8 +224,53 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
     // 인증 시도 추적
     trackBehavior('verification_attempt', `phone_borrow_${phoneNumber.slice(-4)}`);
 
-    // 모든 사용자에게 SMS 인증 진행 (보안을 위해)
-    console.log('📱 SMS 인증번호 전송 중...');
+    // ✨ 1단계: 기존 사용자 확인 (SMS 인증 전)
+    console.log('🔍 기존 사용자 확인 중...');
+    const existingUserResult = await getUserByPhone(phoneNumber);
+
+    if (existingUserResult.success) {
+      // ✅ 기존 사용자 발견! SMS 인증 건너뛰고 바로 대여권 조회
+      console.log('✅ 기존 사용자 확인 완료! SMS 인증 건너뜀');
+      console.log('   UID:', existingUserResult.user.uid);
+      console.log('   이름:', existingUserResult.user.name);
+
+      const effectiveUser = {
+        uid: existingUserResult.user.uid,
+        phoneNumber: existingUserResult.user.mobile
+      };
+      setCurrentUser(effectiveUser);
+
+      // 대여권 조회
+      const ticketsResult = await getUserTickets(effectiveUser.uid);
+      if (ticketsResult.success) {
+        const tickets = ticketsResult.tickets;
+        const { totalCount } = ticketsResult;
+
+        setUserTickets(tickets);
+        setAvailableVouchers(tickets.length);
+
+        if (tickets.length > 0) {
+          // 첫 번째 티켓을 기본 선택
+          setSelectedTicket(tickets[0]);
+          setShowQuantitySelection(true);
+        } else {
+          // 대여권이 없거나 모두 사용중인 경우
+          if (totalCount === 0) {
+            console.log('❌ 보유한 대여권이 없습니다.');
+            setShowNoTicketsType('impossible');
+          } else {
+            console.log('❌ 사용 가능한 대여권이 없습니다. (모두 사용중)');
+            setShowNoTicketsType('unavailable');
+          }
+        }
+      }
+
+      setIsLoading(false);
+      return;
+    }
+
+    // ✨ 2단계: 신규 사용자 → SMS 인증 진행
+    console.log('📱 신규 사용자입니다. SMS 인증번호 전송 중...');
     const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-verify');
 
     if (result.success) {

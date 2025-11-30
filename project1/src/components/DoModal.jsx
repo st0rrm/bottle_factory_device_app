@@ -17,7 +17,7 @@ import { trackBehavior } from '../api/behaviors';
 import { addTransaction } from '../api/statistics';
 import { sendVerificationCode, verifyCode, clearRecaptcha } from '../firebase/auth';
 import { getDeviceShopIdAsync } from '../config/device';
-import { createNewUser } from '../firebase/firestore';
+import { createNewUser, getUserByPhone } from '../firebase/firestore';
 
 export default function DoModal({ onClose, onSuccess }) {
   const [activeTab, setActiveTab] = useState('phone');
@@ -154,7 +154,29 @@ export default function DoModal({ onClose, onSuccess }) {
 
     trackBehavior('verification_attempt', `phone_do_${phoneNumber.slice(-4)}`);
 
-    console.log('📱 SMS 인증번호 전송 중...');
+    // ✨ 1단계: 기존 사용자 확인 (SMS 인증 전)
+    console.log('🔍 기존 사용자 확인 중...');
+    const existingUserResult = await getUserByPhone(phoneNumber);
+
+    if (existingUserResult.success) {
+      // ✅ 기존 사용자 발견! SMS 인증 건너뛰고 바로 실천 항목 선택 화면으로
+      console.log('✅ 기존 사용자 확인 완료! SMS 인증 건너뜀');
+      console.log('   UID:', existingUserResult.user.uid);
+      console.log('   이름:', existingUserResult.user.name);
+
+      const effectiveUser = {
+        uid: existingUserResult.user.uid,
+        phoneNumber: existingUserResult.user.mobile
+      };
+      setCurrentUser(effectiveUser);
+      setShowActionSelection(true);
+
+      setIsLoading(false);
+      return;
+    }
+
+    // ✨ 2단계: 신규 사용자 → SMS 인증 진행
+    console.log('📱 신규 사용자입니다. SMS 인증번호 전송 중...');
     const result = await sendVerificationCode(phoneNumber, 'recaptcha-container-do');
 
     if (result.success) {

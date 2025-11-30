@@ -274,8 +274,16 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
           const data = change.doc.data();
           // source가 없으면 = 기존 앱 QR 적립
           if (!data.source) {
-            console.log('✨ 기존 앱 QR 적립 감지! 통계 업데이트...');
+            console.log('✨ bottleclub 앱 QR 반납 감지! 통계 업데이트...');
             fetchStats();
+
+            // ✨ QR 모달이 열려있으면 먼저 닫기
+            setShowReturnModal(false);
+
+            // ✨ QR 반납 후 2~3초 뒤 설문 QR 모달 표시
+            setTimeout(() => {
+              setShowSurveyQRModal(true);
+            }, 2500);
           }
         }
       });
@@ -318,6 +326,14 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
           if (data.source !== 'web') {
             console.log('📱 bottleclub 앱 QR 대여 감지! 통계 업데이트... (+30점)');
             fetchStats();
+
+            // ✨ QR 모달이 열려있으면 먼저 닫기
+            setShowVerifyModal(false);
+
+            // ✨ QR 대여 후 2~3초 뒤 설문 QR 모달 표시
+            setTimeout(() => {
+              setShowSurveyQRModal(true);
+            }, 2500);
           }
         }
       });

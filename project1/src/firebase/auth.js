@@ -82,6 +82,8 @@ export const initRecaptcha = (buttonId = 'recaptcha-container') => {
     // 새로운 verifier 생성
     window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
       'size': 'invisible',
+      'badge': 'bottomright',  // 배지 위치 명시
+      'hl': 'ko',  // 한국어 명시 (신뢰도 향상)
       'callback': (response) => {
         console.log('✅ reCAPTCHA 검증 완료');
       },
@@ -103,6 +105,8 @@ export const initRecaptcha = (buttonId = 'recaptcha-container') => {
     // 재시도
     window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
       'size': 'invisible',
+      'badge': 'bottomright',
+      'hl': 'ko',
       'callback': (response) => {
         console.log('✅ reCAPTCHA 검증 완료 (재시도)');
       },
