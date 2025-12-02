@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS transactions (
   transaction_type VARCHAR(50) NOT NULL CHECK(transaction_type IN ('borrow', 'return', 'do')),
   phone_number VARCHAR(20),
   quantity INTEGER DEFAULT 1,
+  score INTEGER DEFAULT 0,
+  is_new_user BOOLEAN,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -142,11 +142,11 @@ class Statistics {
     }
   }
   // 거래 기록 추가 (대여, 반납, 또는 실천)
-  static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0) {
+  static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0, isNewUser = null) {
     try {
       const result = await pool.query(
-        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity, score) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-        [cafeId, transactionType, phoneNumber, quantity, score]
+        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity, score, is_new_user) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+        [cafeId, transactionType, phoneNumber, quantity, score, isNewUser]
       );
       return result.rows[0];
     } catch (err) {
@@ -389,11 +389,18 @@ class Statistics {
     }
   }
 
-  // 전화번호 마스킹 (010-****-5678)
+  // 전화번호 마스킹 처리
+  // DB에 이미 마스킹된 형태(010-0000-xxxx)로 저장되어 있으므로 그대로 반환
   static maskPhoneNumber(phone) {
-    if (!phone || phone.length < 10) return '***-****-****';
-    // 01012345678 → 010-****-5678
-    return phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-****-$3');
+    if (!phone) return '***-****-****';
+    // 이미 마스킹된 형태면 그대로 반환 (010-0000-xxxx)
+    if (phone.includes('0000')) return phone;
+    // 혹시 마스킹되지 않은 형태가 있다면 마스킹 처리
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 11) {
+      return `${digits.slice(0, 3)}-****-${digits.slice(-4)}`;
+    }
+    return '***-****-****';
   }
 
   // 액션 타입 한글 변환

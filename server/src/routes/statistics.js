@@ -17,9 +17,22 @@ router.post('/transaction', authenticateToken, async (req, res) => {
     }
 
     // Calculate score if not provided
-    let calculatedScore = score || 0;
-    if (!score && transactionType === 'borrow') {
-      calculatedScore = (quantity || 1) * 10;
+    let calculatedScore = score;
+
+    if (calculatedScore === null || calculatedScore === undefined) {
+      switch (transactionType) {
+        case 'borrow':
+          calculatedScore = 0;  // 대여: 포인트 없음
+          break;
+        case 'return':
+          calculatedScore = (quantity || 1) * 10;  // 반납: 1개당 10포인트
+          break;
+        case 'do':
+          calculatedScore = 0;  // 실천: 프론트엔드에서 계산해서 전달
+          break;
+        default:
+          calculatedScore = 0;
+      }
     }
 
     const result = await Statistics.addTransaction(

@@ -106,7 +106,8 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
 
       const effectiveUser = {
         uid: existingUserResult.user.uid,
-        phoneNumber: existingUserResult.user.mobile
+        phoneNumber: existingUserResult.user.mobile,
+        isNewUser: false
       };
       setCurrentUser(effectiveUser);
 
@@ -241,7 +242,8 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
     const authenticatedUser = {
       uid: result.user.uid,
       phoneNumber: result.user.phoneNumber,
-      mobile: phoneNumber
+      mobile: phoneNumber,
+      isNewUser: result.isNewUser
     };
 
     setCurrentUser(authenticatedUser);
@@ -315,20 +317,13 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
 
     try {
       // Firebase에 반납 처리 (개수만큼 rentals 배열 전달)
-      const result = await processReturn(currentUser.uid, selectedRentals, shopId, shopName);
+      const result = await processReturn(currentUser.uid, selectedRentals, shopId, shopName, currentUser.isNewUser);
 
       if (result.success) {
         const scoreMsg = `${result.score}점 적립 (${result.count}개 반납)`;
         console.log(`✅ 반납 완료: ${scoreMsg}`);
 
-        // PostgreSQL에 거래 기록 추가 (카페 통계 업데이트)
-        try {
-          await addTransaction('return', phoneNumber, quantity);
-          console.log(`📊 거래 기록 완료: ${quantity}개 반납`);
-        } catch (error) {
-          console.error('거래 기록 실패 (통계는 업데이트되지 않음):', error);
-          // 거래 기록 실패해도 반납은 완료되었으므로 계속 진행
-        }
+        // PostgreSQL 거래 기록은 백엔드 /api/users/return에서 자동으로 처리됨
 
         setIsLoading(false);
 

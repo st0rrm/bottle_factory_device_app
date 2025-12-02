@@ -122,7 +122,10 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
             console.log('👤 기존 사용자 - SMS 인증 완료');
           }
 
-          const effectiveUser = result.user;
+          const effectiveUser = {
+            ...result.user,
+            isNewUser: result.isNewUser
+          };
           setCurrentUser(effectiveUser);
 
           // 사용자 대여권 조회 (effectiveUser UID 사용)
@@ -233,7 +236,8 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
 
       const effectiveUser = {
         uid: existingUserResult.user.uid,
-        phoneNumber: existingUserResult.user.mobile
+        phoneNumber: existingUserResult.user.mobile,
+        isNewUser: false
       };
       setCurrentUser(effectiveUser);
 
@@ -350,13 +354,7 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
       if (phoneNumber === '01010000001' || selectedTickets[0]?.id.startsWith('test_voucher')) {
         console.log('✅ 테스트 모드 - 대여 처리 건너뛰기');
 
-        // PostgreSQL에 거래 기록만 추가 (테스트용)
-        try {
-          await addTransaction('borrow', phoneNumber, quantity);
-          console.log(`📊 테스트 거래 기록 완료: ${quantity}개 대여`);
-        } catch (error) {
-          console.error('테스트 거래 기록 실패:', error);
-        }
+        // PostgreSQL 거래 기록은 백엔드 /api/users/borrow에서 자동으로 처리됨 (테스트 모드는 제외)
 
         setIsLoading(false);
         console.log('🏠 홈 화면으로 돌아갑니다...');
@@ -366,7 +364,7 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
       }
 
       // Firebase에 대여 처리 (개수만큼 대여권 배열 전달)
-      const result = await processRental(currentUser.uid, selectedTickets, shopId, shopName);
+      const result = await processRental(currentUser.uid, selectedTickets, shopId, shopName, currentUser.isNewUser);
 
       if (result.success) {
         console.log(`✅ 대여 완료: ${result.count}개 대여권 사용, ${result.count}개 컵 대여`);

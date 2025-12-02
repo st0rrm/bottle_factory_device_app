@@ -422,7 +422,7 @@ export const getUserTickets = async (uid) => {
  * @param {string} shopName - 가게 이름
  * @returns {Promise}
  */
-export const processRental = async (uid, tickets, shopId, shopName) => {
+export const processRental = async (uid, tickets, shopId, shopName, isNewUser = false) => {
   try {
     // 백엔드 API를 통해 대여 처리
     const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -435,7 +435,8 @@ export const processRental = async (uid, tickets, shopId, shopName) => {
         uid,
         tickets,
         shopId,
-        shopName
+        shopName,
+        isNewUser
       })
     });
 
@@ -560,7 +561,7 @@ export const getUserActiveRentals = async (uid, shopId) => {
  * @param {string} shopName - 가게 이름
  * @returns {Promise}
  */
-export const processReturn = async (uid, rentals, shopId, shopName) => {
+export const processReturn = async (uid, rentals, shopId, shopName, isNewUser = false) => {
   try {
     const returnCount = rentals.length;
     const scorePerCup = 10;  // 컵 1개당 10점
@@ -576,7 +577,8 @@ export const processReturn = async (uid, rentals, shopId, shopName) => {
         uid,
         rentals,
         shopId,
-        shopName
+        shopName,
+        isNewUser
       })
     });
 

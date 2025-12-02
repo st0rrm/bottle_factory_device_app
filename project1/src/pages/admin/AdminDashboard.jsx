@@ -401,6 +401,7 @@ function AdminDashboard() {
     const excelData = transactions.map(txn => ({
       'ID': txn.id,
       '거래 유형': txn.transaction_type_kr,
+      '사용자 구분': txn.is_new_user === null ? '-' : txn.is_new_user ? '신규' : '기존',
       '전화번호': txn.phone_number,
       '수량': txn.quantity,
       '포인트': txn.score,
@@ -746,6 +747,7 @@ function AdminDashboard() {
                 <tr>
                   <th>ID</th>
                   <th>거래 유형</th>
+                  <th>사용자 구분</th>
                   <th>전화번호</th>
                   <th>수량</th>
                   <th>포인트</th>
@@ -755,7 +757,7 @@ function AdminDashboard() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center' }}>
+                    <td colSpan="7" style={{ textAlign: 'center' }}>
                       거래 내역이 없습니다.
                     </td>
                   </tr>
@@ -767,6 +769,9 @@ function AdminDashboard() {
                         <span className={`transaction-badge transaction-${txn.transaction_type}`}>
                           {txn.transaction_type_kr}
                         </span>
+                      </td>
+                      <td>
+                        {txn.is_new_user === null ? '-' : txn.is_new_user ? '신규' : '기존'}
                       </td>
                       <td>{txn.phone_number}</td>
                       <td>{txn.quantity}</td>

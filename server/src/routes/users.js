@@ -5,6 +5,29 @@ const Statistics = require('../models/Statistics');
 const pool = require('../config/database');
 
 /**
+ * Mask phone number for privacy (010-0000-xxxx format)
+ * @param {string} phone - Phone number (e.g., "01012345678" or "010-1234-5678")
+ * @returns {string} Masked phone number (e.g., "010-0000-5678")
+ */
+function maskPhoneNumber(phone) {
+  if (!phone) return null;
+
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+
+  // Check if valid Korean mobile number (11 digits starting with 010)
+  if (digits.length !== 11 || !digits.startsWith('010')) {
+    return null;
+  }
+
+  // Extract last 4 digits
+  const lastFour = digits.slice(-4);
+
+  // Return masked format: 010-0000-xxxx
+  return `010-0000-${lastFour}`;
+}
+
+/**
  * Get server date in KST (Korea Standard Time)
  * Returns year and month for statistics tracking
  */
@@ -128,7 +151,7 @@ async function addStatistics(statisticsRef, items) {
  */
 router.post('/rental', async (req, res) => {
   try {
-    const { uid, tickets, shopId, shopName } = req.body;
+    const { uid, tickets, shopId, shopName, isNewUser } = req.body;
 
     // Validate required fields
     if (!uid || !tickets || !shopId || !shopName) {
@@ -228,12 +251,15 @@ router.post('/rental', async (req, res) => {
 
         if (cafeResult.rows.length > 0) {
           const cafeId = cafeResult.rows[0].id;
+          // Mask phone number (010-0000-xxxx format)
+          const maskedPhone = maskPhoneNumber(userData.mobile);
           await Statistics.addTransaction(
             cafeId,
             'borrow',
-            null,
+            maskedPhone,
             rentalCount,
-            rentalScore
+            rentalScore,
+            isNewUser
           );
         }
       }
@@ -275,7 +301,7 @@ router.post('/rental', async (req, res) => {
  */
 router.post('/return', async (req, res) => {
   try {
-    const { uid, rentals, shopId, shopName } = req.body;
+    const { uid, rentals, shopId, shopName, isNewUser } = req.body;
 
     // Validate required fields
     if (!uid || !rentals || !shopId || !shopName) {
@@ -321,6 +347,10 @@ router.post('/return', async (req, res) => {
 
     // 3. Process scoring and savings (모든 반납에 점수 적립)
     const totalScore = scorePerCup * returnCount;  // 모든 반납에 대해 점수 계산
+
+    // Get user data for phone number masking
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data();
 
     // Update user document (score, coin)
     await db.collection('users').doc(uid).update({
@@ -371,12 +401,15 @@ router.post('/return', async (req, res) => {
 
         if (cafeResult.rows.length > 0) {
           const cafeId = cafeResult.rows[0].id;
+          // Mask phone number (010-0000-xxxx format)
+          const maskedPhone = maskPhoneNumber(userData.mobile);
           await Statistics.addTransaction(
             cafeId,
             'return',
-            null,
+            maskedPhone,
             returnCount,
-            totalScore
+            totalScore,
+            isNewUser
           );
         }
       }
@@ -418,7 +451,7 @@ router.post('/return', async (req, res) => {
  */
 router.post('/do-actions', async (req, res) => {
   try {
-    const { uid, shopId, items } = req.body;
+    const { uid, shopId, items, isNewUser } = req.body;
 
     // Validate required fields
     if (!uid || !shopId || !items) {
@@ -450,6 +483,10 @@ router.post('/do-actions', async (req, res) => {
     // Calculate bottle_all (only tumbler/returnmecup items)
     const TUMBLER_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 텀블러/리턴미컵
     const bottleCount = items[TUMBLER_ITEM_ID] || 0;
+
+    // Get user data for phone number masking
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data();
 
     // 1. Update user document (score, coin, bottle_all, saving_all)
     await db.collection('users').doc(uid).update({
@@ -487,6 +524,28 @@ router.post('/do-actions', async (req, res) => {
     // 7. Update global savings collection
     const globalSavingsRef = db.collection('savings');
     await addStatistics(globalSavingsRef, items);
+
+    // 8. PostgreSQL에 거래 기록 추가 (통계용)
+    try {
+      const cafeResult = await pool.query('SELECT id FROM cafes WHERE cafe_id = $1', [shopId]);
+      if (cafeResult.rows.length > 0) {
+        const cafeId = cafeResult.rows[0].id;
+        // Mask phone number (010-0000-xxxx format)
+        const maskedPhone = maskPhoneNumber(userData.mobile);
+        await Statistics.addTransaction(
+          cafeId,
+          'do',
+          maskedPhone,
+          totalCount,
+          totalScore,
+          isNewUser
+        );
+        console.log(`📊 PostgreSQL 실천 기록 완료: ${totalCount}개 행동, ${totalScore}점`);
+      }
+    } catch (pgError) {
+      console.error('⚠️ PostgreSQL 실천 기록 실패:', pgError);
+      // PostgreSQL 실패해도 Firebase 기록은 성공했으므로 계속 진행
+    }
 
     res.json({
       success: true,

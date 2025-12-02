@@ -166,7 +166,8 @@ export default function DoModal({ onClose, onSuccess }) {
 
       const effectiveUser = {
         uid: existingUserResult.user.uid,
-        phoneNumber: existingUserResult.user.mobile
+        phoneNumber: existingUserResult.user.mobile,
+        isNewUser: false
       };
       setCurrentUser(effectiveUser);
       setShowActionSelection(true);
@@ -283,6 +284,7 @@ export default function DoModal({ onClose, onSuccess }) {
       uid: result.user.uid,
       phoneNumber: result.user.phoneNumber,
       mobile: phoneNumber,
+      isNewUser: result.isNewUser
     };
 
     setCurrentUser(authenticatedUser);
@@ -370,7 +372,8 @@ export default function DoModal({ onClose, onSuccess }) {
         body: JSON.stringify({
           uid: currentUser.uid,
           shopId: shopId,
-          items: itemCounts
+          items: itemCounts,
+          isNewUser: currentUser.isNewUser
         })
       });
 
@@ -383,13 +386,7 @@ export default function DoModal({ onClose, onSuccess }) {
       const apiResult = await response.json();
       console.log('✅ Firestore 업데이트 완료:', apiResult);
 
-      // ✅ PostgreSQL에 기록 (통계용)
-      try {
-        await addTransaction('do', phoneNumber, selectedActions.length, totalScore);
-        console.log(`✅ 실천 기록 완료: ${selectedActions.length}개 행동, 총 ${totalScore}점`);
-      } catch (error) {
-        console.error('⚠️ PostgreSQL 기록 실패:', error);
-      }
+      // PostgreSQL 거래 기록은 백엔드 /api/users/do-actions에서 자동으로 처리됨
 
       setIsLoading(false);
       onSuccess?.(totalScore);
