@@ -12,6 +12,7 @@
 }
 
 .settings-modal {
+  position: relative;
   background: white;
   border-radius: clamp(12px, 2vw, 16px);
   padding: clamp(16px, 3vw, 24px);
@@ -19,6 +20,26 @@
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+/* Close Button */
+.settings-close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+
+.settings-close-button:hover {
+  opacity: 0.7;
 }
 
 .settings-modal h2 {
@@ -128,24 +149,6 @@
   background: #d32f2f;
 }
 
-.close-btn {
-  width: 100%;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: clamp(12px, 2.5vh, 16px);
-  border-radius: clamp(6px, 1vw, 8px);
-  cursor: pointer;
-  font-size: clamp(14px, 2.5vw, 16px);
-  font-weight: 600;
-  margin-top: clamp(12px, 2vh, 16px);
-  transition: background 0.2s;
-}
-
-.close-btn:hover {
-  background: #45a049;
-}
-
 /* Toggle Option */
 .toggle-option {
   display: flex;
@@ -197,4 +200,133 @@
   font-size: clamp(12px, 2vw, 14px);
   color: #333;
   font-weight: 500;
+}
+
+/* Cafe Name Section */
+.cafe-name-section {
+  padding: clamp(10px, 1.8vh, 12px) 0;
+}
+
+.cafe-name-display {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 12px);
+}
+
+.cafe-name-current {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.5vw, 10px);
+  font-size: clamp(14px, 2.5vw, 16px);
+}
+
+.cafe-name-current strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.custom-badge {
+  display: inline-block;
+  background: #4CAF50;
+  color: white;
+  padding: clamp(2px, 0.5vh, 4px) clamp(6px, 1vw, 8px);
+  border-radius: clamp(3px, 0.5vw, 4px);
+  font-size: clamp(10px, 1.8vw, 12px);
+  font-weight: 500;
+}
+
+.cafe-name-buttons {
+  display: flex;
+  gap: clamp(8px, 1.5vw, 10px);
+}
+
+.edit-name-btn,
+.reset-name-btn {
+  padding: clamp(8px, 1.5vh, 10px) clamp(14px, 2.5vw, 18px);
+  border: none;
+  border-radius: clamp(4px, 0.8vw, 6px);
+  font-size: clamp(12px, 2vw, 14px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-name-btn {
+  background: #2196F3;
+  color: white;
+}
+
+.edit-name-btn:hover {
+  background: #1976D2;
+}
+
+.reset-name-btn {
+  background: #FF9800;
+  color: white;
+}
+
+.reset-name-btn:hover {
+  background: #F57C00;
+}
+
+.cafe-name-edit {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 12px);
+}
+
+.cafe-name-input {
+  width: 100%;
+  padding: clamp(10px, 1.8vh, 12px);
+  border: 2px solid #ddd;
+  border-radius: clamp(6px, 1vw, 8px);
+  font-size: clamp(14px, 2.5vw, 16px);
+  transition: border-color 0.2s;
+}
+
+.cafe-name-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.cafe-name-edit-buttons {
+  display: flex;
+  gap: clamp(8px, 1.5vw, 10px);
+}
+
+.save-name-btn,
+.cancel-name-btn {
+  flex: 1;
+  padding: clamp(10px, 1.8vh, 12px);
+  border: none;
+  border-radius: clamp(6px, 1vw, 8px);
+  font-size: clamp(14px, 2.5vw, 16px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-name-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.save-name-btn:hover {
+  background: #45a049;
+}
+
+.cancel-name-btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.cancel-name-btn:hover {
+  background: #e0e0e0;
+}
+
+.cafe-name-hint {
+  margin: 0;
+  font-size: clamp(11px, 2vw, 13px);
+  color: #666;
+  font-style: italic;
 }

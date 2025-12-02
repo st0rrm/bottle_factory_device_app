@@ -5,6 +5,7 @@ import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
 import DoModal from '../../components/DoModal';
 import SettingsModal from '../../components/SettingsModal';
+import AdminLogin from '../admin/AdminLogin';
 import helpIcon from '../../assets/images/help.svg';
 import hillImage from '../../assets/images/front_hills_new 2.png'
 import Waterpoint from '../../assets/images/waterpoint.png'
@@ -29,6 +30,7 @@ function HomeScreen() {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showDoModal, setShowDoModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
   const [showSurveyQRModal, setShowSurveyQRModal] = useState(false);
@@ -207,6 +209,11 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     }
 
     const cafe = JSON.parse(userData);
+
+    // 화면 표시용 이름 추가 (cafeName은 원본 유지 - Firebase/API용)
+    const customCafeName = localStorage.getItem('customCafeName');
+    cafe.displayName = customCafeName || cafe.cafeName;
+
     setCafeInfo(cafe);
 
     // Firebase shops document ID 조회 (실시간 리스너용)
@@ -315,10 +322,10 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
             // ✨ QR 모달이 열려있으면 먼저 닫기
             setShowReturnModal(false);
 
-            // ✨ QR 반납 후 2~3초 뒤 설문 QR 모달 표시
+            // ✨ QR 반납 후 1.5초 뒤 설문 QR 모달 표시
             setTimeout(() => {
               setShowSurveyQRModal(true);
-            }, 2500);
+            }, 1500);
           }
         }
       });
@@ -365,10 +372,10 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
             // ✨ QR 모달이 열려있으면 먼저 닫기
             setShowVerifyModal(false);
 
-            // ✨ QR 대여 후 2~3초 뒤 설문 QR 모달 표시
+            // ✨ QR 대여 후 1.5초 뒤 설문 QR 모달 표시
             setTimeout(() => {
               setShowSurveyQRModal(true);
-            }, 2500);
+            }, 1500);
           }
         }
       });
@@ -414,10 +421,10 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       setTreeScore(0);
     }, 3000);
 
-    // 스낵바 종료(1초) + 2초 대기 = 총 3초 후 설문 QR 모달 표시
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
     setTimeout(() => {
       setShowSurveyQRModal(true);
-    }, 3000);
+    }, 1500);
   };
 
   const handleReturnSuccess = () => {
@@ -431,10 +438,10 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       setTreeScore(0);
     }, 3000);
 
-    // 스낵바 종료(1초) + 2초 대기 = 총 3초 후 설문 QR 모달 표시
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
     setTimeout(() => {
       setShowSurveyQRModal(true);
-    }, 3000);
+    }, 1500);
   };
 
   const handleDoSuccess = (score) => {
@@ -448,10 +455,10 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       setTreeScore(0);
     }, 3000);
 
-    // 스낵바 종료(1초) + 2초 대기 = 총 3초 후 설문 QR 모달 표시
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
     setTimeout(() => {
       setShowSurveyQRModal(true);
-    }, 3000);
+    }, 1500);
   };
 
   // loading state
@@ -464,7 +471,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       {/* Header Section */}
       <div className="header-section">
         <div className="header-top">
-          <h1 className="cafe-name">{cafeInfo.cafeName}</h1>
+          <h1 className="cafe-name">{cafeInfo.displayName || cafeInfo.cafeName}</h1>
         </div>
 
         <div className="total-score">
@@ -487,7 +494,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       {/* Settings Button */}
       <button
         className="settings-button"
-        onClick={() => setShowSettingsModal(true)}
+        onClick={() => setShowAdminLoginModal(true)}
         aria-label="설정"
       >
         ⚙️
@@ -599,10 +606,30 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
         />
       }
 
+      {/* Admin Login Modal (설정 접근용) */}
+      {showAdminLoginModal && (
+        <AdminLogin
+          onClose={() => setShowAdminLoginModal(false)}
+          onLoginSuccess={() => {
+            setShowAdminLoginModal(false);
+            setShowSettingsModal(true);
+          }}
+          forSettings={true}
+        />
+      )}
+
+      {/* Settings Modal */}
       {showSettingsModal && (
         <SettingsModal
           isOpen={showSettingsModal}
           onClose={() => setShowSettingsModal(false)}
+          onCafeNameChange={(newName) => {
+            // 화면 표시용 이름만 변경 (cafeName은 원본 유지)
+            setCafeInfo(prev => ({
+              ...prev,
+              displayName: newName
+            }));
+          }}
         />
       )}
 
