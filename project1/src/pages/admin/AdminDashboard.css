@@ -520,6 +520,32 @@
   color: #6b7280;
 }
 
+/* Transaction Badges */
+.transaction-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.transaction-badge.transaction-borrow {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.transaction-badge.transaction-return {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.transaction-badge.transaction-do {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .dashboard-content {

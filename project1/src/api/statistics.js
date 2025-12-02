@@ -1,4 +1,5 @@
 import apiClient from './axios';
+import * as XLSX from 'xlsx';
 
 // 현재 카페의 통계 조회
 export const getMyStats = async () => {
@@ -87,5 +88,30 @@ export const resetCafeStats = async (cafeId) => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: '카페 통계 초기화 중 오류가 발생했습니다.' };
+  }
+};
+
+// 카페 거래 상세 내역 조회 (관리자 전용)
+export const getCafeTransactionDetails = async (cafeId, options = {}) => {
+  try {
+    const { limit = 100, offset = 0, type = null } = options;
+
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString()
+    });
+
+    if (type) {
+      params.append('type', type);
+    }
+
+    const response = await apiClient.get(
+      `/statistics/cafe/${cafeId}/transactions?${params.toString()}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || {
+      error: '거래 내역을 가져오는 중 오류가 발생했습니다.'
+    };
   }
 };

@@ -143,4 +143,34 @@ router.delete('/cafe/:cafeId/reset', authenticateAdmin, async (req, res) => {
   }
 });
 
+// 특정 카페의 거래 상세 내역 조회 (관리자 전용)
+router.get('/cafe/:cafeId/transactions', authenticateAdmin, async (req, res) => {
+  try {
+    const cafeId = parseInt(req.params.cafeId);
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    const transactionType = req.query.type || null;
+
+    if (isNaN(cafeId)) {
+      return res.status(400).json({ error: 'Invalid cafe ID' });
+    }
+
+    const result = await Statistics.getTransactionDetails(
+      cafeId,
+      limit,
+      offset,
+      transactionType
+    );
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json({ error: result.error });
+    }
+  } catch (err) {
+    console.error('Get transaction details error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

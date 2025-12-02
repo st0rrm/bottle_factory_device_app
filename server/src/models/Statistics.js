@@ -334,6 +334,77 @@ class Statistics {
       throw err;
     }
   }
+
+  // 거래 상세 내역 조회 (개별 거래 내역)
+  static async getTransactionDetails(cafeId, limit = 100, offset = 0, transactionType = null) {
+    try {
+      let query = `
+        SELECT
+          t.id,
+          t.transaction_type,
+          t.phone_number,
+          t.quantity,
+          t.score,
+          t.created_at,
+          c.cafe_name,
+          c.cafe_id
+        FROM transactions t
+        JOIN cafes c ON t.cafe_id = c.id
+        WHERE t.cafe_id = $1
+      `;
+
+      const params = [cafeId];
+
+      // 타입 필터 (선택사항)
+      if (transactionType) {
+        query += ` AND t.transaction_type = $${params.length + 1}`;
+        params.push(transactionType);
+      }
+
+      query += `
+        ORDER BY t.created_at DESC
+        LIMIT $${params.length + 1}
+        OFFSET $${params.length + 2}
+      `;
+
+      params.push(limit, offset);
+
+      const result = await pool.query(query, params);
+
+      // 전화번호 마스킹 처리
+      const masked = result.rows.map(row => ({
+        ...row,
+        phone_number: this.maskPhoneNumber(row.phone_number),
+        transaction_type_kr: this.getTransactionTypeKorean(row.transaction_type)
+      }));
+
+      return {
+        success: true,
+        data: masked,
+        total: result.rowCount
+      };
+    } catch (error) {
+      console.error('거래 상세 내역 조회 실패:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // 전화번호 마스킹 (010-****-5678)
+  static maskPhoneNumber(phone) {
+    if (!phone || phone.length < 10) return '***-****-****';
+    // 01012345678 → 010-****-5678
+    return phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-****-$3');
+  }
+
+  // 액션 타입 한글 변환
+  static getTransactionTypeKorean(type) {
+    const types = {
+      'borrow': '대여',
+      'return': '반납',
+      'do': '실천'
+    };
+    return types[type] || type;
+  }
 }
 
 module.exports = Statistics;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import { getCafes, createCafe, updateCafe, updateCafePassword, deleteCafe } from '../../api/cafe';
 import { logout } from '../../api/auth';
-import { getAllCafesStats, resetCafeStats } from '../../api/statistics';
+import { getAllCafesStats, resetCafeStats, getCafeTransactionDetails } from '../../api/statistics';
 import { getAllCafesBehaviorStats, getAllCafesDailyStats } from '../../api/behaviors';
 import * as XLSX from 'xlsx';
 
@@ -19,6 +19,10 @@ function AdminDashboard() {
   const [adminInfo, setAdminInfo] = useState(null);
   const [showStatsView, setShowStatsView] = useState(false);
   const [showDailyView, setShowDailyView] = useState(false);
+  const [showTransactionsView, setShowTransactionsView] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [selectedTransactionCafe, setSelectedTransactionCafe] = useState('');
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('cafe_name'); // cafe_name, total_transactions, today_count, weekly_count
   const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
@@ -123,12 +127,41 @@ function AdminDashboard() {
     loadStats();
     setShowStatsView(true);
     setShowDailyView(false);
+    setShowTransactionsView(false);
   };
 
   const handleShowDailyStats = () => {
     loadDailyStats();
     setShowDailyView(true);
     setShowStatsView(false);
+    setShowTransactionsView(false);
+  };
+
+  const handleShowTransactions = () => {
+    setShowTransactionsView(true);
+    setShowStatsView(false);
+    setShowDailyView(false);
+    if (cafes.length > 0 && !selectedTransactionCafe) {
+      setSelectedTransactionCafe(cafes[0].id);
+      loadTransactionDetails(cafes[0].id);
+    } else if (selectedTransactionCafe) {
+      loadTransactionDetails(selectedTransactionCafe);
+    }
+  };
+
+  const loadTransactionDetails = async (cafeId) => {
+    try {
+      const options = {
+        limit: 100,
+        offset: 0,
+        type: transactionTypeFilter === 'all' ? null : transactionTypeFilter
+      };
+      const result = await getCafeTransactionDetails(cafeId, options);
+      setTransactions(result.data || []);
+    } catch (error) {
+      console.error('거래 내역 불러오기 실패:', error);
+      alert('거래 내역을 불러오는데 실패했습니다.');
+    }
   };
 
   // statsDays, dateMode, startDate, endDate가 변경되면 일별 통계 다시 불러오기
@@ -137,6 +170,13 @@ function AdminDashboard() {
       loadDailyStats();
     }
   }, [statsDays, dateMode, startDate, endDate]);
+
+  // 거래 내역 필터 변경 시 다시 불러오기
+  useEffect(() => {
+    if (showTransactionsView && selectedTransactionCafe) {
+      loadTransactionDetails(selectedTransactionCafe);
+    }
+  }, [transactionTypeFilter, selectedTransactionCafe]);
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -340,6 +380,33 @@ function AdminDashboard() {
     XLSX.writeFile(workbook, fileName);
   };
 
+  // 거래 내역 엑셀 다운로드
+  const handleExportTransactionsToExcel = () => {
+    if (transactions.length === 0) {
+      alert('다운로드할 거래 내역이 없습니다.');
+      return;
+    }
+
+    const selectedCafe = cafes.find(c => c.id === parseInt(selectedTransactionCafe));
+    const cafeName = selectedCafe?.cafe_name || '알 수 없음';
+
+    const excelData = transactions.map(txn => ({
+      'ID': txn.id,
+      '거래 유형': txn.transaction_type_kr,
+      '전화번호': txn.phone_number,
+      '수량': txn.quantity,
+      '포인트': txn.score,
+      '거래 일시': new Date(txn.created_at).toLocaleString('ko-KR')
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '거래 내역');
+
+    const fileName = `${cafeName}_거래내역_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   // 정렬 변경
   const handleSortChange = (newSortBy) => {
     if (sortBy === newSortBy) {
@@ -403,12 +470,12 @@ function AdminDashboard() {
       <main className="dashboard-content">
         <div className="content-header">
           <h2 className="section-title">
-            {showDailyView ? '일별 통계' : showStatsView ? '카페 통계' : '카페 관리'}
+            {showTransactionsView ? '거래 내역' : showDailyView ? '일별 통계' : showStatsView ? '카페 통계' : '카페 관리'}
           </h2>
           <div className="header-buttons">
             <button
-              className={!showStatsView && !showDailyView ? 'view-button active' : 'view-button'}
-              onClick={() => { setShowStatsView(false); setShowDailyView(false); }}
+              className={!showStatsView && !showDailyView && !showTransactionsView ? 'view-button active' : 'view-button'}
+              onClick={() => { setShowStatsView(false); setShowDailyView(false); setShowTransactionsView(false); }}
             >
               카페 관리
             </button>
@@ -425,9 +492,15 @@ function AdminDashboard() {
               일별 통계
             </button>
             <button
+              className={showTransactionsView ? 'view-button active' : 'view-button'}
+              onClick={handleShowTransactions}
+            >
+              거래 내역
+            </button>
+            <button
               className="create-button"
               onClick={openCreateModal}
-              style={{ visibility: showStatsView || showDailyView ? 'hidden' : 'visible' }}
+              style={{ visibility: showStatsView || showDailyView || showTransactionsView ? 'hidden' : 'visible' }}
             >
               + 카페 추가
             </button>
@@ -435,7 +508,7 @@ function AdminDashboard() {
         </div>
 
         {/* 검색 및 필터 바 */}
-        {!showDailyView && (
+        {!showDailyView && !showTransactionsView && (
           <div className="filter-bar">
             <input
               type="text"
@@ -486,6 +559,38 @@ function AdminDashboard() {
                 </>
               )}
             </div>
+          </div>
+        )}
+
+        {/* 거래 내역 필터 바 */}
+        {showTransactionsView && (
+          <div className="filter-bar">
+            <select
+              className="cafe-filter-select"
+              value={selectedTransactionCafe}
+              onChange={(e) => setSelectedTransactionCafe(e.target.value)}
+            >
+              {cafes.map((cafe) => (
+                <option key={cafe.id} value={cafe.id}>
+                  {cafe.cafe_name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="sort-select"
+              value={transactionTypeFilter}
+              onChange={(e) => setTransactionTypeFilter(e.target.value)}
+            >
+              <option value="all">전체 거래</option>
+              <option value="borrow">대여</option>
+              <option value="return">반납</option>
+              <option value="do">실천</option>
+            </select>
+
+            <button className="export-button" onClick={handleExportTransactionsToExcel}>
+              📊 엑셀 다운로드
+            </button>
           </div>
         )}
 
@@ -617,6 +722,46 @@ function AdminDashboard() {
                     </tr>
                   ));
                 })()}
+              </tbody>
+            </table>
+          </div>
+        ) : showTransactionsView ? (
+          /* Transactions View */
+          <div className="cafe-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>거래 유형</th>
+                  <th>전화번호</th>
+                  <th>수량</th>
+                  <th>포인트</th>
+                  <th>거래 일시</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center' }}>
+                      거래 내역이 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  transactions.map((txn) => (
+                    <tr key={txn.id}>
+                      <td>{txn.id}</td>
+                      <td>
+                        <span className={`transaction-badge transaction-${txn.transaction_type}`}>
+                          {txn.transaction_type_kr}
+                        </span>
+                      </td>
+                      <td>{txn.phone_number}</td>
+                      <td>{txn.quantity}</td>
+                      <td>{txn.score}</td>
+                      <td>{new Date(txn.created_at).toLocaleString('ko-KR')}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
