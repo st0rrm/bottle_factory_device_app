@@ -141,15 +141,23 @@ function AdminDashboard() {
     setShowTransactionsView(true);
     setShowStatsView(false);
     setShowDailyView(false);
+
+    // 카페가 선택되지 않았으면 첫 번째 카페 선택 (useEffect에서 자동 로딩)
     if (cafes.length > 0 && !selectedTransactionCafe) {
       setSelectedTransactionCafe(cafes[0].id);
-      loadTransactionDetails(cafes[0].id);
-    } else if (selectedTransactionCafe) {
-      loadTransactionDetails(selectedTransactionCafe);
+    } else if (cafes.length === 0) {
+      alert('등록된 카페가 없습니다.');
     }
+    // selectedTransactionCafe가 이미 있으면 useEffect가 자동으로 로딩
   };
 
   const loadTransactionDetails = async (cafeId) => {
+    if (!cafeId) {
+      console.error('Invalid cafeId:', cafeId);
+      alert('카페를 선택해주세요.');
+      return;
+    }
+
     try {
       const options = {
         limit: 100,
@@ -176,7 +184,7 @@ function AdminDashboard() {
     if (showTransactionsView && selectedTransactionCafe) {
       loadTransactionDetails(selectedTransactionCafe);
     }
-  }, [transactionTypeFilter, selectedTransactionCafe]);
+  }, [transactionTypeFilter, selectedTransactionCafe, showTransactionsView]);
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -569,12 +577,17 @@ function AdminDashboard() {
               className="cafe-filter-select"
               value={selectedTransactionCafe}
               onChange={(e) => setSelectedTransactionCafe(e.target.value)}
+              disabled={cafes.length === 0}
             >
-              {cafes.map((cafe) => (
-                <option key={cafe.id} value={cafe.id}>
-                  {cafe.cafe_name}
-                </option>
-              ))}
+              {cafes.length === 0 ? (
+                <option value="">카페 없음</option>
+              ) : (
+                cafes.map((cafe) => (
+                  <option key={cafe.id} value={cafe.id}>
+                    {cafe.cafe_name}
+                  </option>
+                ))
+              )}
             </select>
 
             <select
