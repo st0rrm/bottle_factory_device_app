@@ -142,11 +142,11 @@ class Statistics {
     }
   }
   // 거래 기록 추가 (대여, 반납, 또는 실천)
-  static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0, isNewUser = null) {
+  static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0, isNewUser = null, source = 'web') {
     try {
       const result = await pool.query(
-        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity, score, is_new_user) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-        [cafeId, transactionType, phoneNumber, quantity, score, isNewUser]
+        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity, score, is_new_user, source) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+        [cafeId, transactionType, phoneNumber, quantity, score, isNewUser, source]
       );
       return result.rows[0];
     } catch (err) {

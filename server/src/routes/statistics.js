@@ -40,7 +40,9 @@ router.post('/transaction', authenticateToken, async (req, res) => {
       transactionType,
       phoneNumber || null,
       quantity || 1,
-      calculatedScore
+      calculatedScore,
+      null,  // isNewUser
+      null   // source: 수동 거래
     );
 
     res.status(201).json({

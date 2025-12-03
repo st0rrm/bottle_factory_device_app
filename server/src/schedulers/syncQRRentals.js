@@ -72,9 +72,11 @@ async function syncSingleRental(docId, data) {
     await Statistics.addTransaction(
       cafeId,
       'borrow',
-      null, // QR 대여는 전화번호 없음
-      1,    // 1개 대여
-      30    // 30점
+      null,  // QR 대여는 전화번호 없음
+      1,     // 1개 대여
+      30,    // 30점
+      false, // isNewUser: QR 스캔 = 앱 설치 기존 유저
+      'qr'   // source: QR 스캔
     );
 
     // Firebase에 동기화 플래그 설정
