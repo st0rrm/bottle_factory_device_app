@@ -114,6 +114,7 @@
   font-size: clamp(0.75rem, 1.5vw + 0.75vh, 1.25rem);
   font-weight: var(--pretendard-medium);
   color: #44748a;
+  margin-right: 1rem;
 }
 
 .info-value {
