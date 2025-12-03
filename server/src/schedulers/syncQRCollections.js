@@ -38,25 +38,21 @@ async function syncSingleCollection(docId, data) {
     const score = data.score || 0;
     const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 리턴미컵(텀블러) 아이템 ID
 
-    // action_type 결정: collect_items 확인
-    let actionType = data.action_type; // 명시적으로 지정된 경우 우선
+    // collect_items로 반납/실천 판단
+    let actionType = 'return'; // 기본값
+    try {
+      const collectItemsSnapshot = await db.collection('collect_history')
+        .doc(docId)
+        .collection('collect_items')
+        .doc(RETURNMECUP_ITEM_ID)
+        .get();
 
-    if (!actionType) {
-      // action_type이 없으면 collect_items로 판단
-      try {
-        const collectItemsSnapshot = await db.collection('collect_history')
-          .doc(docId)
-          .collection('collect_items')
-          .doc(RETURNMECUP_ITEM_ID)
-          .get();
-
-        // 리턴미컵 아이템이 있고 score가 10점이면 반납, 아니면 실천
-        const isReturn = collectItemsSnapshot.exists && score === 10;
-        actionType = isReturn ? 'return' : 'do';
-      } catch (itemError) {
-        console.warn(`⚠️ [syncQRCollection] collect_items 확인 실패: ${docId}`, itemError);
-        actionType = 'return'; // 에러 시 기본값
-      }
+      // 리턴미컵 아이템이 있고 score가 10점이면 반납, 아니면 실천
+      const isReturn = collectItemsSnapshot.exists && score === 10;
+      actionType = isReturn ? 'return' : 'do';
+    } catch (itemError) {
+      console.warn(`⚠️ [syncQRCollection] collect_items 확인 실패: ${docId}`, itemError);
+      // 에러 시 기본값 'return' 사용
     }
 
     // 가게 정보 조회
