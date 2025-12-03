@@ -54,6 +54,9 @@ export default function RentalConfirmationView({
       {/* Info Text */}
       <div className="sms-notification-container">
         <div className="sms-info-text">
+          보상은 리턴미컵을 반납한 이후 적립됩니다.
+        </div>
+        <div className="sms-info-text">
           반납일자 알림 문자가 자동으로 발송됩니다.
         </div>
       </div>
