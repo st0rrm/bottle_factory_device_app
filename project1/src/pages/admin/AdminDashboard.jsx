@@ -23,7 +23,7 @@ function AdminDashboard() {
   const [showTransactionsView, setShowTransactionsView] = useState(false);
   const [showRentalsView, setShowRentalsView] = useState(false);
   const [transactions, setTransactions] = useState([]);
-  const [selectedTransactionCafe, setSelectedTransactionCafe] = useState('');
+  const [selectedTransactionCafe, setSelectedTransactionCafe] = useState('all');
   const [transactionTypeFilter, setTransactionTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('cafe_name'); // cafe_name, total_transactions, today_count, weekly_count
@@ -149,13 +149,11 @@ function AdminDashboard() {
     setShowDailyView(false);
     setShowRentalsView(false);
 
-    // 카페가 선택되지 않았으면 첫 번째 카페 선택 (useEffect에서 자동 로딩)
-    if (cafes.length > 0 && !selectedTransactionCafe) {
-      setSelectedTransactionCafe(cafes[0].id);
-    } else if (cafes.length === 0) {
+    // 카페가 없으면 경고
+    if (cafes.length === 0) {
       alert('등록된 카페가 없습니다.');
     }
-    // selectedTransactionCafe가 이미 있으면 useEffect가 자동으로 로딩
+    // selectedTransactionCafe가 'all'로 설정되어 있으므로 useEffect가 자동으로 모든 카페의 거래 내역 로딩
   };
 
   const handleShowRentals = () => {
@@ -179,8 +177,27 @@ function AdminDashboard() {
         offset: 0,
         type: transactionTypeFilter === 'all' ? null : transactionTypeFilter
       };
-      const result = await getCafeTransactionDetails(cafeId, options);
-      setTransactions(result.data || []);
+
+      // '전체' 선택 시 모든 카페의 거래 내역 가져오기
+      if (cafeId === 'all') {
+        const allTransactions = [];
+        for (const cafe of cafes) {
+          try {
+            const result = await getCafeTransactionDetails(cafe.id, options);
+            if (result.data && result.data.length > 0) {
+              allTransactions.push(...result.data);
+            }
+          } catch (err) {
+            console.error(`카페 ${cafe.cafe_name} 거래 내역 불러오기 실패:`, err);
+          }
+        }
+        // 거래 일시 기준 내림차순 정렬
+        allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setTransactions(allTransactions);
+      } else {
+        const result = await getCafeTransactionDetails(cafeId, options);
+        setTransactions(result.data || []);
+      }
     } catch (error) {
       console.error('거래 내역 불러오기 실패:', error);
       alert('거래 내역을 불러오는데 실패했습니다.');
@@ -420,17 +437,34 @@ function AdminDashboard() {
     }
 
     const selectedCafe = cafes.find(c => c.id === parseInt(selectedTransactionCafe));
-    const cafeName = selectedCafe?.cafe_name || '알 수 없음';
+    const cafeName = selectedTransactionCafe === 'all' ? '전체카페' : (selectedCafe?.cafe_name || '알 수 없음');
 
-    const excelData = transactions.map(txn => ({
-      'ID': txn.id,
-      '거래 유형': txn.transaction_type_kr,
-      '사용자 구분': txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존',
-      '전화번호': txn.phone_number,
-      '수량': txn.quantity,
-      '포인트': txn.score,
-      '거래 일시': new Date(txn.created_at).toLocaleString('ko-KR')
-    }));
+    const excelData = transactions.map(txn => {
+      const data = {
+        'ID': txn.id,
+        '거래 유형': txn.transaction_type_kr,
+        '사용자 구분': txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존',
+        '전화번호': txn.phone_number,
+        '수량': txn.quantity,
+        '포인트': txn.score,
+        '거래 일시': new Date(txn.created_at).toLocaleString('ko-KR')
+      };
+
+      // '전체' 선택 시 카페명 추가
+      if (selectedTransactionCafe === 'all') {
+        return {
+          'ID': data.ID,
+          '카페명': txn.cafe_name,
+          '거래 유형': data['거래 유형'],
+          '사용자 구분': data['사용자 구분'],
+          '전화번호': data['전화번호'],
+          '수량': data['수량'],
+          '포인트': data['포인트'],
+          '거래 일시': data['거래 일시']
+        };
+      }
+      return data;
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
@@ -613,11 +647,14 @@ function AdminDashboard() {
               {cafes.length === 0 ? (
                 <option value="">카페 없음</option>
               ) : (
-                cafes.map((cafe) => (
-                  <option key={cafe.id} value={cafe.id}>
-                    {cafe.cafe_name}
-                  </option>
-                ))
+                <>
+                  <option value="all">전체 카페</option>
+                  {cafes.map((cafe) => (
+                    <option key={cafe.id} value={cafe.id}>
+                      {cafe.cafe_name}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
 
@@ -851,6 +888,7 @@ function AdminDashboard() {
               <thead>
                 <tr>
                   <th>ID</th>
+                  {selectedTransactionCafe === 'all' && <th>카페명</th>}
                   <th>거래 유형</th>
                   <th>사용자 구분</th>
                   <th>전화번호</th>
@@ -862,7 +900,7 @@ function AdminDashboard() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center' }}>
+                    <td colSpan={selectedTransactionCafe === 'all' ? 8 : 7} style={{ textAlign: 'center' }}>
                       거래 내역이 없습니다.
                     </td>
                   </tr>
@@ -870,6 +908,7 @@ function AdminDashboard() {
                   transactions.map((txn) => (
                     <tr key={txn.id}>
                       <td>{txn.id}</td>
+                      {selectedTransactionCafe === 'all' && <td>{txn.cafe_name}</td>}
                       <td>
                         <span className={`transaction-badge transaction-${txn.transaction_type}`}>
                           {txn.transaction_type_kr}

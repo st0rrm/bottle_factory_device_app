@@ -5,6 +5,7 @@ import './QRCodeView.css';
 import { getShopByName } from '../firebase/firestore';
 
 export default function QRCodeView({ title = '리턴미컵 대여를 위해', mode = 'rental' }) {
+  // mode: 'rental' | 'return' | 'action' (실천 모드)
   const [qrValue, setQrValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -92,17 +93,26 @@ export default function QRCodeView({ title = '리턴미컵 대여를 위해', mo
           </div>
           <div className="instruction-item">
             <div className="instruction-bullet" />
-            <div className="instruction-with-icon">
-              <p className="instruction-text">좌측 하단에서</p>
-              <div className="pause-icon-container">
-                <img src={maskCupIcon} alt="Cup Icon" className="pause-icon" />
+            {mode === 'action' ? (
+              <p className="instruction-text">왼쪽으로 스와이프해 보틀 적립 탭 전환</p>
+            ) : (
+              <div className="instruction-with-icon">
+                <p className="instruction-text">좌측 하단에서</p>
+                <div className="pause-icon-container">
+                  <img src={maskCupIcon} alt="Cup Icon" className="pause-icon" />
+                </div>
+                <p className="instruction-text">터치</p>
               </div>
-              <p className="instruction-text">터치</p>
-            </div>
+            )}
           </div>
           <div className="instruction-item">
             <div className="instruction-bullet" />
-            <p className="instruction-text">[{mode === 'rental' ? '대여' : '반납'}] 선택 후 {mode === 'rental' ? '대여할' : '반납할'} 컵 선택</p>
+            <p className="instruction-text">
+              {mode === 'action'
+                ? '행동 선택 후 적립하기 누르기'
+                : `[${mode === 'rental' ? '대여' : '반납'}] 선택 후 ${mode === 'rental' ? '대여할' : '반납할'} 컵 선택`
+              }
+            </p>
           </div>
           <div className="instruction-item">
             <div className="instruction-bullet" />

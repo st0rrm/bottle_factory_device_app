@@ -507,7 +507,7 @@ export default function DoModal({ onClose, onSuccess }) {
             )}
           </>
         ) : (
-          <QRCodeView title="제로웨이스트 실천 기록을 위해" mode="do" />
+          <QRCodeView title="제로웨이스트 실천 기록을 위해" mode="action" />
         )}
       </div>
     </div>
