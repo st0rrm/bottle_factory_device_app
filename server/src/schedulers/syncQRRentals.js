@@ -43,12 +43,8 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
     return;
   }
 
-  // 웹 대여는 제외 (이미 백엔드에서 처리됨)
-  if (data.source === 'web') {
-    return;
-  }
-
   // 반납 업데이트가 아닌 경우에만 pg_synced 체크
+  // (대여는 pg_synced, 반납은 pg_return_synced로 중복 방지)
   if (!isReturnUpdate && data.pg_synced === true) {
     return;
   }
@@ -204,12 +200,11 @@ function startRealtimeListener() {
   // 먼저 기존 미동기화 대여 처리
   syncExistingRentals();
 
-  // 실시간 리스너 설정 - status='rent'인 모든 문서 감시
+  // 실시간 리스너 설정 - status='rent'/'return'인 모든 문서 감시
   // (새 대여 추가 + 기존 대여의 반납 업데이트 모두 감지)
+  // source 필터 제거: 크로스 플랫폼 반납 지원 (웹→QR, QR→웹)
   listener = db.collection('rents')
     .where('status', 'in', ['rent', 'return'])  // rent 또는 return 상태인 것만
-    .where('source', '!=', 'web')  // QR만
-    .orderBy('source')
     .orderBy('rented_date', 'desc')
     .onSnapshot(
       (snapshot) => {
@@ -221,18 +216,23 @@ function startRealtimeListener() {
           if (change.type === 'added' || change.type === 'modified') {
             const isReturnUpdate = change.type === 'modified' && data.status === 'return';
 
-            console.log(`🆕 [syncQRRentals] ${change.type === 'added' ? '새 대여' : '반납 업데이트'} 감지: ${doc.id} (status: ${data.status})`);
+            console.log(`🆕 [syncQRRentals] ${change.type === 'added' ? '새 대여' : '반납 업데이트'} 감지: ${doc.id} (status: ${data.status}, source: ${data.source})`);
 
-            // QR 대여/반납인지 확인 후 동기화
-            if (data.source !== 'web') {
-              // 반납 업데이트는 pg_return_synced 체크, 대여는 pg_synced 체크
-              const shouldSync = isReturnUpdate
-                ? !data.pg_return_synced
-                : !data.pg_synced;
+            // 중복 처리 방지 로직
+            // 1. added 이벤트 + source='web' → 스킵 (이미 routes/users.js에서 처리됨)
+            // 2. modified 이벤트 (반납) → source 무관하게 처리 (크로스 플랫폼 반납 지원)
+            if (change.type === 'added' && data.source === 'web') {
+              console.log(`  ⏭️ 스킵: 웹 대여는 이미 routes/users.js에서 처리됨`);
+              return;
+            }
 
-              if (shouldSync) {
-                await syncSingleRental(doc.id, data, isReturnUpdate);
-              }
+            // 반납 업데이트는 pg_return_synced 체크, 대여는 pg_synced 체크
+            const shouldSync = isReturnUpdate
+              ? !data.pg_return_synced
+              : !data.pg_synced;
+
+            if (shouldSync) {
+              await syncSingleRental(doc.id, data, isReturnUpdate);
             }
           }
         });
