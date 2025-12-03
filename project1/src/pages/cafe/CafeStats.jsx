@@ -78,10 +78,10 @@ function CafeStats() {
 
   // 거래 내역 필터 변경 시 다시 불러오기
   useEffect(() => {
-    if (showTransactionsView) {
+    if (currentView === 'transactions') {
       loadTransactions();
     }
-  }, [transactionTypeFilter, showTransactionsView]);
+  }, [transactionTypeFilter, currentView]);
 
   // 엑셀 다운로드
   const handleExportTransactionsToExcel = () => {
