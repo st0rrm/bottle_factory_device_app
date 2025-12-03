@@ -79,7 +79,7 @@ router.get('/my-history', authenticateToken, async (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
 
     const transactions = await Statistics.getTransactionHistory(req.user.id, limit, offset);
-    res.json(transactions);
+    res.json({ success: true, data: transactions, total: transactions.length });
   } catch (err) {
     console.error('History error:', err);
     res.status(500).json({ error: 'Internal server error' });
