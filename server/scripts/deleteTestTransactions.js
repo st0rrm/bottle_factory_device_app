@@ -7,8 +7,10 @@ const pool = require('../src/config/database');
  */
 
 async function deleteTestTransactions() {
-  const startTime = '2025-12-03 22:15:00';  // KST 오후 10:15
-  const endTime = '2025-12-03 22:20:00';    // KST 오후 10:20
+  // PostgreSQL은 UTC로 저장됨 (KST - 9시간)
+  // KST 2025-12-03 22:17 = UTC 2025-12-03 13:17
+  const startTime = '2025-12-03 13:17:00';  // UTC (KST 22:17)
+  const endTime = '2025-12-03 13:19:00';    // UTC (KST 22:19)
 
   try {
     console.log('🔄 [Delete] 테스트 거래 삭제 시작...');
