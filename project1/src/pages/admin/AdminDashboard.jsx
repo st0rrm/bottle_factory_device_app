@@ -751,10 +751,10 @@ function AdminDashboard() {
             {/* Summary Cards */}
             <div className="summary-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
               {(() => {
-                const totalRented = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.total_rented || 0), 0);
-                const totalActive = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.active_rentals || 0), 0);
-                const totalOverdue = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.overdue_rentals || 0), 0);
-                const totalExpired = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.expired_rentals || 0), 0);
+                const totalRented = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.rented_cups) || 0), 0);
+                const totalActive = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.active_rentals) || 0), 0);
+                const totalOverdue = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.overdue_rentals) || 0), 0);
+                const totalExpired = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.expired_rentals) || 0), 0);
 
                 return (
                   <>
@@ -802,17 +802,17 @@ function AdminDashboard() {
                     </tr>
                   ) : (
                     activeRentalsSummary.map((cafe) => (
-                      <tr key={cafe.id}>
+                      <tr key={cafe.cafe_id}>
                         <td>{cafe.cafe_name}</td>
                         <td>{cafe.total_cups || 0}개</td>
                         <td>
-                          <strong>{cafe.total_rented || 0}개</strong>
+                          <strong>{parseInt(cafe.rented_cups) || 0}개</strong>
                         </td>
-                        <td style={{ color: '#4caf50' }}>{cafe.active_rentals || 0}개</td>
-                        <td style={{ color: '#ff9800' }}>{cafe.overdue_rentals || 0}개</td>
-                        <td style={{ color: '#f44336' }}>{cafe.expired_rentals || 0}개</td>
+                        <td style={{ color: '#4caf50' }}>{parseInt(cafe.active_rentals) || 0}개</td>
+                        <td style={{ color: '#ff9800' }}>{parseInt(cafe.overdue_rentals) || 0}개</td>
+                        <td style={{ color: '#f44336' }}>{parseInt(cafe.expired_rentals) || 0}개</td>
                         <td>
-                          <strong>{cafe.available_cups || 0}개</strong>
+                          <strong>{parseInt(cafe.available_cups) || 0}개</strong>
                         </td>
                       </tr>
                     ))

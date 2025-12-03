@@ -629,9 +629,18 @@ class Statistics {
       `);
 
       return result.rows.map(row => ({
-        ...row,
-        available_cups: (row.total_cups || 0) - (parseInt(row.rented_cups) + parseInt(row.lost_cups)),
-        rental_rate: row.total_cups > 0 ? Math.round((parseInt(row.rented_cups) / row.total_cups) * 100) : 0
+        cafe_id: row.cafe_id,
+        cafe_name: row.cafe_name,
+        cafe_username: row.cafe_username,
+        total_cups: parseInt(row.total_cups) || 0,
+        rented_cups: parseInt(row.rented_cups) || 0,
+        lost_cups: parseInt(row.lost_cups) || 0,
+        active_rentals: parseInt(row.active_rentals) || 0,
+        overdue_rentals: parseInt(row.overdue_rentals) || 0,
+        expired_rentals: parseInt(row.expired_rentals) || 0,
+        active_users: parseInt(row.active_users) || 0,
+        available_cups: (parseInt(row.total_cups) || 0) - ((parseInt(row.rented_cups) || 0) + (parseInt(row.lost_cups) || 0)),
+        rental_rate: row.total_cups > 0 ? Math.round((parseInt(row.rented_cups) / parseInt(row.total_cups)) * 100) : 0
       }));
     } catch (error) {
       console.error('Error getting all active rentals summary:', error);
