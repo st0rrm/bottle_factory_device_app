@@ -200,11 +200,11 @@ function startRealtimeListener() {
   // 먼저 기존 미동기화 대여 처리
   syncExistingRentals();
 
-  // 실시간 리스너 설정 - status='rent'/'return'인 모든 문서 감시
+  // 실시간 리스너 설정 - status='rent'인 문서만 감시
   // (새 대여 추가 + 기존 대여의 반납 업데이트 모두 감지)
   // source 필터 제거: 크로스 플랫폼 반납 지원 (웹→QR, QR→웹)
   listener = db.collection('rents')
-    .where('status', 'in', ['rent', 'return'])  // rent 또는 return 상태인 것만
+    .where('status', '==', 'rent')  // 현재 대여 중인 것만 (과거 반납 문서 제외)
     .orderBy('rented_date', 'desc')
     .onSnapshot(
       (snapshot) => {
