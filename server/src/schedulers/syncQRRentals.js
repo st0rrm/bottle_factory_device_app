@@ -35,6 +35,8 @@ async function syncSingleRental(docId, data) {
 
   try {
     const rentedShopId = data.rented_shop_id;
+    const userUid = data.uid;
+    const status = data.status; // 'rent' or 'return'
 
     // 가게 정보 조회
     const shopDoc = await db.collection('shops').doc(rentedShopId).get();
@@ -68,12 +70,16 @@ async function syncSingleRental(docId, data) {
 
     const cafeId = cafeResult.rows[0].id;
 
-    // PostgreSQL에 transaction 기록 (QR 대여 - 적립 없음)
+    // status에 따라 대여 또는 반납 처리
+    const transactionType = status === 'return' ? 'return' : 'borrow';
+
+    // PostgreSQL에 transaction 기록 (QR 대여/반납 - 적립 없음)
+    // uid를 phone_number 필드에 저장 (QR 사용자 식별용)
     await Statistics.addTransaction(
       cafeId,
-      'borrow',
-      null,  // QR 대여는 전화번호 없음
-      1,     // 1개 대여
+      transactionType,
+      `uid:${userUid}`,  // uid를 phone_number 형식으로 저장
+      1,     // 1개 대여/반납
       0,     // 적립 없음
       false, // isNewUser: QR 스캔 = 앱 설치 기존 유저
       'qr'   // source: QR 스캔
@@ -85,7 +91,7 @@ async function syncSingleRental(docId, data) {
       pg_synced_at: FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName})`);
+    console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName}) ${transactionType}`);
 
   } catch (error) {
     console.error(`❌ [syncQRRental] 동기화 실패: ${docId}`, error);
