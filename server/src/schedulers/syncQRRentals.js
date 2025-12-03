@@ -204,11 +204,13 @@ function startRealtimeListener() {
   // 먼저 기존 미동기화 대여 처리
   syncExistingRentals();
 
-  // 실시간 리스너 설정 - 새로운 대여와 반납 모두 감지
-  const now = new Date();
-
+  // 실시간 리스너 설정 - status='rent'인 모든 문서 감시
+  // (새 대여 추가 + 기존 대여의 반납 업데이트 모두 감지)
   listener = db.collection('rents')
-    .where('rented_date', '>', now) // 지금 이후 생성된 것만
+    .where('status', 'in', ['rent', 'return'])  // rent 또는 return 상태인 것만
+    .where('source', '!=', 'web')  // QR만
+    .orderBy('source')
+    .orderBy('rented_date', 'desc')
     .onSnapshot(
       (snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
