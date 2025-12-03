@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './CafeActiveRentals.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 export default function CafeActiveRentals() {
   const [cupStatus, setCupStatus] = useState(null);
@@ -18,18 +18,18 @@ export default function CafeActiveRentals() {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const headers = { Authorization: `Bearer ${token}` };
 
       // 컵 현황 조회
       const cupStatusRes = await axios.get(
-        `${API_URL}/api/statistics/my-cup-status`,
+        `${API_URL}/statistics/my-cup-status`,
         { headers }
       );
 
       // 대여 현황 조회
       const rentalsRes = await axios.get(
-        `${API_URL}/api/statistics/my-active-rentals`,
+        `${API_URL}/statistics/my-active-rentals`,
         { headers }
       );
 
@@ -56,9 +56,9 @@ export default function CafeActiveRentals() {
         return;
       }
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       await axios.put(
-        `${API_URL}/api/statistics/my-total-cups`,
+        `${API_URL}/statistics/my-total-cups`,
         { total_cups: totalCups },
         { headers: { Authorization: `Bearer ${token}` } }
       );
