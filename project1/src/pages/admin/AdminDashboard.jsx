@@ -308,7 +308,7 @@ function AdminDashboard() {
 
     try {
       const result = await resetCafeStats(cafeId);
-      alert(`카페 통계가 초기화되었습니다.\n- 행동 데이터: ${result.deletedBehaviors}개\n- 거래 기록: ${result.deletedTransactions}개\n- 음성 통계: ${result.deletedVoiceStats}개\n총 ${result.deletedCount}개 삭제`);
+      alert(`카페 통계가 초기화되었습니다.\n- 대여 현황: ${result.deletedActiveRentals}개\n- 행동 데이터: ${result.deletedBehaviors}개\n- 거래 기록: ${result.deletedTransactions}개\n- 음성 통계: ${result.deletedVoiceStats}개\n총 ${result.deletedCount}개 삭제`);
 
       // 통계 다시 불러오기
       loadStats();

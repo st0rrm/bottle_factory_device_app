@@ -383,6 +383,12 @@ class Statistics {
   // 관리자용: 특정 카페의 통계 초기화
   static async resetCafeStats(cafeId) {
     try {
+      // Delete active rentals first (foreign key to transactions)
+      const activeRentalsResult = await pool.query(
+        'DELETE FROM active_rentals WHERE cafe_id = $1',
+        [cafeId]
+      );
+
       // Delete user behaviors for this cafe
       const behaviorsResult = await pool.query(
         'DELETE FROM user_behaviors WHERE cafe_id = $1',
@@ -401,11 +407,12 @@ class Statistics {
         [cafeId]
       );
 
-      const totalDeleted = behaviorsResult.rowCount + transactionsResult.rowCount + voiceStatsResult.rowCount;
+      const totalDeleted = activeRentalsResult.rowCount + behaviorsResult.rowCount + transactionsResult.rowCount + voiceStatsResult.rowCount;
 
       return {
         success: true,
         deletedCount: totalDeleted,
+        deletedActiveRentals: activeRentalsResult.rowCount,
         deletedBehaviors: behaviorsResult.rowCount,
         deletedTransactions: transactionsResult.rowCount,
         deletedVoiceStats: voiceStatsResult.rowCount
