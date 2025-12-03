@@ -53,7 +53,7 @@ export default function RentalConfirmationView({
         {/* Bottle Info */}
         <div className="info-row">
           <div className="reward-label-container">
-            <span className="info-label">보틀이 뭔가요?</span>
+            <span className="info-label" style={{ fontWeight: '700', color: '#4481D1' }}>보틀 적립 안내</span>
             <button
               onClick={() => setShowRewardsInfo(true)}
               className="help-button"
