@@ -658,7 +658,7 @@ class Statistics {
           COALESCE(SUM(CASE WHEN ar.expected_return_date < NOW() - INTERVAL '7 days' THEN ar.quantity ELSE 0 END), 0) as lost_cups,
           COALESCE(SUM(CASE WHEN ar.expected_return_date >= NOW() THEN ar.quantity ELSE 0 END), 0) as active_rentals,
           COALESCE(SUM(CASE WHEN ar.expected_return_date < NOW() AND ar.expected_return_date >= NOW() - INTERVAL '7 days' THEN ar.quantity ELSE 0 END), 0) as overdue_rentals,
-          COUNT(DISTINCT ar.phone_number) FILTER (WHERE ar.expected_return_date >= NOW() OR (ar.expected_return_date < NOW() AND ar.expected_return_date >= NOW() - INTERVAL '7 days')) as active_users
+          COALESCE(COUNT(DISTINCT CASE WHEN ar.phone_number IS NOT NULL AND (ar.expected_return_date >= NOW() OR (ar.expected_return_date < NOW() AND ar.expected_return_date >= NOW() - INTERVAL '7 days')) THEN ar.phone_number END), 0) as active_users
         FROM cafes c
         LEFT JOIN active_rentals ar ON c.id = ar.cafe_id
         WHERE c.id = $1

@@ -68,13 +68,13 @@ async function syncSingleRental(docId, data) {
 
     const cafeId = cafeResult.rows[0].id;
 
-    // PostgreSQL에 transaction 기록 (QR 대여 = 30점)
+    // PostgreSQL에 transaction 기록 (QR 대여 - 적립 없음)
     await Statistics.addTransaction(
       cafeId,
       'borrow',
       null,  // QR 대여는 전화번호 없음
       1,     // 1개 대여
-      30,    // 30점
+      0,     // 적립 없음
       false, // isNewUser: QR 스캔 = 앱 설치 기존 유저
       'qr'   // source: QR 스캔
     );
@@ -85,7 +85,7 @@ async function syncSingleRental(docId, data) {
       pg_synced_at: FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName}) +30점`);
+    console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName})`);
 
   } catch (error) {
     console.error(`❌ [syncQRRental] 동기화 실패: ${docId}`, error);
