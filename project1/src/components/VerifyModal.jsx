@@ -102,24 +102,24 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
 
         if (result.success) {
           console.log('✅ 인증 성공:', result.user.uid);
-          console.log('📊 신규 사용자 여부:', result.isNewUser);
+          console.log('📊 Firebase Auth 신규 사용자 여부:', result.isNewUser);
 
-          // ✨ 신규 사용자인 경우에만 Firestore 문서 생성
-          if (result.isNewUser) {
-            console.log('🆕 신규 사용자 - Firestore 문서 생성 중...');
-            const createResult = await createNewUser(result.user);
+          // ✨ Firestore 문서 생성/확인 (createNewUser 내부에서 존재 여부 체크)
+          console.log('🔍 Firestore 문서 확인 및 생성 중...');
+          const createResult = await createNewUser(result.user);
 
-            if (!createResult.success) {
-              console.error('❌ 사용자 생성 실패:', createResult.error);
-              setErrorMessage('사용자 정보 생성에 실패했습니다.');
-              setIsError(true);
-              setIsLoading(false);
-              return;
-            }
+          if (!createResult.success) {
+            console.error('❌ 사용자 생성 실패:', createResult.error);
+            setErrorMessage('사용자 정보 생성에 실패했습니다.');
+            setIsError(true);
+            setIsLoading(false);
+            return;
+          }
 
-            console.log('✅ 신규 사용자 생성 완료:', createResult.nickname);
+          if (createResult.isNew) {
+            console.log('✅ 신규 Firestore 문서 생성 완료:', createResult.nickname);
           } else {
-            console.log('👤 기존 사용자 - SMS 인증 완료');
+            console.log('✅ 기존 Firestore 문서 확인 완료');
           }
 
           const effectiveUser = {

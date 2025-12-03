@@ -367,8 +367,17 @@ function AdminDashboard() {
       '카페명': cafe.cafe_name,
       '카페 ID': cafe.cafe_id,
       '총 거래': cafe.total_transactions || 0,
+      '총 대여': cafe.total_borrow || 0,
+      '총 반납': cafe.total_return || 0,
+      '총 실천': cafe.total_do || 0,
       '오늘 거래': cafe.today_count || 0,
+      '오늘 대여': cafe.today_borrow || 0,
+      '오늘 반납': cafe.today_return || 0,
+      '오늘 실천': cafe.today_do || 0,
       '주간 거래': cafe.weekly_count || 0,
+      '주간 대여': cafe.weekly_borrow || 0,
+      '주간 반납': cafe.weekly_return || 0,
+      '주간 실천': cafe.weekly_do || 0,
       '보틀': cafe.total_score || 0,
       'QR 탭 (총)': cafe.qr_tab_clicks || 0,
       'QR 대여': cafe.qr_borrow_clicks || 0,
@@ -820,9 +829,24 @@ function AdminDashboard() {
                     <tr key={cafe.id}>
                       <td>{cafe.cafe_name}</td>
                       <td>{cafe.cafe_id}</td>
-                      <td>{cafe.total_transactions || 0}</td>
-                      <td>{cafe.today_count || 0}</td>
-                      <td>{cafe.weekly_count || 0}</td>
+                      <td>
+                        <div>{cafe.total_transactions || 0}회</div>
+                        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+                          대여 {cafe.total_borrow || 0} · 반납 {cafe.total_return || 0} · 실천 {cafe.total_do || 0}
+                        </div>
+                      </td>
+                      <td>
+                        <div>{cafe.today_count || 0}회</div>
+                        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+                          대여 {cafe.today_borrow || 0} · 반납 {cafe.today_return || 0} · 실천 {cafe.today_do || 0}
+                        </div>
+                      </td>
+                      <td>
+                        <div>{cafe.weekly_count || 0}회</div>
+                        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+                          대여 {cafe.weekly_borrow || 0} · 반납 {cafe.weekly_return || 0} · 실천 {cafe.weekly_do || 0}
+                        </div>
+                      </td>
                       <td>{cafe.total_score || 0}</td>
                       <td>{cafe.qr_tab_clicks || 0}</td>
                       <td>{cafe.qr_borrow_clicks || 0}</td>

@@ -209,7 +209,16 @@ class Statistics {
           COALESCE(SUM(score), 0) as total_score,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do')), 0) as total_count,
           COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do') AND DATE(created_at) = CURRENT_DATE), 0) as today,
-          COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do') AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type IN ('borrow', 'do') AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow'), 0) as total_borrow,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'return'), 0) as total_return,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'do'), 0) as total_do,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND DATE(created_at) = CURRENT_DATE), 0) as today_borrow,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'return' AND DATE(created_at) = CURRENT_DATE), 0) as today_return,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'do' AND DATE(created_at) = CURRENT_DATE), 0) as today_do,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'borrow' AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_borrow,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'return' AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_return,
+          COALESCE(SUM(quantity) FILTER (WHERE transaction_type = 'do' AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_do
         FROM transactions
         WHERE cafe_id = $1`,
         [cafeId]
@@ -219,7 +228,16 @@ class Statistics {
         totalScore: parseInt(pgResult.rows[0].total_score) || 0,
         totalCount: parseInt(pgResult.rows[0].total_count) || 0,
         today: parseInt(pgResult.rows[0].today) || 0,
-        weekly: parseInt(pgResult.rows[0].weekly) || 0
+        weekly: parseInt(pgResult.rows[0].weekly) || 0,
+        totalBorrow: parseInt(pgResult.rows[0].total_borrow) || 0,
+        totalReturn: parseInt(pgResult.rows[0].total_return) || 0,
+        totalDo: parseInt(pgResult.rows[0].total_do) || 0,
+        todayBorrow: parseInt(pgResult.rows[0].today_borrow) || 0,
+        todayReturn: parseInt(pgResult.rows[0].today_return) || 0,
+        todayDo: parseInt(pgResult.rows[0].today_do) || 0,
+        weeklyBorrow: parseInt(pgResult.rows[0].weekly_borrow) || 0,
+        weeklyReturn: parseInt(pgResult.rows[0].weekly_return) || 0,
+        weeklyDo: parseInt(pgResult.rows[0].weekly_do) || 0
       };
 
       console.log('  ✅ PostgreSQL 통계 (웹 + QR 대여 + QR 적립):', stats);
@@ -259,7 +277,16 @@ class Statistics {
           COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type IN ('borrow', 'do')), 0) as total_transactions,
           COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type IN ('borrow', 'do') AND DATE(t.created_at) = CURRENT_DATE), 0) as today_count,
           COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type IN ('borrow', 'do') AND t.created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_count,
-          COALESCE(SUM(t.score), 0) as total_score
+          COALESCE(SUM(t.score), 0) as total_score,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'borrow'), 0) as total_borrow,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'return'), 0) as total_return,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'do'), 0) as total_do,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'borrow' AND DATE(t.created_at) = CURRENT_DATE), 0) as today_borrow,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'return' AND DATE(t.created_at) = CURRENT_DATE), 0) as today_return,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'do' AND DATE(t.created_at) = CURRENT_DATE), 0) as today_do,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'borrow' AND t.created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_borrow,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'return' AND t.created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_return,
+          COALESCE(SUM(t.quantity) FILTER (WHERE t.transaction_type = 'do' AND t.created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as weekly_do
         FROM cafes c
         LEFT JOIN transactions t ON c.id = t.cafe_id
         GROUP BY c.id, c.cafe_id, c.cafe_name
@@ -271,7 +298,16 @@ class Statistics {
         total_transactions: parseInt(row.total_transactions) || 0,
         today_count: parseInt(row.today_count) || 0,
         weekly_count: parseInt(row.weekly_count) || 0,
-        total_score: parseInt(row.total_score) || 0
+        total_score: parseInt(row.total_score) || 0,
+        total_borrow: parseInt(row.total_borrow) || 0,
+        total_return: parseInt(row.total_return) || 0,
+        total_do: parseInt(row.total_do) || 0,
+        today_borrow: parseInt(row.today_borrow) || 0,
+        today_return: parseInt(row.today_return) || 0,
+        today_do: parseInt(row.today_do) || 0,
+        weekly_borrow: parseInt(row.weekly_borrow) || 0,
+        weekly_return: parseInt(row.weekly_return) || 0,
+        weekly_do: parseInt(row.weekly_do) || 0
       }));
     } catch (err) {
       throw err;

@@ -64,6 +64,13 @@
   color: #4481D1;
 }
 
+.card-breakdown {
+  font-size: 12px;
+  color: #888;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
 .period-selector {
   display: flex;
   gap: 10px;
@@ -171,6 +178,127 @@
 
 .legend-desc {
   color: #666;
+}
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.view-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.view-btn.active {
+  background: white;
+  color: #4481D1;
+  border-color: white;
+}
+
+/* Filter Bar */
+.filter-bar {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sort-select {
+  padding: 0.625rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: 'Pretendard', sans-serif;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #4481D1;
+  box-shadow: 0 0 0 3px rgba(68, 129, 209, 0.1);
+}
+
+.export-button {
+  padding: 0.625rem 1.25rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.export-button:hover {
+  background-color: #059669;
+}
+
+.cafe-filter-select {
+  padding: 0.625rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: 'Pretendard', sans-serif;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 200px;
+}
+
+.cafe-filter-select:focus {
+  outline: none;
+  border-color: #4481D1;
+  box-shadow: 0 0 0 3px rgba(68, 129, 209, 0.1);
+}
+
+/* Transaction Badges */
+.transaction-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.transaction-badge.transaction-borrow {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.transaction-badge.transaction-return {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.transaction-badge.transaction-do {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
 /* Responsive */
