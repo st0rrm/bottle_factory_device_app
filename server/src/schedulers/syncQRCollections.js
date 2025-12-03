@@ -94,7 +94,9 @@ async function syncSingleCollection(docId, data) {
       transactionType,  // 'return' 또는 'do'
       null,             // QR 적립은 전화번호 없음
       1,                // 1개 반납/실천
-      score             // collect_history의 score
+      score,            // collect_history의 score
+      false,            // isNewUser: QR 스캔 = 앱 설치 기존 유저
+      'qr'              // source: QR 스캔
     );
 
     // Firebase에 동기화 플래그 설정

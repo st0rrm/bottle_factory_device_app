@@ -259,7 +259,8 @@ router.post('/rental', async (req, res) => {
             maskedPhone,
             rentalCount,
             rentalScore,
-            isNewUser
+            isNewUser,
+            'web'
           );
         }
       }
@@ -409,7 +410,8 @@ router.post('/return', async (req, res) => {
             maskedPhone,
             returnCount,
             totalScore,
-            isNewUser
+            isNewUser,
+            'web'
           );
         }
       }
@@ -527,20 +529,30 @@ router.post('/do-actions', async (req, res) => {
 
     // 8. PostgreSQL에 거래 기록 추가 (통계용)
     try {
-      const cafeResult = await pool.query('SELECT id FROM cafes WHERE cafe_id = $1', [shopId]);
-      if (cafeResult.rows.length > 0) {
-        const cafeId = cafeResult.rows[0].id;
-        // Mask phone number (010-0000-xxxx format)
-        const maskedPhone = maskPhoneNumber(userData.mobile);
-        await Statistics.addTransaction(
-          cafeId,
-          'do',
-          maskedPhone,
-          totalCount,
-          totalScore,
-          isNewUser
+      // Look up cafe by shop name (same as rental/return)
+      const shopDoc = await db.collection('shops').doc(shopId).get();
+      if (shopDoc.exists) {
+        const shopName = shopDoc.data().name;
+        const cafeResult = await pool.query(
+          'SELECT id FROM cafes WHERE cafe_name = $1',
+          [shopName]
         );
-        console.log(`📊 PostgreSQL 실천 기록 완료: ${totalCount}개 행동, ${totalScore}점`);
+
+        if (cafeResult.rows.length > 0) {
+          const cafeId = cafeResult.rows[0].id;
+          // Mask phone number (010-0000-xxxx format)
+          const maskedPhone = maskPhoneNumber(userData.mobile);
+          await Statistics.addTransaction(
+            cafeId,
+            'do',
+            maskedPhone,
+            totalCount,
+            totalScore,
+            isNewUser,
+            'web'
+          );
+          console.log(`📊 PostgreSQL 실천 기록 완료: ${totalCount}개 행동, ${totalScore}점`);
+        }
       }
     } catch (pgError) {
       console.error('⚠️ PostgreSQL 실천 기록 실패:', pgError);
