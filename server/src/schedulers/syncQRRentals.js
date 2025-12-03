@@ -38,18 +38,37 @@ function maskPhoneNumber(phone) {
  * 단일 QR 대여를 PostgreSQL에 동기화
  */
 async function syncSingleRental(docId, data, isReturnUpdate = false) {
-  // 이미 동기화 중이면 스킵
-  if (syncingDocs.has(docId)) {
-    return;
-  }
-
   // 반납 업데이트가 아닌 경우에만 pg_synced 체크
   // (대여는 pg_synced, 반납은 pg_return_synced로 중복 방지)
   if (!isReturnUpdate && data.pg_synced === true) {
     return;
   }
 
+  // 반납 업데이트인 경우 pg_return_synced 체크
+  if (isReturnUpdate && data.pg_return_synced === true) {
+    return;
+  }
+
+  // 이미 동기화 중이면 스킵
+  if (syncingDocs.has(docId)) {
+    console.log(`⏭️ [syncQRRental] 이미 동기화 중: ${docId}`);
+    return;
+  }
+
   syncingDocs.add(docId);
+
+  // 즉시 Firebase에 플래그 설정 (다른 중복 이벤트 방지)
+  try {
+    const flagUpdate = isReturnUpdate
+      ? { pg_return_synced: true }
+      : { pg_synced: true };
+
+    await db.collection('rents').doc(docId).update(flagUpdate);
+  } catch (flagError) {
+    console.error(`❌ [syncQRRental] 플래그 설정 실패: ${docId}`, flagError);
+    syncingDocs.delete(docId);
+    return;
+  }
 
   try {
     const rentedShopId = data.rented_shop_id;
@@ -61,7 +80,6 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
     if (!userDoc.exists) {
       console.warn(`⚠️ [syncQRRental] user not found: ${userUid}`);
       await db.collection('rents').doc(docId).update({
-        pg_synced: true,
         pg_sync_error: 'user_not_found'
       });
       syncingDocs.delete(docId);
@@ -77,7 +95,6 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
     if (!shopDoc.exists) {
       console.warn(`⚠️ [syncQRRental] shop not found: ${rentedShopId}`);
       await db.collection('rents').doc(docId).update({
-        pg_synced: true,
         pg_sync_error: 'shop_not_found'
       });
       syncingDocs.delete(docId);
@@ -95,7 +112,6 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
     if (cafeResult.rows.length === 0) {
       console.warn(`⚠️ [syncQRRental] cafe not found: ${shopName}`);
       await db.collection('rents').doc(docId).update({
-        pg_synced: true,
         pg_sync_error: 'cafe_not_found'
       });
       syncingDocs.delete(docId);
@@ -119,31 +135,23 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
       'qr'   // source: QR 스캔
     );
 
-    // Firebase에 동기화 플래그 설정 (반납은 pg_return_synced 플래그 추가)
-    const updateData = {
-      pg_synced: true,
+    // 동기화 완료 타임스탬프 추가 (플래그는 이미 함수 시작 시 설정됨)
+    await db.collection('rents').doc(docId).update({
       pg_synced_at: FieldValue.serverTimestamp()
-    };
-
-    if (status === 'return') {
-      updateData.pg_return_synced = true;
-    }
-
-    await db.collection('rents').doc(docId).update(updateData);
+    });
 
     console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName}) ${transactionType} - ${maskedPhone}`);
 
   } catch (error) {
     console.error(`❌ [syncQRRental] 동기화 실패: ${docId}`, error);
 
-    // 에러 정보 기록
+    // 에러 정보 기록 (플래그는 이미 설정됨)
     try {
       await db.collection('rents').doc(docId).update({
-        pg_synced: true, // 에러난 것도 플래그 설정 (무한 재시도 방지)
         pg_sync_error: error.message
       });
     } catch (flagError) {
-      console.error(`❌ [syncQRRental] 플래그 설정 실패: ${docId}`, flagError);
+      console.error(`❌ [syncQRRental] 에러 정보 기록 실패: ${docId}`, flagError);
     }
   } finally {
     syncingDocs.delete(docId);
@@ -195,6 +203,12 @@ async function syncExistingRentals() {
  * Firebase 실시간 리스너 시작
  */
 function startRealtimeListener() {
+  // 이미 리스너가 실행 중이면 중복 시작 방지
+  if (listener) {
+    console.log('⚠️ [syncQRRentals] 리스너가 이미 실행 중입니다. 중복 시작 방지.');
+    return;
+  }
+
   console.log('🚀 [syncQRRentals] 실시간 리스너 시작');
 
   // 먼저 기존 미동기화 대여 처리
