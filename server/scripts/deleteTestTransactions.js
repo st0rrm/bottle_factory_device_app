@@ -47,7 +47,21 @@ async function deleteTestTransactions() {
       return;
     }
 
-    // 3. 삭제 실행
+    // 3. 삭제 실행 (active_rentals 먼저, 그 다음 transactions)
+    console.log('\n🚀 [삭제 시작] 관련 active_rentals 먼저 삭제 중...');
+
+    // 3-1. 먼저 active_rentals에서 해당 transaction을 참조하는 레코드 삭제
+    const activeRentalsDelete = await pool.query(`
+      DELETE FROM active_rentals
+      WHERE borrow_transaction_id IN (
+        SELECT id FROM transactions
+        WHERE created_at >= $1 AND created_at <= $2
+      )
+    `, [startTime, endTime]);
+
+    console.log(`✅ [active_rentals 삭제] ${activeRentalsDelete.rowCount}개 레코드 삭제됨`);
+
+    // 3-2. transactions 삭제
     console.log('\n🚀 [삭제 시작] 테스트 거래 삭제 중...');
 
     const deleteResult = await pool.query(`
