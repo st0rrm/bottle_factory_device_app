@@ -1,6 +1,7 @@
 require('dotenv').config();
 const app = require('./src/app');
 const db = require('./src/config/database');
+const { runAutoMigration } = require('./scripts/autoMigrate');
 // SMS 알림은 Firebase Cloud Functions로 이관됨
 // const { startSMSNotificationScheduler } = require('./src/schedulers/smsNotificationScheduler');
 const { startScheduler: startQRRentalsSync } = require('./src/schedulers/syncQRRentals');
@@ -9,7 +10,7 @@ const { startScheduler: startQRCollectionsSync } = require('./src/schedulers/syn
 const PORT = process.env.PORT || 3000;
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log('='.repeat(50));
   console.log(`ReturnMeCup API Server`);
   console.log(`Server running on http://localhost:${PORT}`);
@@ -27,6 +28,9 @@ const server = app.listen(PORT, () => {
   console.log('   - QR 대여 (rents)');
   console.log('   - QR 적립 (collect_history)');
   console.log('='.repeat(50));
+
+  // 자동 마이그레이션 실행
+  await runAutoMigration();
 
   // SMS notification scheduler는 Firebase Cloud Functions로 이관됨
   // startSMSNotificationScheduler();

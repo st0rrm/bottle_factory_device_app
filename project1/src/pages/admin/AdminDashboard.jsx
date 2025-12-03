@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import { getCafes, createCafe, updateCafe, updateCafePassword, deleteCafe } from '../../api/cafe';
 import { logout } from '../../api/auth';
-import { getAllCafesStats, resetCafeStats, getCafeTransactionDetails } from '../../api/statistics';
+import { getAllCafesStats, resetCafeStats, getCafeTransactionDetails, getAllActiveRentals } from '../../api/statistics';
 import { getAllCafesBehaviorStats, getAllCafesDailyStats } from '../../api/behaviors';
 import * as XLSX from 'xlsx';
 
@@ -12,6 +12,7 @@ function AdminDashboard() {
   const [cafesStats, setCafesStats] = useState([]);
   const [behaviorStats, setBehaviorStats] = useState([]);
   const [dailyStats, setDailyStats] = useState([]);
+  const [activeRentalsSummary, setActiveRentalsSummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -20,6 +21,7 @@ function AdminDashboard() {
   const [showStatsView, setShowStatsView] = useState(false);
   const [showDailyView, setShowDailyView] = useState(false);
   const [showTransactionsView, setShowTransactionsView] = useState(false);
+  const [showRentalsView, setShowRentalsView] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [selectedTransactionCafe, setSelectedTransactionCafe] = useState('');
   const [transactionTypeFilter, setTransactionTypeFilter] = useState('all');
@@ -86,12 +88,14 @@ function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      const [stats, behaviors] = await Promise.all([
+      const [stats, behaviors, rentals] = await Promise.all([
         getAllCafesStats(),
-        getAllCafesBehaviorStats()
+        getAllCafesBehaviorStats(),
+        getAllActiveRentals()
       ]);
       setCafesStats(stats);
       setBehaviorStats(behaviors);
+      setActiveRentalsSummary(rentals.data || []);
     } catch (error) {
       console.error('통계 불러오기 실패:', error);
       alert('통계를 불러오는데 실패했습니다.');
@@ -128,6 +132,7 @@ function AdminDashboard() {
     setShowStatsView(true);
     setShowDailyView(false);
     setShowTransactionsView(false);
+    setShowRentalsView(false);
   };
 
   const handleShowDailyStats = () => {
@@ -135,12 +140,14 @@ function AdminDashboard() {
     setShowDailyView(true);
     setShowStatsView(false);
     setShowTransactionsView(false);
+    setShowRentalsView(false);
   };
 
   const handleShowTransactions = () => {
     setShowTransactionsView(true);
     setShowStatsView(false);
     setShowDailyView(false);
+    setShowRentalsView(false);
 
     // 카페가 선택되지 않았으면 첫 번째 카페 선택 (useEffect에서 자동 로딩)
     if (cafes.length > 0 && !selectedTransactionCafe) {
@@ -149,6 +156,14 @@ function AdminDashboard() {
       alert('등록된 카페가 없습니다.');
     }
     // selectedTransactionCafe가 이미 있으면 useEffect가 자동으로 로딩
+  };
+
+  const handleShowRentals = () => {
+    loadStats();
+    setShowRentalsView(true);
+    setShowStatsView(false);
+    setShowDailyView(false);
+    setShowTransactionsView(false);
   };
 
   const loadTransactionDetails = async (cafeId) => {
@@ -410,7 +425,7 @@ function AdminDashboard() {
     const excelData = transactions.map(txn => ({
       'ID': txn.id,
       '거래 유형': txn.transaction_type_kr,
-      '사용자 구분': txn.is_new_user === null ? '-' : txn.is_new_user ? '신규' : '기존',
+      '사용자 구분': txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존',
       '전화번호': txn.phone_number,
       '수량': txn.quantity,
       '포인트': txn.score,
@@ -488,12 +503,12 @@ function AdminDashboard() {
       <main className="dashboard-content">
         <div className="content-header">
           <h2 className="section-title">
-            {showTransactionsView ? '거래 내역' : showDailyView ? '일별 통계' : showStatsView ? '카페 통계' : '카페 관리'}
+            {showRentalsView ? '대여 현황' : showTransactionsView ? '거래 내역' : showDailyView ? '일별 통계' : showStatsView ? '카페 통계' : '카페 관리'}
           </h2>
           <div className="header-buttons">
             <button
-              className={!showStatsView && !showDailyView && !showTransactionsView ? 'view-button active' : 'view-button'}
-              onClick={() => { setShowStatsView(false); setShowDailyView(false); setShowTransactionsView(false); }}
+              className={!showStatsView && !showDailyView && !showTransactionsView && !showRentalsView ? 'view-button active' : 'view-button'}
+              onClick={() => { setShowStatsView(false); setShowDailyView(false); setShowTransactionsView(false); setShowRentalsView(false); }}
             >
               카페 관리
             </button>
@@ -510,6 +525,12 @@ function AdminDashboard() {
               일별 통계
             </button>
             <button
+              className={showRentalsView ? 'view-button active' : 'view-button'}
+              onClick={handleShowRentals}
+            >
+              대여 현황
+            </button>
+            <button
               className={showTransactionsView ? 'view-button active' : 'view-button'}
               onClick={handleShowTransactions}
             >
@@ -518,7 +539,7 @@ function AdminDashboard() {
             <button
               className="create-button"
               onClick={openCreateModal}
-              style={{ visibility: showStatsView || showDailyView || showTransactionsView ? 'hidden' : 'visible' }}
+              style={{ visibility: showStatsView || showDailyView || showTransactionsView || showRentalsView ? 'hidden' : 'visible' }}
             >
               + 카페 추가
             </button>
@@ -526,7 +547,7 @@ function AdminDashboard() {
         </div>
 
         {/* 검색 및 필터 바 */}
-        {!showDailyView && !showTransactionsView && (
+        {!showDailyView && !showTransactionsView && !showRentalsView && (
           <div className="filter-bar">
             <input
               type="text"
@@ -687,8 +708,83 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* Daily Stats View */}
-        {showDailyView ? (
+        {/* Rentals View */}
+        {showRentalsView ? (
+          <div className="rentals-summary">
+            {/* Summary Cards */}
+            <div className="summary-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+              {(() => {
+                const totalRented = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.total_rented || 0), 0);
+                const totalActive = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.active_rentals || 0), 0);
+                const totalOverdue = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.overdue_rentals || 0), 0);
+                const totalExpired = activeRentalsSummary.reduce((sum, cafe) => sum + (cafe.expired_rentals || 0), 0);
+
+                return (
+                  <>
+                    <div className="summary-card">
+                      <div className="card-label">전체 대여 중</div>
+                      <div className="card-value">{totalRented}개</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="card-label">정상 대여</div>
+                      <div className="card-value" style={{ color: '#4caf50' }}>{totalActive}개</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="card-label">연체</div>
+                      <div className="card-value" style={{ color: '#ff9800' }}>{totalOverdue}개</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="card-label">분실</div>
+                      <div className="card-value" style={{ color: '#f44336' }}>{totalExpired}개</div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Cafe-wise Rental Table */}
+            <div className="cafe-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>카페명</th>
+                    <th>총 컵 개수</th>
+                    <th>대여 중</th>
+                    <th>정상 대여</th>
+                    <th>연체</th>
+                    <th>분실</th>
+                    <th>매장 재고</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeRentalsSummary.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center' }}>
+                        대여 현황 데이터가 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    activeRentalsSummary.map((cafe) => (
+                      <tr key={cafe.id}>
+                        <td>{cafe.cafe_name}</td>
+                        <td>{cafe.total_cups || 0}개</td>
+                        <td>
+                          <strong>{cafe.total_rented || 0}개</strong>
+                        </td>
+                        <td style={{ color: '#4caf50' }}>{cafe.active_rentals || 0}개</td>
+                        <td style={{ color: '#ff9800' }}>{cafe.overdue_rentals || 0}개</td>
+                        <td style={{ color: '#f44336' }}>{cafe.expired_rentals || 0}개</td>
+                        <td>
+                          <strong>{cafe.available_cups || 0}개</strong>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : showDailyView ? (
           <div className="cafe-table">
             <table>
               <thead>
@@ -780,7 +876,7 @@ function AdminDashboard() {
                         </span>
                       </td>
                       <td>
-                        {txn.is_new_user === null ? '-' : txn.is_new_user ? '신규' : '기존'}
+                        {txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존'}
                       </td>
                       <td>{txn.phone_number}</td>
                       <td>{txn.quantity}</td>

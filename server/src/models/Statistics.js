@@ -144,12 +144,48 @@ class Statistics {
   // 거래 기록 추가 (대여, 반납, 또는 실천)
   static async addTransaction(cafeId, transactionType, phoneNumber, quantity, score = 0, isNewUser = null, source = 'web') {
     try {
+      // 1. transactions 테이블에 기록
       const result = await pool.query(
-        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity, score, is_new_user, source) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+        'INSERT INTO transactions (cafe_id, transaction_type, phone_number, quantity, score, is_new_user, source) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at',
         [cafeId, transactionType, phoneNumber, quantity, score, isNewUser, source]
       );
+
+      const transactionId = result.rows[0].id;
+      const createdAt = result.rows[0].created_at;
+
+      // 2. active_rentals 동기화 (전화번호가 있는 경우만)
+      if (phoneNumber) {
+        if (transactionType === 'borrow') {
+          // 대여: active_rentals에 추가
+          const expectedReturnDate = new Date(createdAt);
+          expectedReturnDate.setDate(expectedReturnDate.getDate() + 14); // 14일 후
+
+          await this.addActiveRental(
+            cafeId,
+            phoneNumber,
+            quantity,
+            createdAt,
+            expectedReturnDate,
+            transactionId
+          );
+
+          console.log(`✅ [addTransaction] Active rental added: cafe_id=${cafeId}, phone=${phoneNumber}, qty=${quantity}`);
+
+        } else if (transactionType === 'return') {
+          // 반납: active_rentals에서 제거
+          const removeResult = await this.removeActiveRental(cafeId, phoneNumber, quantity);
+
+          if (removeResult) {
+            console.log(`✅ [addTransaction] Active rental ${removeResult.action}: cafe_id=${cafeId}, phone=${phoneNumber}, qty=${quantity}`);
+          } else {
+            console.warn(`⚠️ [addTransaction] No active rental found for return: cafe_id=${cafeId}, phone=${phoneNumber}`);
+          }
+        }
+      }
+
       return result.rows[0];
     } catch (err) {
+      console.error('Error in addTransaction:', err);
       throw err;
     }
   }
@@ -456,6 +492,228 @@ class Statistics {
       'do': '실천'
     };
     return types[type] || type;
+  }
+
+  // ============= Active Rentals 관리 =============
+
+  // 대여 시 active_rentals에 추가 (또는 수량 증가)
+  static async addActiveRental(cafeId, phoneNumber, quantity, rentalDate, expectedReturnDate, borrowTransactionId) {
+    try {
+      // UPSERT: 같은 전화번호가 이미 있으면 수량 증가, 없으면 새로 추가
+      const result = await pool.query(`
+        INSERT INTO active_rentals (
+          cafe_id, phone_number, quantity,
+          rental_date, expected_return_date,
+          borrow_transaction_id
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (cafe_id, phone_number)
+        DO UPDATE SET
+          quantity = active_rentals.quantity + EXCLUDED.quantity,
+          rental_date = EXCLUDED.rental_date,
+          expected_return_date = EXCLUDED.expected_return_date,
+          borrow_transaction_id = EXCLUDED.borrow_transaction_id
+        RETURNING *
+      `, [cafeId, phoneNumber, quantity, rentalDate, expectedReturnDate, borrowTransactionId]);
+
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error adding active rental:', error);
+      throw error;
+    }
+  }
+
+  // 반납 시 active_rentals에서 제거 (또는 수량 차감)
+  static async removeActiveRental(cafeId, phoneNumber, quantity) {
+    try {
+      // 먼저 현재 대여 정보 조회
+      const rental = await pool.query(`
+        SELECT * FROM active_rentals
+        WHERE cafe_id = $1 AND phone_number = $2
+        ORDER BY rental_date ASC
+        LIMIT 1
+      `, [cafeId, phoneNumber]);
+
+      if (rental.rows.length === 0) {
+        console.warn(`⚠️ Active rental not found: cafe_id=${cafeId}, phone=${phoneNumber}`);
+        return null;
+      }
+
+      const currentQty = rental.rows[0].quantity;
+
+      if (quantity >= currentQty) {
+        // 전체 반납: 레코드 삭제
+        await pool.query(`
+          DELETE FROM active_rentals
+          WHERE cafe_id = $1 AND phone_number = $2
+        `, [cafeId, phoneNumber]);
+        return { action: 'deleted', quantity: currentQty };
+      } else {
+        // 부분 반납: 수량 차감
+        const result = await pool.query(`
+          UPDATE active_rentals
+          SET quantity = quantity - $3
+          WHERE cafe_id = $1 AND phone_number = $2
+          RETURNING *
+        `, [cafeId, phoneNumber, quantity]);
+        return { action: 'updated', quantity: quantity, remaining: result.rows[0].quantity };
+      }
+    } catch (error) {
+      console.error('Error removing active rental:', error);
+      throw error;
+    }
+  }
+
+  // 카페의 현재 대여 현황 조회 (실시간 상태 계산)
+  static async getActiveRentals(cafeId, includeExpired = false) {
+    try {
+      let query = `
+        SELECT
+          id, cafe_id, phone_number, quantity,
+          rental_date, expected_return_date,
+          borrow_transaction_id, created_at,
+          EXTRACT(DAY FROM (expected_return_date - NOW())) as days_remaining,
+          CASE
+            WHEN expected_return_date >= NOW() THEN 'active'
+            WHEN expected_return_date < NOW() - INTERVAL '7 days' THEN 'expired'
+            ELSE 'overdue'
+          END as status
+        FROM active_rentals
+        WHERE cafe_id = $1
+      `;
+
+      if (!includeExpired) {
+        query += ` AND expected_return_date >= NOW() - INTERVAL '7 days'`;
+      }
+
+      query += ` ORDER BY expected_return_date ASC`;
+
+      const result = await pool.query(query, [cafeId]);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting active rentals:', error);
+      throw error;
+    }
+  }
+
+  // 모든 카페의 대여 현황 요약 (실시간 상태 계산)
+  static async getAllActiveRentalsSummary() {
+    try {
+      const result = await pool.query(`
+        WITH rental_status AS (
+          SELECT
+            cafe_id,
+            phone_number,
+            quantity,
+            CASE
+              WHEN expected_return_date >= NOW() THEN 'active'
+              WHEN expected_return_date < NOW() - INTERVAL '7 days' THEN 'expired'
+              ELSE 'overdue'
+            END as status
+          FROM active_rentals
+        )
+        SELECT
+          c.id as cafe_id,
+          c.cafe_name,
+          c.cafe_id as cafe_username,
+          c.total_cups,
+          COALESCE(SUM(CASE WHEN rs.status IN ('active', 'overdue') THEN rs.quantity ELSE 0 END), 0) as rented_cups,
+          COALESCE(SUM(CASE WHEN rs.status = 'expired' THEN rs.quantity ELSE 0 END), 0) as lost_cups,
+          COALESCE(SUM(CASE WHEN rs.status = 'active' THEN rs.quantity ELSE 0 END), 0) as active_rentals,
+          COALESCE(SUM(CASE WHEN rs.status = 'overdue' THEN rs.quantity ELSE 0 END), 0) as overdue_rentals,
+          COALESCE(SUM(CASE WHEN rs.status = 'expired' THEN rs.quantity ELSE 0 END), 0) as expired_rentals,
+          COUNT(DISTINCT rs.phone_number) FILTER (WHERE rs.status IN ('active', 'overdue')) as active_users
+        FROM cafes c
+        LEFT JOIN rental_status rs ON c.id = rs.cafe_id
+        GROUP BY c.id, c.cafe_name, c.cafe_id, c.total_cups
+        ORDER BY c.cafe_name
+      `);
+
+      return result.rows.map(row => ({
+        ...row,
+        available_cups: (row.total_cups || 0) - (parseInt(row.rented_cups) + parseInt(row.lost_cups)),
+        rental_rate: row.total_cups > 0 ? Math.round((parseInt(row.rented_cups) / row.total_cups) * 100) : 0
+      }));
+    } catch (error) {
+      console.error('Error getting all active rentals summary:', error);
+      throw error;
+    }
+  }
+
+  // 카페의 컵 현황 조회 (실시간 상태 계산)
+  static async getCupStatus(cafeId) {
+    try {
+      const result = await pool.query(`
+        WITH rental_status AS (
+          SELECT
+            phone_number,
+            quantity,
+            CASE
+              WHEN expected_return_date >= NOW() THEN 'active'
+              WHEN expected_return_date < NOW() - INTERVAL '7 days' THEN 'expired'
+              ELSE 'overdue'
+            END as status
+          FROM active_rentals
+          WHERE cafe_id = $1
+        )
+        SELECT
+          c.total_cups,
+          COALESCE(SUM(CASE WHEN rs.status IN ('active', 'overdue') THEN rs.quantity ELSE 0 END), 0) as rented_cups,
+          COALESCE(SUM(CASE WHEN rs.status = 'expired' THEN rs.quantity ELSE 0 END), 0) as lost_cups,
+          COALESCE(SUM(CASE WHEN rs.status = 'active' THEN rs.quantity ELSE 0 END), 0) as active_rentals,
+          COALESCE(SUM(CASE WHEN rs.status = 'overdue' THEN rs.quantity ELSE 0 END), 0) as overdue_rentals,
+          COUNT(DISTINCT rs.phone_number) FILTER (WHERE rs.status IN ('active', 'overdue')) as active_users
+        FROM cafes c
+        LEFT JOIN rental_status rs ON true
+        WHERE c.id = $1
+        GROUP BY c.id, c.total_cups
+      `, [cafeId]);
+
+      if (result.rows.length === 0) {
+        return { total_cups: 0, rented_cups: 0, lost_cups: 0, available_cups: 0, rental_rate: 0 };
+      }
+
+      const row = result.rows[0];
+      const totalCups = row.total_cups || 0;
+      const rentedCups = parseInt(row.rented_cups);
+      const lostCups = parseInt(row.lost_cups);
+      const availableCups = totalCups - rentedCups - lostCups;
+      const rentalRate = totalCups > 0 ? Math.round((rentedCups / totalCups) * 100) : 0;
+
+      return {
+        total_cups: totalCups,
+        rented_cups: rentedCups,
+        lost_cups: lostCups,
+        available_cups: availableCups,
+        rental_rate: rentalRate,
+        active_rentals: parseInt(row.active_rentals),
+        overdue_rentals: parseInt(row.overdue_rentals),
+        active_users: parseInt(row.active_users)
+      };
+    } catch (error) {
+      console.error('Error getting cup status:', error);
+      throw error;
+    }
+  }
+
+  // 카페의 총 컵 개수 업데이트
+  static async updateTotalCups(cafeId, totalCups) {
+    try {
+      const result = await pool.query(`
+        UPDATE cafes
+        SET total_cups = $2, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *
+      `, [cafeId, totalCups]);
+
+      if (result.rows.length === 0) {
+        throw new Error('Cafe not found');
+      }
+
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating total cups:', error);
+      throw error;
+    }
   }
 }
 

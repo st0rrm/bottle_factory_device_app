@@ -188,4 +188,158 @@ router.get('/cafe/:cafeId/transactions', authenticateAdmin, async (req, res) => 
   }
 });
 
+// ============= Active Rentals API =============
+
+// 현재 카페의 대여 현황 조회 (카페 전용)
+router.get('/my-active-rentals', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'cafe') {
+      return res.status(403).json({ error: 'Cafe access required' });
+    }
+
+    const includeExpired = req.query.includeExpired === 'true';
+    const rentals = await Statistics.getActiveRentals(req.user.id, includeExpired);
+
+    res.json({
+      success: true,
+      data: rentals,
+      total: rentals.length
+    });
+  } catch (err) {
+    console.error('Get active rentals error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 현재 카페의 컵 현황 조회 (카페 전용)
+router.get('/my-cup-status', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'cafe') {
+      return res.status(403).json({ error: 'Cafe access required' });
+    }
+
+    const cupStatus = await Statistics.getCupStatus(req.user.id);
+    res.json({
+      success: true,
+      data: cupStatus
+    });
+  } catch (err) {
+    console.error('Get cup status error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 카페의 총 컵 개수 업데이트 (카페 전용)
+router.put('/my-total-cups', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'cafe') {
+      return res.status(403).json({ error: 'Cafe access required' });
+    }
+
+    const { total_cups } = req.body;
+
+    if (total_cups === undefined || total_cups === null || total_cups < 0) {
+      return res.status(400).json({ error: 'Valid total_cups required (>= 0)' });
+    }
+
+    const result = await Statistics.updateTotalCups(req.user.id, total_cups);
+
+    res.json({
+      success: true,
+      message: 'Total cups updated',
+      data: result
+    });
+  } catch (err) {
+    console.error('Update total cups error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 특정 카페의 대여 현황 조회 (관리자 전용)
+router.get('/cafe/:cafeId/active-rentals', authenticateAdmin, async (req, res) => {
+  try {
+    const cafeId = parseInt(req.params.cafeId);
+    const includeExpired = req.query.includeExpired === 'true';
+
+    if (isNaN(cafeId)) {
+      return res.status(400).json({ error: 'Invalid cafe ID' });
+    }
+
+    const rentals = await Statistics.getActiveRentals(cafeId, includeExpired);
+
+    res.json({
+      success: true,
+      data: rentals,
+      total: rentals.length
+    });
+  } catch (err) {
+    console.error('Get active rentals error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 특정 카페의 컵 현황 조회 (관리자 전용)
+router.get('/cafe/:cafeId/cup-status', authenticateAdmin, async (req, res) => {
+  try {
+    const cafeId = parseInt(req.params.cafeId);
+
+    if (isNaN(cafeId)) {
+      return res.status(400).json({ error: 'Invalid cafe ID' });
+    }
+
+    const cupStatus = await Statistics.getCupStatus(cafeId);
+
+    res.json({
+      success: true,
+      data: cupStatus
+    });
+  } catch (err) {
+    console.error('Get cup status error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 모든 카페의 대여 현황 요약 조회 (관리자 전용)
+router.get('/all-active-rentals', authenticateAdmin, async (req, res) => {
+  try {
+    const summary = await Statistics.getAllActiveRentalsSummary();
+
+    res.json({
+      success: true,
+      data: summary,
+      total: summary.length
+    });
+  } catch (err) {
+    console.error('Get all active rentals error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 특정 카페의 총 컵 개수 업데이트 (관리자 전용)
+router.put('/cafe/:cafeId/total-cups', authenticateAdmin, async (req, res) => {
+  try {
+    const cafeId = parseInt(req.params.cafeId);
+    const { total_cups } = req.body;
+
+    if (isNaN(cafeId)) {
+      return res.status(400).json({ error: 'Invalid cafe ID' });
+    }
+
+    if (total_cups === undefined || total_cups === null || total_cups < 0) {
+      return res.status(400).json({ error: 'Valid total_cups required (>= 0)' });
+    }
+
+    const result = await Statistics.updateTotalCups(cafeId, total_cups);
+
+    res.json({
+      success: true,
+      message: 'Total cups updated',
+      data: result
+    });
+  } catch (err) {
+    console.error('Update total cups error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

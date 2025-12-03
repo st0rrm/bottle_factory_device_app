@@ -115,3 +115,37 @@ export const getCafeTransactionDetails = async (cafeId, options = {}) => {
     };
   }
 };
+
+// ============= Active Rentals API =============
+
+// 모든 카페의 대여 현황 요약 조회 (관리자 전용)
+export const getAllActiveRentals = async () => {
+  try {
+    const response = await apiClient.get('/statistics/all-active-rentals');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '대여 현황을 가져오는 중 오류가 발생했습니다.' };
+  }
+};
+
+// 특정 카페의 대여 현황 조회 (관리자 전용)
+export const getCafeActiveRentals = async (cafeId, includeExpired = false) => {
+  try {
+    const response = await apiClient.get(`/statistics/cafe/${cafeId}/active-rentals`, {
+      params: { includeExpired }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '카페 대여 현황을 가져오는 중 오류가 발생했습니다.' };
+  }
+};
+
+// 특정 카페의 컵 현황 조회 (관리자 전용)
+export const getCafeCupStatus = async (cafeId) => {
+  try {
+    const response = await apiClient.get(`/statistics/cafe/${cafeId}/cup-status`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '카페 컵 현황을 가져오는 중 오류가 발생했습니다.' };
+  }
+};

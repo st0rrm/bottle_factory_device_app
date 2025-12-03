@@ -1,0 +1,383 @@
+.active-rentals-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.1rem;
+}
+
+.error {
+  color: #d32f2f;
+}
+
+/* 컵 재고 현황 카드 */
+.cup-status-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.btn-edit {
+  padding: 0.5rem 1rem;
+  background-color: #478a81;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.btn-edit:hover {
+  background-color: #3a6f67;
+}
+
+.cup-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-row.main-stat {
+  background-color: #e8f4f3;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.stat-label {
+  color: #555;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-value.rented {
+  color: #1976d2;
+}
+
+.stat-value.lost {
+  color: #d32f2f;
+}
+
+.stat-value.available {
+  color: #388e3c;
+}
+
+.stat-value.available.low {
+  color: #d32f2f;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.rental-rate-bar {
+  margin-top: 0.5rem;
+}
+
+.rate-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 24px;
+  background-color: #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  transition: width 0.3s ease;
+}
+
+.warning-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+  color: #e65100;
+  font-weight: 600;
+}
+
+/* 대여 목록 섹션 */
+.rentals-list-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rentals-list-section h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+  font-size: 1.1rem;
+}
+
+.rentals-table-container {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+.rentals-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rentals-table th {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 2px solid #ddd;
+}
+
+.rentals-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.rentals-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* 상태별 행 색상 */
+.rentals-table tr.status-expired {
+  background-color: #ffebee;
+}
+
+.rentals-table tr.status-overdue {
+  background-color: #fff3e0;
+}
+
+.rentals-table tr.status-urgent {
+  background-color: #fff9c4;
+}
+
+/* 상태 배지 */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-badge.status-normal {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.status-warning {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.status-badge.status-urgent {
+  background-color: #fff9c4;
+  color: #f57c00;
+}
+
+.status-badge.status-overdue {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-badge.status-expired {
+  background-color: #f44336;
+  color: white;
+}
+
+/* 요약 */
+.rentals-summary {
+  display: flex;
+  gap: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-item span:first-child {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.summary-value.overdue {
+  color: #d32f2f;
+}
+
+/* 모달 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.modal-body {
+  margin-bottom: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.input-group input {
+  flex: 1;
+  padding: 0.75rem;
+  font-size: 1.1rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #478a81;
+}
+
+.input-group span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.hint {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.btn-cancel, .btn-save {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancel {
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+.btn-cancel:hover {
+  background-color: #d0d0d0;
+}
+
+.btn-save {
+  background-color: #478a81;
+  color: white;
+}
+
+.btn-save:hover {
+  background-color: #3a6f67;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .active-rentals-container {
+    padding: 1rem;
+  }
+
+  .rentals-summary {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .rentals-table th,
+  .rentals-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+  }
+}

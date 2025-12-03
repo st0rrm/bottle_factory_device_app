@@ -4,6 +4,7 @@ import './CafeStats.css';
 import { getMyDailyStats } from '../../api/behaviors';
 import { getMyStats, getMyHistory } from '../../api/statistics';
 import * as XLSX from 'xlsx';
+import CafeActiveRentals from './CafeActiveRentals';
 
 function CafeStats() {
   const navigate = useNavigate();
@@ -13,8 +14,8 @@ function CafeStats() {
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(7);
 
-  // 거래 내역 관련 state
-  const [showTransactionsView, setShowTransactionsView] = useState(false);
+  // 뷰 전환 관련 state ('stats', 'transactions', 'rentals')
+  const [currentView, setCurrentView] = useState('stats');
   const [transactions, setTransactions] = useState([]);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState('all');
 
@@ -92,7 +93,7 @@ function CafeStats() {
     const excelData = transactions.map(txn => ({
       'ID': txn.id,
       '거래 유형': txn.transaction_type_kr,
-      '사용자 구분': txn.is_new_user === null ? '-' : txn.is_new_user ? '신규' : '기존',
+      '사용자 구분': txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존',
       '전화번호': txn.phone_number,
       '수량': txn.quantity,
       '포인트': txn.score,
@@ -163,21 +164,27 @@ function CafeStats() {
       {/* View Toggle Buttons */}
       <div className="view-toggle">
         <button
-          className={!showTransactionsView ? 'view-btn active' : 'view-btn'}
-          onClick={() => setShowTransactionsView(false)}
+          className={currentView === 'stats' ? 'view-btn active' : 'view-btn'}
+          onClick={() => setCurrentView('stats')}
         >
           일별 통계
         </button>
         <button
-          className={showTransactionsView ? 'view-btn active' : 'view-btn'}
-          onClick={() => setShowTransactionsView(true)}
+          className={currentView === 'rentals' ? 'view-btn active' : 'view-btn'}
+          onClick={() => setCurrentView('rentals')}
+        >
+          대여 현황
+        </button>
+        <button
+          className={currentView === 'transactions' ? 'view-btn active' : 'view-btn'}
+          onClick={() => setCurrentView('transactions')}
         >
           거래 내역
         </button>
       </div>
 
       {/* Period Selector - 일별 통계 뷰일 때만 표시 */}
-      {!showTransactionsView && (
+      {currentView === 'stats' && (
         <div className="period-selector">
           <button
             className={days === 7 ? 'period-btn active' : 'period-btn'}
@@ -201,7 +208,7 @@ function CafeStats() {
       )}
 
       {/* Transaction Filter - 거래 내역 뷰일 때만 표시 */}
-      {showTransactionsView && (
+      {currentView === 'transactions' && (
         <div className="filter-bar">
           <select
             className="sort-select"
@@ -222,7 +229,10 @@ function CafeStats() {
 
       {/* Stats Content */}
       <div className="stats-content">
-        {showTransactionsView ? (
+        {currentView === 'rentals' ? (
+          /* Active Rentals View */
+          <CafeActiveRentals />
+        ) : currentView === 'transactions' ? (
           /* Transactions View */
           <div className="stats-table-container">
             <table className="stats-table">
@@ -254,7 +264,7 @@ function CafeStats() {
                         </span>
                       </td>
                       <td>
-                        {txn.is_new_user === null ? '-' : txn.is_new_user ? '신규' : '기존'}
+                        {txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존'}
                       </td>
                       <td>{txn.phone_number}</td>
                       <td>{txn.quantity}</td>
