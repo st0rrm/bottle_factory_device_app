@@ -87,13 +87,14 @@ async function syncSingleCollection(docId, data) {
 
     const cafeId = cafeResult.rows[0].id;
 
-    // PostgreSQL에 transaction 기록 (action_type에 따라 구분)
+    // PostgreSQL에 transaction 기록 (적립 점수만 - 카운트는 syncQRRentals에서 처리)
+    // quantity=0으로 설정하여 반납/실천 카운트 중복 방지
     const transactionType = actionType === 'do' ? 'do' : 'return';
     await Statistics.addTransaction(
       cafeId,
       transactionType,  // 'return' 또는 'do'
       null,             // QR 적립은 전화번호 없음
-      1,                // 1개 반납/실천
+      0,                // 0 - 카운트 제외 (적립 점수만 기록, 반납 카운트는 syncQRRentals에서)
       score,            // collect_history의 score
       false,            // isNewUser: QR 스캔 = 앱 설치 기존 유저
       'qr'              // source: QR 스캔
