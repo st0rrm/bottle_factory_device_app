@@ -49,31 +49,6 @@ export default function RentalConfirmationView({
           <span className="info-label">반납 일자</span>
           <span className="info-value">{formatDate(returnDate)}</span>
         </div>
-
-        {/* Reward */}
-        <div className="info-row">
-          <div className="reward-label-container">
-            <span className="info-label">보상</span>
-            <button
-              onClick={() => setShowRewardsInfo(true)}
-              className="help-button"
-            >
-              <svg className="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="17" r="0.5" fill="currentColor" strokeWidth="0" />
-              </svg>
-            </button>
-          </div>
-          <div className="reward-value-container">
-            <svg className="coins-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="8" cy="8" r="6" strokeWidth="2" />
-              <path d="M18.09 10.37A6 6 0 1 1 10.34 18" strokeWidth="2" />
-              <circle cx="16" cy="16" r="6" strokeWidth="2" />
-            </svg>
-            <span className="reward-value">{rewardPoints}보틀</span>
-          </div>
-        </div>
       </div>
 
       {/* Info Text */}
