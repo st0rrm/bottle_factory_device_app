@@ -36,6 +36,28 @@ async function syncSingleCollection(docId, data) {
   try {
     const shopId = data.shop_id;
     const score = data.score || 0;
+    const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 리턴미컵(텀블러) 아이템 ID
+
+    // action_type 결정: collect_items 확인
+    let actionType = data.action_type; // 명시적으로 지정된 경우 우선
+
+    if (!actionType) {
+      // action_type이 없으면 collect_items로 판단
+      try {
+        const collectItemsSnapshot = await db.collection('collect_history')
+          .doc(docId)
+          .collection('collect_items')
+          .doc(RETURNMECUP_ITEM_ID)
+          .get();
+
+        // 리턴미컵 아이템이 있고 score가 10점이면 반납, 아니면 실천
+        const isReturn = collectItemsSnapshot.exists && score === 10;
+        actionType = isReturn ? 'return' : 'do';
+      } catch (itemError) {
+        console.warn(`⚠️ [syncQRCollection] collect_items 확인 실패: ${docId}`, itemError);
+        actionType = 'return'; // 에러 시 기본값
+      }
+    }
 
     // 가게 정보 조회
     const shopDoc = await db.collection('shops').doc(shopId).get();
@@ -69,13 +91,14 @@ async function syncSingleCollection(docId, data) {
 
     const cafeId = cafeResult.rows[0].id;
 
-    // PostgreSQL에 transaction 기록 (QR 적립 = score점)
+    // PostgreSQL에 transaction 기록 (action_type에 따라 구분)
+    const transactionType = actionType === 'do' ? 'do' : 'return';
     await Statistics.addTransaction(
       cafeId,
-      'return',  // 반납으로 기록
-      null,      // QR 적립은 전화번호 없음
-      1,         // 1개 반납
-      score      // collect_history의 score
+      transactionType,  // 'return' 또는 'do'
+      null,             // QR 적립은 전화번호 없음
+      1,                // 1개 반납/실천
+      score             // collect_history의 score
     );
 
     // Firebase에 동기화 플래그 설정
@@ -84,7 +107,8 @@ async function syncSingleCollection(docId, data) {
       pg_synced_at: FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ [syncQRCollection] 실시간 동기화 완료: ${docId} (${shopName}) +${score}점`);
+    const actionLabel = transactionType === 'do' ? '실천' : '반납';
+    console.log(`✅ [syncQRCollection] 실시간 동기화 완료: ${docId} (${shopName}) ${actionLabel} +${score}점`);
 
   } catch (error) {
     console.error(`❌ [syncQRCollection] 동기화 실패: ${docId}`, error);
