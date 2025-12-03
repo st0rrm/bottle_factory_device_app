@@ -253,14 +253,22 @@ class Statistics {
   static async getTransactionHistory(cafeId, limit = 50, offset = 0) {
     try {
       const result = await pool.query(
-        `SELECT id, transaction_type, phone_number, quantity, created_at
+        `SELECT id, transaction_type, phone_number, quantity, score, is_new_user, created_at
          FROM transactions
          WHERE cafe_id = $1
          ORDER BY created_at DESC
          LIMIT $2 OFFSET $3`,
         [cafeId, limit, offset]
       );
-      return result.rows;
+
+      // 전화번호 마스킹 및 한글 변환 처리
+      const masked = result.rows.map(row => ({
+        ...row,
+        phone_number: this.maskPhoneNumber(row.phone_number),
+        transaction_type_kr: this.getTransactionTypeKorean(row.transaction_type)
+      }));
+
+      return masked;
     } catch (err) {
       throw err;
     }
