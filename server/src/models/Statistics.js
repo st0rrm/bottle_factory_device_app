@@ -709,10 +709,10 @@ class Statistics {
     try {
       const result = await pool.query(`
         UPDATE cafes
-        SET total_cups = $2, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $1
+        SET total_cups = $1
+        WHERE id = $2
         RETURNING *
-      `, [cafeId, totalCups]);
+      `, [totalCups, cafeId]);
 
       if (result.rows.length === 0) {
         throw new Error('Cafe not found');
