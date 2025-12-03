@@ -719,6 +719,146 @@ class Statistics {
       throw error;
     }
   }
+
+  // Active Rentals 정리 (uid:xxx 형식을 마스킹된 전화번호로 변환)
+  static async cleanupActiveRentals() {
+    try {
+      console.log('🔄 [cleanupActiveRentals] 시작...');
+
+      // 1. uid:xxx 형식의 phone_number를 가진 active_rentals 조회
+      const result = await pool.query(`
+        SELECT id, cafe_id, phone_number, quantity, rental_date, expected_return_date
+        FROM active_rentals
+        WHERE phone_number LIKE 'uid:%'
+        ORDER BY rental_date DESC
+      `);
+
+      console.log(`📊 [cleanupActiveRentals] 정리 대상: ${result.rows.length}개`);
+
+      if (result.rows.length === 0) {
+        return {
+          updatedCount: 0,
+          deletedCount: 0,
+          message: '정리할 데이터가 없습니다.'
+        };
+      }
+
+      let updatedCount = 0;
+      let deletedCount = 0;
+      const errors = [];
+
+      for (const row of result.rows) {
+        const uidString = row.phone_number; // 'uid:xxxxx' 형식
+        const uid = uidString.replace('uid:', '');
+
+        try {
+          // Firebase에서 사용자 정보 조회
+          const userDoc = await db.collection('users').doc(uid).get();
+
+          if (!userDoc.exists) {
+            console.warn(`⚠️ [cleanupActiveRentals] 사용자를 찾을 수 없음: ${uid} - 삭제합니다.`);
+
+            // 사용자가 없으면 해당 active_rental 삭제
+            await pool.query(
+              'DELETE FROM active_rentals WHERE id = $1',
+              [row.id]
+            );
+            deletedCount++;
+            continue;
+          }
+
+          const userData = userDoc.data();
+          const userPhone = userData.mobile;
+          const maskedPhone = this.maskPhoneNumber(userPhone);
+
+          if (!maskedPhone) {
+            console.warn(`⚠️ [cleanupActiveRentals] 유효하지 않은 전화번호: ${userPhone} - 삭제합니다.`);
+
+            // 유효하지 않은 전화번호면 삭제
+            await pool.query(
+              'DELETE FROM active_rentals WHERE id = $1',
+              [row.id]
+            );
+            deletedCount++;
+            continue;
+          }
+
+          // 같은 전화번호로 이미 대여가 있는지 확인
+          const existingRental = await pool.query(
+            'SELECT id, quantity FROM active_rentals WHERE cafe_id = $1 AND phone_number = $2 AND id != $3',
+            [row.cafe_id, maskedPhone, row.id]
+          );
+
+          if (existingRental.rows.length > 0) {
+            // 이미 같은 전화번호로 대여가 있으면 수량 합산 후 현재 레코드 삭제
+            const existingId = existingRental.rows[0].id;
+            const existingQty = existingRental.rows[0].quantity;
+            const totalQty = existingQty + row.quantity;
+
+            console.log(`  📦 [cleanupActiveRentals] 기존 대여와 합산: ${existingQty} + ${row.quantity} = ${totalQty}`);
+
+            await pool.query(
+              'UPDATE active_rentals SET quantity = $1 WHERE id = $2',
+              [totalQty, existingId]
+            );
+
+            await pool.query(
+              'DELETE FROM active_rentals WHERE id = $1',
+              [row.id]
+            );
+
+            updatedCount++;
+          } else {
+            // 중복이 없으면 phone_number만 업데이트
+            await pool.query(
+              'UPDATE active_rentals SET phone_number = $1 WHERE id = $2',
+              [maskedPhone, row.id]
+            );
+
+            updatedCount++;
+          }
+
+          console.log(`  ✅ [cleanupActiveRentals] 완료: ${uidString} -> ${maskedPhone}`);
+
+        } catch (error) {
+          console.error(`  ❌ [cleanupActiveRentals] 처리 실패: ${uidString}`, error);
+          errors.push({ uid: uidString, error: error.message });
+        }
+      }
+
+      console.log(`✅ [cleanupActiveRentals] 정리 완료! 업데이트: ${updatedCount}개, 삭제: ${deletedCount}개`);
+
+      return {
+        updatedCount,
+        deletedCount,
+        totalProcessed: result.rows.length,
+        errors: errors.length > 0 ? errors : undefined
+      };
+
+    } catch (error) {
+      console.error('❌ [cleanupActiveRentals] 오류:', error);
+      throw error;
+    }
+  }
+
+  // 전화번호 마스킹 처리 (내부 메서드로 사용)
+  static maskPhoneNumber(phone) {
+    if (!phone) return null;
+
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+
+    // Check if valid Korean mobile number (11 digits starting with 010)
+    if (digits.length !== 11 || !digits.startsWith('010')) {
+      return null;
+    }
+
+    // Extract last 4 digits
+    const lastFour = digits.slice(-4);
+
+    // Return masked format: 010-0000-xxxx
+    return `010-0000-${lastFour}`;
+  }
 }
 
 module.exports = Statistics;

@@ -342,4 +342,24 @@ router.put('/cafe/:cafeId/total-cups', authenticateAdmin, async (req, res) => {
   }
 });
 
+// active_rentals 정리 API (관리자 전용)
+router.post('/cleanup-active-rentals', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await Statistics.cleanupActiveRentals();
+
+    res.json({
+      success: true,
+      message: 'Active rentals cleanup completed',
+      ...result
+    });
+  } catch (err) {
+    console.error('Cleanup active rentals error:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: err.message
+    });
+  }
+});
+
 module.exports = router;

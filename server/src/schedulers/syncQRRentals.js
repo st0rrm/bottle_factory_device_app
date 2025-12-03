@@ -13,6 +13,28 @@ let listener = null;
 const syncingDocs = new Set(); // 현재 동기화 중인 문서 ID 추적 (중복 방지)
 
 /**
+ * Mask phone number for privacy (010-0000-xxxx format)
+ * Same format as used in routes/users.js for consistency
+ */
+function maskPhoneNumber(phone) {
+  if (!phone) return null;
+
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+
+  // Check if valid Korean mobile number (11 digits starting with 010)
+  if (digits.length !== 11 || !digits.startsWith('010')) {
+    return null;
+  }
+
+  // Extract last 4 digits
+  const lastFour = digits.slice(-4);
+
+  // Return masked format: 010-0000-xxxx
+  return `010-0000-${lastFour}`;
+}
+
+/**
  * 단일 QR 대여를 PostgreSQL에 동기화
  */
 async function syncSingleRental(docId, data) {
@@ -37,6 +59,22 @@ async function syncSingleRental(docId, data) {
     const rentedShopId = data.rented_shop_id;
     const userUid = data.uid;
     const status = data.status; // 'rent' or 'return'
+
+    // 사용자 정보 조회 (전화번호 확인)
+    const userDoc = await db.collection('users').doc(userUid).get();
+    if (!userDoc.exists) {
+      console.warn(`⚠️ [syncQRRental] user not found: ${userUid}`);
+      await db.collection('rents').doc(docId).update({
+        pg_synced: true,
+        pg_sync_error: 'user_not_found'
+      });
+      syncingDocs.delete(docId);
+      return;
+    }
+
+    const userData = userDoc.data();
+    const userPhone = userData.mobile;
+    const maskedPhone = maskPhoneNumber(userPhone);
 
     // 가게 정보 조회
     const shopDoc = await db.collection('shops').doc(rentedShopId).get();
@@ -74,11 +112,11 @@ async function syncSingleRental(docId, data) {
     const transactionType = status === 'return' ? 'return' : 'borrow';
 
     // PostgreSQL에 transaction 기록 (QR 대여/반납 - 적립 없음)
-    // uid를 phone_number 필드에 저장 (QR 사용자 식별용)
+    // 마스킹된 전화번호를 phone_number로 저장 (웹 앱과 동일한 형식으로 active_rentals 매칭 가능)
     await Statistics.addTransaction(
       cafeId,
       transactionType,
-      `uid:${userUid}`,  // uid를 phone_number 형식으로 저장
+      maskedPhone,  // 마스킹된 전화번호 사용 (크로스 반납 지원)
       1,     // 1개 대여/반납
       0,     // 적립 없음
       false, // isNewUser: QR 스캔 = 앱 설치 기존 유저
@@ -91,7 +129,7 @@ async function syncSingleRental(docId, data) {
       pg_synced_at: FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName}) ${transactionType}`);
+    console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName}) ${transactionType} - ${maskedPhone}`);
 
   } catch (error) {
     console.error(`❌ [syncQRRental] 동기화 실패: ${docId}`, error);
