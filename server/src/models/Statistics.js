@@ -389,6 +389,7 @@ class Statistics {
           t.phone_number,
           t.quantity,
           t.score,
+          t.is_new_user,
           t.created_at,
           c.cafe_name,
           c.cafe_id
