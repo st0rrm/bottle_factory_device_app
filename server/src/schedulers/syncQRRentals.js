@@ -177,21 +177,32 @@ async function syncExistingRentals() {
     for (const doc of allQRRentalsQuery.docs) {
       const data = doc.data();
 
-      // 대여 동기화 체크
-      const needsSyncRental = !data.pg_synced;
-
-      // 반납 동기화 체크 (status가 'return'이고 pg_return_synced가 없는 경우)
-      const needsSyncReturn = data.status === 'return' && !data.pg_return_synced;
-
-      if (needsSyncRental) {
-        console.log(`  🔄 대여 동기화: ${doc.id} (status: ${data.status})`);
+      // 케이스 1: status='rent'이고 대여 미동기화 → 대여만 처리
+      if (data.status === 'rent' && !data.pg_synced) {
+        console.log(`  🔄 대여 동기화: ${doc.id}`);
         await syncSingleRental(doc.id, data, false);
         syncedCount++;
-      } else if (needsSyncReturn) {
+      }
+      // 케이스 2: status='return'이고 대여 미동기화 → 대여 먼저, 반납 나중에
+      else if (data.status === 'return' && !data.pg_synced) {
+        console.log(`  🔄 대여+반납 동기화: ${doc.id} (반납 완료된 기존 문서)`);
+
+        // 먼저 대여 처리 (status를 임시로 'rent'로 변경)
+        const rentalData = { ...data, status: 'rent' };
+        await syncSingleRental(doc.id, rentalData, false);
+
+        // 그 다음 반납 처리
+        await syncSingleRental(doc.id, data, true);
+        syncedCount += 2;
+      }
+      // 케이스 3: status='return'이고 대여는 동기화됨, 반납만 미동기화 → 반납만 처리
+      else if (data.status === 'return' && data.pg_synced && !data.pg_return_synced) {
         console.log(`  🔄 반납 동기화: ${doc.id}`);
         await syncSingleRental(doc.id, data, true);
         syncedCount++;
-      } else {
+      }
+      // 케이스 4: 이미 모두 동기화됨 → 스킵
+      else {
         skippedCount++;
       }
     }
