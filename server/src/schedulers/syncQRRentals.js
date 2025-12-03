@@ -156,53 +156,35 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
 
 /**
  * 기존에 동기화되지 않은 QR 대여를 일괄 동기화 (서버 시작 시)
+ * 현재 대여 중인 문서만 처리 (이미 반납된 과거 데이터는 무시)
  */
 async function syncExistingRentals() {
   try {
     console.log('🔄 [syncQRRentals] 기존 미동기화 대여 일괄 처리 시작...');
 
-    // source가 'web'이 아닌 문서 조회 (pg_synced 필드가 없는 기존 문서 포함)
-    const allQRRentalsQuery = await db.collection('rents')
+    // status='rent'이고 source가 'web'이 아닌 문서만 조회 (현재 대여 중인 것만)
+    const activeRentalsQuery = await db.collection('rents')
+      .where('status', '==', 'rent')
       .where('source', '!=', 'web')
       .orderBy('source')
       .orderBy('rented_date', 'desc')
       .limit(100)
       .get();
 
-    console.log(`📱 [syncQRRentals] QR 대여/반납 문서 총 ${allQRRentalsQuery.size}개`);
+    console.log(`📱 [syncQRRentals] 현재 대여 중인 QR 문서: ${activeRentalsQuery.size}개`);
 
     let syncedCount = 0;
     let skippedCount = 0;
 
-    for (const doc of allQRRentalsQuery.docs) {
+    for (const doc of activeRentalsQuery.docs) {
       const data = doc.data();
 
-      // 케이스 1: status='rent'이고 대여 미동기화 → 대여만 처리
-      if (data.status === 'rent' && !data.pg_synced) {
+      // pg_synced가 없거나 false인 경우만 동기화
+      if (!data.pg_synced) {
         console.log(`  🔄 대여 동기화: ${doc.id}`);
         await syncSingleRental(doc.id, data, false);
         syncedCount++;
-      }
-      // 케이스 2: status='return'이고 대여 미동기화 → 대여 먼저, 반납 나중에
-      else if (data.status === 'return' && !data.pg_synced) {
-        console.log(`  🔄 대여+반납 동기화: ${doc.id} (반납 완료된 기존 문서)`);
-
-        // 먼저 대여 처리 (status를 임시로 'rent'로 변경)
-        const rentalData = { ...data, status: 'rent' };
-        await syncSingleRental(doc.id, rentalData, false);
-
-        // 그 다음 반납 처리
-        await syncSingleRental(doc.id, data, true);
-        syncedCount += 2;
-      }
-      // 케이스 3: status='return'이고 대여는 동기화됨, 반납만 미동기화 → 반납만 처리
-      else if (data.status === 'return' && data.pg_synced && !data.pg_return_synced) {
-        console.log(`  🔄 반납 동기화: ${doc.id}`);
-        await syncSingleRental(doc.id, data, true);
-        syncedCount++;
-      }
-      // 케이스 4: 이미 모두 동기화됨 → 스킵
-      else {
+      } else {
         skippedCount++;
       }
     }
