@@ -166,9 +166,9 @@ export default function CafeActiveRentals() {
           )}
         </div>
 
-        {cupStatus?.available_cups < 10 && (
+        {cupStatus && cupStatus.total_cups > 0 && (cupStatus.available_cups / cupStatus.total_cups) < 0.2 && (
           <div className="warning-message">
-            ⚠️ 컵 재고가 부족합니다! 추가 구매를 고려해주세요.
+            ⚠️ 컵 재고가 부족합니다! (남은 재고: {cupStatus.available_cups}개, {Math.round((cupStatus.available_cups / cupStatus.total_cups) * 100)}%)
           </div>
         )}
       </div>

@@ -652,33 +652,21 @@ class Statistics {
   static async getCupStatus(cafeId) {
     try {
       const result = await pool.query(`
-        WITH rental_status AS (
-          SELECT
-            phone_number,
-            quantity,
-            CASE
-              WHEN expected_return_date >= NOW() THEN 'active'
-              WHEN expected_return_date < NOW() - INTERVAL '7 days' THEN 'expired'
-              ELSE 'overdue'
-            END as status
-          FROM active_rentals
-          WHERE cafe_id = $1
-        )
         SELECT
           c.total_cups,
-          COALESCE(SUM(CASE WHEN rs.status IN ('active', 'overdue') THEN rs.quantity ELSE 0 END), 0) as rented_cups,
-          COALESCE(SUM(CASE WHEN rs.status = 'expired' THEN rs.quantity ELSE 0 END), 0) as lost_cups,
-          COALESCE(SUM(CASE WHEN rs.status = 'active' THEN rs.quantity ELSE 0 END), 0) as active_rentals,
-          COALESCE(SUM(CASE WHEN rs.status = 'overdue' THEN rs.quantity ELSE 0 END), 0) as overdue_rentals,
-          COUNT(DISTINCT rs.phone_number) FILTER (WHERE rs.status IN ('active', 'overdue')) as active_users
+          COALESCE(SUM(CASE WHEN ar.expected_return_date >= NOW() OR (ar.expected_return_date < NOW() AND ar.expected_return_date >= NOW() - INTERVAL '7 days') THEN ar.quantity ELSE 0 END), 0) as rented_cups,
+          COALESCE(SUM(CASE WHEN ar.expected_return_date < NOW() - INTERVAL '7 days' THEN ar.quantity ELSE 0 END), 0) as lost_cups,
+          COALESCE(SUM(CASE WHEN ar.expected_return_date >= NOW() THEN ar.quantity ELSE 0 END), 0) as active_rentals,
+          COALESCE(SUM(CASE WHEN ar.expected_return_date < NOW() AND ar.expected_return_date >= NOW() - INTERVAL '7 days' THEN ar.quantity ELSE 0 END), 0) as overdue_rentals,
+          COUNT(DISTINCT ar.phone_number) FILTER (WHERE ar.expected_return_date >= NOW() OR (ar.expected_return_date < NOW() AND ar.expected_return_date >= NOW() - INTERVAL '7 days')) as active_users
         FROM cafes c
-        LEFT JOIN rental_status rs ON true
+        LEFT JOIN active_rentals ar ON c.id = ar.cafe_id
         WHERE c.id = $1
         GROUP BY c.id, c.total_cups
       `, [cafeId]);
 
       if (result.rows.length === 0) {
-        return { total_cups: 0, rented_cups: 0, lost_cups: 0, available_cups: 0, rental_rate: 0 };
+        return { total_cups: 0, rented_cups: 0, lost_cups: 0, available_cups: 0, rental_rate: 0, active_users: 0 };
       }
 
       const row = result.rows[0];
