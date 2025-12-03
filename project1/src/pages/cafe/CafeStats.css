@@ -71,14 +71,14 @@
   font-weight: 500;
 }
 
-.period-selector {
+.cafe-stats-container .period-selector {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
   justify-content: center;
 }
 
-.period-btn {
+.cafe-stats-container .period-btn {
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
@@ -90,11 +90,11 @@
   transition: all 0.3s ease;
 }
 
-.period-btn:hover {
+.cafe-stats-container .period-btn:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.period-btn.active {
+.cafe-stats-container .period-btn.active {
   background: white;
   color: #4481D1;
   border-color: white;
@@ -319,7 +319,7 @@
     font-size: 24px;
   }
 
-  .period-selector {
+  .cafe-stats-container .period-selector {
     flex-wrap: wrap;
   }
 
