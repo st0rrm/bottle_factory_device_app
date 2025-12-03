@@ -161,21 +161,42 @@ async function syncExistingRentals() {
   try {
     console.log('🔄 [syncQRRentals] 기존 미동기화 대여 일괄 처리 시작...');
 
-    // pg_synced=false인 문서 조회
-    const unsyncedQuery = await db.collection('rents')
-      .where('pg_synced', '==', false)
-      .limit(50)
+    // source가 'web'이 아닌 문서 조회 (pg_synced 필드가 없는 기존 문서 포함)
+    const allQRRentalsQuery = await db.collection('rents')
+      .where('source', '!=', 'web')
+      .orderBy('source')
+      .orderBy('rented_date', 'desc')
+      .limit(100)
       .get();
 
-    console.log(`📱 [syncQRRentals] 미동기화 대여: ${unsyncedQuery.size}개`);
+    console.log(`📱 [syncQRRentals] QR 대여/반납 문서 총 ${allQRRentalsQuery.size}개`);
 
     let syncedCount = 0;
-    for (const doc of unsyncedQuery.docs) {
-      await syncSingleRental(doc.id, doc.data());
-      syncedCount++;
+    let skippedCount = 0;
+
+    for (const doc of allQRRentalsQuery.docs) {
+      const data = doc.data();
+
+      // 대여 동기화 체크
+      const needsSyncRental = !data.pg_synced;
+
+      // 반납 동기화 체크 (status가 'return'이고 pg_return_synced가 없는 경우)
+      const needsSyncReturn = data.status === 'return' && !data.pg_return_synced;
+
+      if (needsSyncRental) {
+        console.log(`  🔄 대여 동기화: ${doc.id} (status: ${data.status})`);
+        await syncSingleRental(doc.id, data, false);
+        syncedCount++;
+      } else if (needsSyncReturn) {
+        console.log(`  🔄 반납 동기화: ${doc.id}`);
+        await syncSingleRental(doc.id, data, true);
+        syncedCount++;
+      } else {
+        skippedCount++;
+      }
     }
 
-    console.log(`✅ [syncQRRentals] 기존 미동기화 대여 처리 완료: ${syncedCount}개`);
+    console.log(`✅ [syncQRRentals] 기존 미동기화 대여 처리 완료: 동기화 ${syncedCount}개, 스킵 ${skippedCount}개`);
   } catch (error) {
     console.error('❌ [syncQRRentals] 기존 대여 동기화 오류:', error);
   }
