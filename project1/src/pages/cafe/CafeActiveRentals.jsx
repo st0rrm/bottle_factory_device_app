@@ -56,6 +56,13 @@ export default function CafeActiveRentals() {
         return;
       }
 
+      // 현재 대여 중 + 분실 컵보다 작게 설정할 수 없음
+      const minRequired = (cupStatus?.rented_cups || 0) + (cupStatus?.lost_cups || 0);
+      if (totalCups < minRequired) {
+        alert(`컵 개수는 최소 ${minRequired}개 이상이어야 합니다.\n(현재 대여 중: ${cupStatus?.rented_cups || 0}개, 분실: ${cupStatus?.lost_cups || 0}개)`);
+        return;
+      }
+
       const token = localStorage.getItem('authToken');
       await axios.put(
         `${API_URL}/statistics/my-total-cups`,

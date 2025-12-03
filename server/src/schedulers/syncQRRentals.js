@@ -37,7 +37,7 @@ function maskPhoneNumber(phone) {
 /**
  * 단일 QR 대여를 PostgreSQL에 동기화
  */
-async function syncSingleRental(docId, data) {
+async function syncSingleRental(docId, data, isReturnUpdate = false) {
   // 이미 동기화 중이면 스킵
   if (syncingDocs.has(docId)) {
     return;
@@ -48,8 +48,8 @@ async function syncSingleRental(docId, data) {
     return;
   }
 
-  // 이미 동기화된 문서는 스킵
-  if (data.pg_synced === true) {
+  // 반납 업데이트가 아닌 경우에만 pg_synced 체크
+  if (!isReturnUpdate && data.pg_synced === true) {
     return;
   }
 
@@ -123,11 +123,17 @@ async function syncSingleRental(docId, data) {
       'qr'   // source: QR 스캔
     );
 
-    // Firebase에 동기화 플래그 설정
-    await db.collection('rents').doc(docId).update({
+    // Firebase에 동기화 플래그 설정 (반납은 pg_return_synced 플래그 추가)
+    const updateData = {
       pg_synced: true,
       pg_synced_at: FieldValue.serverTimestamp()
-    });
+    };
+
+    if (status === 'return') {
+      updateData.pg_return_synced = true;
+    }
+
+    await db.collection('rents').doc(docId).update(updateData);
 
     console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName}) ${transactionType} - ${maskedPhone}`);
 
@@ -184,7 +190,7 @@ function startRealtimeListener() {
   // 먼저 기존 미동기화 대여 처리
   syncExistingRentals();
 
-  // 실시간 리스너 설정 - 새로운 대여만 감지
+  // 실시간 리스너 설정 - 새로운 대여와 반납 모두 감지
   const now = new Date();
 
   listener = db.collection('rents')
@@ -192,15 +198,25 @@ function startRealtimeListener() {
     .onSnapshot(
       (snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
-          if (change.type === 'added') {
-            const doc = change.doc;
-            const data = doc.data();
+          const doc = change.doc;
+          const data = doc.data();
 
-            console.log(`🆕 [syncQRRentals] 새 대여 감지: ${doc.id}`);
+          // added: 새 대여, modified: 반납 업데이트
+          if (change.type === 'added' || change.type === 'modified') {
+            const isReturnUpdate = change.type === 'modified' && data.status === 'return';
 
-            // QR 대여인지 확인 후 동기화
-            if (data.source !== 'web' && data.pg_synced !== true) {
-              await syncSingleRental(doc.id, data);
+            console.log(`🆕 [syncQRRentals] ${change.type === 'added' ? '새 대여' : '반납 업데이트'} 감지: ${doc.id} (status: ${data.status})`);
+
+            // QR 대여/반납인지 확인 후 동기화
+            if (data.source !== 'web') {
+              // 반납 업데이트는 pg_return_synced 체크, 대여는 pg_synced 체크
+              const shouldSync = isReturnUpdate
+                ? !data.pg_return_synced
+                : !data.pg_synced;
+
+              if (shouldSync) {
+                await syncSingleRental(doc.id, data, isReturnUpdate);
+              }
             }
           }
         });
