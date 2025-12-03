@@ -212,27 +212,32 @@ function startRealtimeListener() {
           const doc = change.doc;
           const data = doc.data();
 
-          // added: 새 대여, modified: 반납 업데이트
-          if (change.type === 'added' || change.type === 'modified') {
-            const isReturnUpdate = change.type === 'modified' && data.status === 'return';
+          // added: 새 대여
+          // removed: 반납 (status=rent 쿼리에서 벗어남)
+          if (change.type === 'added') {
+            console.log(`🆕 [syncQRRentals] 새 대여 감지: ${doc.id} (status: ${data.status}, source: ${data.source})`);
 
-            console.log(`🆕 [syncQRRentals] ${change.type === 'added' ? '새 대여' : '반납 업데이트'} 감지: ${doc.id} (status: ${data.status}, source: ${data.source})`);
-
-            // 중복 처리 방지 로직
-            // 1. added 이벤트 + source='web' → 스킵 (이미 routes/users.js에서 처리됨)
-            // 2. modified 이벤트 (반납) → source 무관하게 처리 (크로스 플랫폼 반납 지원)
-            if (change.type === 'added' && data.source === 'web') {
+            // 중복 처리 방지: 웹 대여는 이미 routes/users.js에서 처리됨
+            if (data.source === 'web') {
               console.log(`  ⏭️ 스킵: 웹 대여는 이미 routes/users.js에서 처리됨`);
               return;
             }
 
-            // 반납 업데이트는 pg_return_synced 체크, 대여는 pg_synced 체크
-            const shouldSync = isReturnUpdate
-              ? !data.pg_return_synced
-              : !data.pg_synced;
+            // pg_synced가 없거나 false인 경우만 동기화
+            if (!data.pg_synced) {
+              await syncSingleRental(doc.id, data, false);
+            }
+          } else if (change.type === 'removed') {
+            // status=rent → return으로 변경되어 쿼리에서 제거됨 = 반납
+            console.log(`📤 [syncQRRentals] 반납 감지 (쿼리 제거): ${doc.id} (status: ${data.status}, source: ${data.source})`);
 
-            if (shouldSync) {
-              await syncSingleRental(doc.id, data, isReturnUpdate);
+            // 문서 다시 조회해서 최신 상태 확인 (status=return인지)
+            const freshDoc = await db.collection('rents').doc(doc.id).get();
+            if (freshDoc.exists) {
+              const freshData = freshDoc.data();
+              if (freshData.status === 'return' && !freshData.pg_return_synced) {
+                await syncSingleRental(doc.id, freshData, true);
+              }
             }
           }
         });
