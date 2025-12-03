@@ -38,6 +38,10 @@ function maskPhoneNumber(phone) {
  * 단일 QR 대여를 PostgreSQL에 동기화
  */
 async function syncSingleRental(docId, data, isReturnUpdate = false) {
+  // 중복 방지 키 생성 (대여/반납 구분)
+  const syncKey = isReturnUpdate ? `${docId}:return` : `${docId}:rent`;
+  const flagField = isReturnUpdate ? 'pg_return_synced' : 'pg_synced';
+
   // 반납 업데이트가 아닌 경우에만 pg_synced 체크
   // (대여는 pg_synced, 반납은 pg_return_synced로 중복 방지)
   if (!isReturnUpdate && data.pg_synced === true) {
@@ -49,24 +53,45 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
     return;
   }
 
-  // 이미 동기화 중이면 스킵
-  if (syncingDocs.has(docId)) {
-    console.log(`⏭️ [syncQRRental] 이미 동기화 중: ${docId}`);
+  // 이미 동기화 중이면 스킵 (메모리 기반 중복 방지)
+  if (syncingDocs.has(syncKey)) {
+    console.log(`⏭️ [syncQRRental] 이미 동기화 중: ${syncKey}`);
     return;
   }
 
-  syncingDocs.add(docId);
+  syncingDocs.add(syncKey);
 
-  // 즉시 Firebase에 플래그 설정 (다른 중복 이벤트 방지)
+  // Firebase 트랜잭션으로 플래그 원자적 설정 (중복 이벤트 완전 차단)
+  const docRef = db.collection('rents').doc(docId);
+
   try {
-    const flagUpdate = isReturnUpdate
-      ? { pg_return_synced: true }
-      : { pg_synced: true };
+    const shouldProcess = await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(docRef);
 
-    await db.collection('rents').doc(docId).update(flagUpdate);
+      if (!doc.exists) {
+        return false;
+      }
+
+      const docData = doc.data();
+
+      // 이미 플래그가 설정되어 있으면 스킵
+      if (docData[flagField] === true) {
+        return false;
+      }
+
+      // 플래그 설정 (트랜잭션으로 원자적 처리)
+      transaction.update(docRef, { [flagField]: true });
+      return true;
+    });
+
+    if (!shouldProcess) {
+      console.log(`⏭️ [syncQRRental] 이미 처리됨 (Firebase 체크): ${syncKey}`);
+      syncingDocs.delete(syncKey);
+      return;
+    }
   } catch (flagError) {
     console.error(`❌ [syncQRRental] 플래그 설정 실패: ${docId}`, flagError);
-    syncingDocs.delete(docId);
+    syncingDocs.delete(syncKey);
     return;
   }
 
@@ -154,7 +179,7 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
       console.error(`❌ [syncQRRental] 에러 정보 기록 실패: ${docId}`, flagError);
     }
   } finally {
-    syncingDocs.delete(docId);
+    syncingDocs.delete(syncKey);
   }
 }
 
