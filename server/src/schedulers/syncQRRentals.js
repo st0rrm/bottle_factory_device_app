@@ -61,39 +61,7 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
 
   syncingDocs.add(syncKey);
 
-  // Firebase 트랜잭션으로 플래그 원자적 설정 (중복 이벤트 완전 차단)
   const docRef = db.collection('rents').doc(docId);
-
-  try {
-    const shouldProcess = await db.runTransaction(async (transaction) => {
-      const doc = await transaction.get(docRef);
-
-      if (!doc.exists) {
-        return false;
-      }
-
-      const docData = doc.data();
-
-      // 이미 플래그가 설정되어 있으면 스킵
-      if (docData[flagField] === true) {
-        return false;
-      }
-
-      // 플래그 설정 (트랜잭션으로 원자적 처리)
-      transaction.update(docRef, { [flagField]: true });
-      return true;
-    });
-
-    if (!shouldProcess) {
-      console.log(`⏭️ [syncQRRental] 이미 처리됨 (Firebase 체크): ${syncKey}`);
-      syncingDocs.delete(syncKey);
-      return;
-    }
-  } catch (flagError) {
-    console.error(`❌ [syncQRRental] 플래그 설정 실패: ${docId}`, flagError);
-    syncingDocs.delete(syncKey);
-    return;
-  }
 
   try {
     const rentedShopId = data.rented_shop_id;
@@ -160,8 +128,9 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
       'qr'   // source: QR 스캔
     );
 
-    // 동기화 완료 타임스탬프 추가 (플래그는 이미 함수 시작 시 설정됨)
+    // 동기화 완료: 플래그와 타임스탬프 설정 (PostgreSQL 성공 후에만 설정)
     await db.collection('rents').doc(docId).update({
+      [flagField]: true,
       pg_synced_at: FieldValue.serverTimestamp()
     });
 
@@ -170,10 +139,11 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
   } catch (error) {
     console.error(`❌ [syncQRRental] 동기화 실패: ${docId}`, error);
 
-    // 에러 정보 기록 (플래그는 이미 설정됨)
+    // 에러 정보만 기록 (플래그는 설정하지 않아서 재시도 가능)
     try {
       await db.collection('rents').doc(docId).update({
-        pg_sync_error: error.message
+        pg_sync_error: error.message,
+        pg_sync_error_at: FieldValue.serverTimestamp()
       });
     } catch (flagError) {
       console.error(`❌ [syncQRRental] 에러 정보 기록 실패: ${docId}`, flagError);
