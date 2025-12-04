@@ -703,8 +703,26 @@ router.get('/phone/:phone', async (req, res) => {
         });
       } catch (authError) {
         if (authError.code === 'auth/user-not-found') {
-          // 이 문서는 Auth가 삭제됨 → 다음 문서 확인
+          // 이 문서는 Auth가 삭제됨 → PostgreSQL active_rentals 정리
           console.log(`⏭️  Auth 삭제된 문서 건너뜀: ${userId} (${phone})`);
+
+          // PostgreSQL에서 이 전화번호의 active_rentals 삭제 (탈퇴한 사용자의 대여 기록 정리)
+          try {
+            const maskedPhone = maskPhoneNumber(phone);
+            if (maskedPhone) {
+              const deleteResult = await pool.query(
+                'DELETE FROM active_rentals WHERE phone_number = $1',
+                [maskedPhone]
+              );
+              if (deleteResult.rowCount > 0) {
+                console.log(`  🧹 Active rentals 정리: ${maskedPhone} (${deleteResult.rowCount}개 삭제)`);
+              }
+            }
+          } catch (cleanupError) {
+            console.error(`  ⚠️ Active rentals 정리 실패: ${userId}`, cleanupError);
+            // 정리 실패해도 계속 진행
+          }
+
           continue;
         }
         throw authError;
