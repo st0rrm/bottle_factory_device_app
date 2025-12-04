@@ -424,7 +424,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
     setTimeout(() => {
       setShowSurveyQRModal(true);
-    }, 15000);
+    }, 1500);
   };
 
   const handleReturnSuccess = () => {
