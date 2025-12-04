@@ -38,21 +38,32 @@ async function syncSingleCollection(docId, data) {
     const score = data.score || 0;
     const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 리턴미컵(텀블러) 아이템 ID
 
-    // collect_items로 반납/실천 판단
+    // collect_items로 반납/실천 판단 및 총 개수 계산
     let actionType = 'return'; // 기본값
+    let totalItemCount = 1; // 기본값: 1개
     try {
+      // collect_items 서브컬렉션 전체 조회
       const collectItemsSnapshot = await db.collection('collect_history')
         .doc(docId)
         .collection('collect_items')
-        .doc(RETURNMECUP_ITEM_ID)
         .get();
 
-      // 리턴미컵 아이템이 있고 score가 10점이면 반납, 아니면 실천
-      const isReturn = collectItemsSnapshot.exists && score === 10;
-      actionType = isReturn ? 'return' : 'do';
+      if (!collectItemsSnapshot.empty) {
+        // 모든 아이템의 개수 합산
+        totalItemCount = 0;
+        collectItemsSnapshot.forEach(doc => {
+          const itemData = doc.data();
+          totalItemCount += (itemData.count || 1);
+        });
+
+        // 리턴미컵 아이템이 있고 score가 10점이면 반납, 아니면 실천
+        const returnmecupDoc = collectItemsSnapshot.docs.find(doc => doc.id === RETURNMECUP_ITEM_ID);
+        const isReturn = returnmecupDoc && score === 10;
+        actionType = isReturn ? 'return' : 'do';
+      }
     } catch (itemError) {
       console.warn(`⚠️ [syncQRCollection] collect_items 확인 실패: ${docId}`, itemError);
-      // 에러 시 기본값 'return' 사용
+      // 에러 시 기본값 사용 (return, 1개)
     }
 
     // 가게 정보 조회
@@ -91,8 +102,8 @@ async function syncSingleCollection(docId, data) {
     const transactionType = actionType === 'do' ? 'do' : 'return';
 
     // 웹 적립은 이미 routes/users.js에서 quantity 포함하여 처리됨
-    // QR 적립만 여기서 quantity=1로 카운팅
-    const quantity = (data.source === 'web') ? 0 : 1;
+    // QR 적립만 여기서 실제 개수로 카운팅
+    const quantity = (data.source === 'web') ? 0 : totalItemCount;
 
     await Statistics.addTransaction(
       cafeId,
