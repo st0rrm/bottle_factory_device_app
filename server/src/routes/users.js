@@ -684,31 +684,39 @@ router.get('/phone/:phone', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get first user (phone should be unique)
-    const userDoc = usersSnapshot.docs[0];
-    const userId = userDoc.id;
+    // ✅ 재가입 케이스 고려: Auth가 살아있는 문서 찾기
+    // 같은 전화번호로 여러 문서가 있을 수 있음 (탈퇴 후 재가입)
+    const { auth } = require('../config/firebase');
 
-    // ✅ Check if user still exists in Firebase Auth (not deleted)
-    try {
-      const { auth } = require('../config/firebase');
-      await auth.getUser(userId);
+    for (const userDoc of usersSnapshot.docs) {
+      const userId = userDoc.id;
 
-      // User exists in Firebase Auth → valid user
-      res.json({
-        uid: userId,
-        ...userDoc.data()
-      });
-    } catch (authError) {
-      if (authError.code === 'auth/user-not-found') {
-        // User deleted from Firebase Auth but Firestore doc remains
-        console.log('User deleted from Auth, treating as new user:', userId);
-        return res.status(404).json({
-          error: 'User not found',
-          message: 'User account has been deleted'
+      try {
+        // Auth에 해당 UID가 존재하는지 확인
+        await auth.getUser(userId);
+
+        // ✅ Auth가 살아있는 문서 발견 → 반환
+        console.log(`✅ Auth가 살아있는 사용자 발견: ${userId} (${phone})`);
+        return res.json({
+          uid: userId,
+          ...userDoc.data()
         });
+      } catch (authError) {
+        if (authError.code === 'auth/user-not-found') {
+          // 이 문서는 Auth가 삭제됨 → 다음 문서 확인
+          console.log(`⏭️  Auth 삭제된 문서 건너뜀: ${userId} (${phone})`);
+          continue;
+        }
+        throw authError;
       }
-      throw authError;
     }
+
+    // 모든 문서의 Auth가 삭제됨 → 404 (탈퇴 케이스)
+    console.log(`❌ 모든 문서의 Auth가 삭제됨 (탈퇴 케이스): ${phone}`);
+    return res.status(404).json({
+      error: 'User not found',
+      message: 'User account has been deleted'
+    });
 
   } catch (error) {
     console.error('Get user by phone error:', error);
