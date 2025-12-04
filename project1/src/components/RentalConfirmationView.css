@@ -189,10 +189,11 @@
   width: 100%;
 }
 
-.cancel-button,
-.confirm-button {
-  flex: 1 1 0;
-  min-width: 0;
+.rental-confirmation-view .cancel-button,
+.rental-confirmation-view .confirm-button {
+  flex: 1;
+  width: auto;
+  max-width: none;
   padding: clamp(0.625rem, 1.5vh, 1.25rem);
   border-radius: clamp(0.75rem, 1.5vw, 1rem);
   font-size: clamp(0.875rem, 2vw + 1vh, 1.5rem);
@@ -202,21 +203,21 @@
   transition: background-color 0.3s;
 }
 
-.cancel-button {
+.rental-confirmation-view .cancel-button {
   background-color: #e2e2e2;
   color: #8798a1;
 }
 
-.cancel-button:hover {
+.rental-confirmation-view .cancel-button:hover {
   background-color: #d4d4d4;
 }
 
-.confirm-button {
+.rental-confirmation-view .confirm-button {
   background-color: #478a81;
   color: white;
 }
 
-.confirm-button:hover {
+.rental-confirmation-view .confirm-button:hover {
   background-color: #44748a;
 }
 

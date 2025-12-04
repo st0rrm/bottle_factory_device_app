@@ -2,11 +2,11 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 /**
  * LLM 기반 음성 인식 훅
- * OpenAI Whisper (음성→텍스트) + Claude Haiku (의도 분석)
+ * OpenAI gpt-4o-mini transcribe (음성→텍스트) + Claude Haiku (의도 분석)
  *
  * 동작 방식:
  * 1. 5초 세그먼트 지속 녹음
- * 2. 각 세그먼트를 크기 기반 휴리스틱으로 음량 추정
+ * 2. 각 세그먼트의 rms 기반 음량 추정
  * 3. 음량 낮음 → 폐기, 다음 세그먼트로
  * 4. 음량 충분 → LLM API 전송 (최대 15초 누적 + 15초 슬라이딩 윈도우)
  * 5. Confidence 기반 적응형 처리

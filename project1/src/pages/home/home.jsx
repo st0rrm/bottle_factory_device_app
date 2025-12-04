@@ -18,7 +18,7 @@ import { logout } from '../../api/auth';
 import { db } from '../../firebase/config';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { usePicovoice } from '../../hooks/usePicovoice';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (Whisper + Claude)
+import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (GPT-4o-mini-transcribe + Claude)
 import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
 import { getShopByName } from '../../firebase/firestore';
 
@@ -183,7 +183,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   // const { isListening, error: picoError, hasPermission, requestPermission } =
   //   usePicovoice(!isAnyModalOpen, handleWakeWordDetected);
 
-  // 방법 2: LLM 기반 (Whisper + Claude)
+  // 방법 2: LLM 기반 (GPT-4o-mini-transcribe + Claude)
   const { isListening, error: picoError, hasPermission, requestPermission, startRecording } =
     useVoiceRecognition(!isAnyModalOpen, handleWakeWordDetected, {
       segmentDuration: 5000,         // 5초마다 분석
@@ -424,7 +424,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
     setTimeout(() => {
       setShowSurveyQRModal(true);
-    }, 1500);
+    }, 5000);
   };
 
   const handleReturnSuccess = () => {
