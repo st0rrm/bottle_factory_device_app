@@ -687,6 +687,7 @@ router.get('/phone/:phone', async (req, res) => {
     // ✅ 재가입 케이스 고려: Auth가 살아있는 문서 찾기
     // 같은 전화번호로 여러 문서가 있을 수 있음 (탈퇴 후 재가입)
     const { auth } = require('../config/firebase');
+    let foundActiveUser = false;
 
     for (const userDoc of usersSnapshot.docs) {
       const userId = userDoc.id;
@@ -697,32 +698,15 @@ router.get('/phone/:phone', async (req, res) => {
 
         // ✅ Auth가 살아있는 문서 발견 → 반환
         console.log(`✅ Auth가 살아있는 사용자 발견: ${userId} (${phone})`);
+        foundActiveUser = true;
         return res.json({
           uid: userId,
           ...userDoc.data()
         });
       } catch (authError) {
         if (authError.code === 'auth/user-not-found') {
-          // 이 문서는 Auth가 삭제됨 → PostgreSQL active_rentals 정리
+          // 이 문서는 Auth가 삭제됨 → 일단 스킵
           console.log(`⏭️  Auth 삭제된 문서 건너뜀: ${userId} (${phone})`);
-
-          // PostgreSQL에서 이 전화번호의 active_rentals 삭제 (탈퇴한 사용자의 대여 기록 정리)
-          try {
-            const maskedPhone = maskPhoneNumber(phone);
-            if (maskedPhone) {
-              const deleteResult = await pool.query(
-                'DELETE FROM active_rentals WHERE phone_number = $1',
-                [maskedPhone]
-              );
-              if (deleteResult.rowCount > 0) {
-                console.log(`  🧹 Active rentals 정리: ${maskedPhone} (${deleteResult.rowCount}개 삭제)`);
-              }
-            }
-          } catch (cleanupError) {
-            console.error(`  ⚠️ Active rentals 정리 실패: ${userId}`, cleanupError);
-            // 정리 실패해도 계속 진행
-          }
-
           continue;
         }
         throw authError;
@@ -730,11 +714,32 @@ router.get('/phone/:phone', async (req, res) => {
     }
 
     // 모든 문서의 Auth가 삭제됨 → 404 (탈퇴 케이스)
-    console.log(`❌ 모든 문서의 Auth가 삭제됨 (탈퇴 케이스): ${phone}`);
-    return res.status(404).json({
-      error: 'User not found',
-      message: 'User account has been deleted'
-    });
+    // 이 경우에만 active_rentals 정리
+    if (!foundActiveUser) {
+      console.log(`❌ 모든 문서의 Auth가 삭제됨 (탈퇴 케이스): ${phone}`);
+
+      // PostgreSQL에서 이 전화번호의 active_rentals 삭제 (탈퇴한 사용자의 대여 기록 정리)
+      try {
+        const maskedPhone = maskPhoneNumber(phone);
+        if (maskedPhone) {
+          const deleteResult = await pool.query(
+            'DELETE FROM active_rentals WHERE phone_number = $1',
+            [maskedPhone]
+          );
+          if (deleteResult.rowCount > 0) {
+            console.log(`  🧹 Active rentals 정리: ${maskedPhone} (${deleteResult.rowCount}개 삭제)`);
+          }
+        }
+      } catch (cleanupError) {
+        console.error(`  ⚠️ Active rentals 정리 실패: ${phone}`, cleanupError);
+        // 정리 실패해도 계속 진행
+      }
+
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'User account has been deleted'
+      });
+    }
 
   } catch (error) {
     console.error('Get user by phone error:', error);
