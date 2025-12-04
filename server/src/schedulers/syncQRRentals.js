@@ -270,6 +270,12 @@ function startRealtimeListener() {
             // status=rent → return으로 변경되어 쿼리에서 제거됨 = 반납
             console.log(`📤 [syncQRRentals] 반납 감지 (쿼리 제거): ${doc.id} (status: ${data.status}, source: ${data.source})`);
 
+            // 웹 반납은 routes/users.js에서 이미 처리됨
+            if (data.source === 'web') {
+              console.log(`  ⏭️ 스킵: 웹 반납은 이미 routes/users.js에서 처리됨`);
+              return;
+            }
+
             // 문서 다시 조회해서 최신 상태 확인 (status=return인지)
             const freshDoc = await db.collection('rents').doc(doc.id).get();
             if (freshDoc.exists) {
