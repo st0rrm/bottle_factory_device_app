@@ -1,0 +1,332 @@
+.settings-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.settings-modal {
+  position: relative;
+  background: white;
+  border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(16px, 3vw, 24px);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Close Button */
+.settings-close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+
+.settings-close-button:hover {
+  opacity: 0.7;
+}
+
+.settings-modal h2 {
+  margin: 0 0 clamp(16px, 3vh, 24px) 0;
+  font-size: clamp(20px, 4vw, 24px);
+  font-weight: 600;
+  color: #333;
+}
+
+.settings-section {
+  margin: clamp(16px, 3vh, 24px) 0;
+  padding-bottom: clamp(16px, 3vh, 24px);
+  border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-of-type {
+  border-bottom: none;
+}
+
+.settings-section h3 {
+  margin: 0 0 clamp(12px, 2vh, 16px) 0;
+  font-size: clamp(16px, 3vw, 18px);
+  font-weight: 600;
+  color: #555;
+}
+
+.background-grid {
+  display: flex;
+  gap: clamp(12px, 2vw, 16px);
+  margin-top: clamp(12px, 2vh, 16px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: clamp(6px, 1vh, 8px);
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f9f9f9;
+}
+
+.background-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.background-grid::-webkit-scrollbar-track {
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.background-grid::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.background-grid::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+.background-option {
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: clamp(6px, 1vw, 8px);
+  overflow: hidden;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  width: clamp(140px, 25vw, 180px);
+}
+
+.background-option:hover {
+  border-color: #ddd;
+}
+
+.background-option.selected {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.background-option img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  display: block;
+  border-radius: clamp(4px, 0.8vw, 6px) clamp(4px, 0.8vw, 6px) 0 0; /* 상단 모서리만 둥글게 */
+}
+
+.background-option span {
+  display: block;
+  padding: clamp(6px, 1.2vh, 8px);
+  text-align: center;
+  font-size: clamp(12px, 2vw, 14px);
+  color: #000;
+  background: #f9f9f9;
+  border-radius: 0 0 clamp(4px, 0.8vw, 6px) clamp(4px, 0.8vw, 6px); /* 하단 모서리만 둥글게 */
+}
+
+.logout-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: clamp(10px, 1.8vh, 12px) clamp(18px, 3vw, 24px);
+  border-radius: clamp(6px, 1vw, 8px);
+  cursor: pointer;
+  font-size: clamp(14px, 2.5vw, 16px);
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.logout-btn:hover {
+  background: #d32f2f;
+}
+
+/* Toggle Option */
+.toggle-option {
+  display: flex;
+  align-items: center;
+  padding: clamp(10px, 1.8vh, 12px) 0;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: clamp(10px, 1.8vw, 12px);
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: clamp(40px, 6vw, 48px);
+  height: clamp(20px, 3vh, 24px);
+  background: #ccc;
+  border-radius: clamp(20px, 3vh, 24px);
+  transition: background 0.3s;
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+  background: #4CAF50;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: clamp(16px, 2.5vw, 20px);
+  height: clamp(16px, 2.5vh, 20px);
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.toggle-checkbox:checked + .toggle-slider::after {
+  transform: translateX(clamp(20px, 3vw, 24px));
+}
+
+.toggle-text {
+  font-size: clamp(12px, 2vw, 14px);
+  color: #333;
+  font-weight: 500;
+}
+
+/* Cafe Name Section */
+.cafe-name-section {
+  padding: clamp(10px, 1.8vh, 12px) 0;
+}
+
+.cafe-name-display {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 12px);
+}
+
+.cafe-name-current {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.5vw, 10px);
+  font-size: clamp(14px, 2.5vw, 16px);
+}
+
+.cafe-name-current strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.custom-badge {
+  display: inline-block;
+  background: #4CAF50;
+  color: white;
+  padding: clamp(2px, 0.5vh, 4px) clamp(6px, 1vw, 8px);
+  border-radius: clamp(3px, 0.5vw, 4px);
+  font-size: clamp(10px, 1.8vw, 12px);
+  font-weight: 500;
+}
+
+.cafe-name-buttons {
+  display: flex;
+  gap: clamp(8px, 1.5vw, 10px);
+}
+
+.edit-name-btn,
+.reset-name-btn {
+  padding: clamp(8px, 1.5vh, 10px) clamp(14px, 2.5vw, 18px);
+  border: none;
+  border-radius: clamp(4px, 0.8vw, 6px);
+  font-size: clamp(12px, 2vw, 14px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-name-btn {
+  background: #2196F3;
+  color: white;
+}
+
+.edit-name-btn:hover {
+  background: #1976D2;
+}
+
+.reset-name-btn {
+  background: #FF9800;
+  color: white;
+}
+
+.reset-name-btn:hover {
+  background: #F57C00;
+}
+
+.cafe-name-edit {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 12px);
+}
+
+.cafe-name-input {
+  width: 100%;
+  padding: clamp(10px, 1.8vh, 12px);
+  border: 2px solid #ddd;
+  border-radius: clamp(6px, 1vw, 8px);
+  font-size: clamp(14px, 2.5vw, 16px);
+  transition: border-color 0.2s;
+}
+
+.cafe-name-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.cafe-name-edit-buttons {
+  display: flex;
+  gap: clamp(8px, 1.5vw, 10px);
+}
+
+.save-name-btn,
+.cancel-name-btn {
+  flex: 1;
+  padding: clamp(10px, 1.8vh, 12px);
+  border: none;
+  border-radius: clamp(6px, 1vw, 8px);
+  font-size: clamp(14px, 2.5vw, 16px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-name-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.save-name-btn:hover {
+  background: #45a049;
+}
+
+.cancel-name-btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.cancel-name-btn:hover {
+  background: #e0e0e0;
+}
+
+.cafe-name-hint {
+  margin: 0;
+  font-size: clamp(11px, 2vw, 13px);
+  color: #666;
+  font-style: italic;
+}

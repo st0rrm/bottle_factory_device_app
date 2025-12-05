@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AdminLogin.css';
 import xIcon from '../../assets/images/x_icon.svg';
-import { adminLogin } from '../../api/auth';
+import { adminLogin, cafeLogin } from '../../api/auth';
+import { useNavigate } from 'react-router-dom';
 
-function AdminLogin({ onClose, onLoginSuccess }) {
+function AdminLogin({ onClose, onLoginSuccess, forSettings = false }) {
+  const navigate = useNavigate();
   const [adminId, setAdminId] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // 설정 접근용일 때 15초 후 자동 닫기
+  useEffect(() => {
+    if (forSettings) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 15000); // 15초
+
+      return () => clearTimeout(timer);
+    }
+  }, [forSettings, onClose]);
 
   const handleLogin = async () => {
     if (!adminId || !password) {
@@ -19,17 +32,71 @@ function AdminLogin({ onClose, onLoginSuccess }) {
     setErrorMessage('');
 
     try {
-      const data = await adminLogin(adminId, password);
+      console.log('로그인 시도:', adminId);
 
-      // 토큰과 사용자 정보 저장
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userType', 'admin');
-      localStorage.setItem('userData', JSON.stringify(data.admin));
+      // 먼저 관리자 로그인 시도
+      try {
+        console.log('관리자 로그인 시도 중...');
+        const data = await adminLogin(adminId, password);
 
-      // 로그인 성공
-      onLoginSuccess(data.admin);
+        console.log('관리자 로그인 성공:', data);
+
+        // 설정 접근용이 아닐 때만 토큰 저장
+        if (!forSettings) {
+          localStorage.setItem('authToken', data.token);
+          localStorage.setItem('userType', 'admin');
+          localStorage.setItem('userData', JSON.stringify(data.admin));
+        }
+
+        // 로그인 성공 처리
+        onLoginSuccess(data.admin);
+
+        // 설정 접근용이 아니면 AdminDashboard로 이동
+        if (!forSettings) {
+          navigate('/admin/dashboard');
+        }
+        return;
+      } catch (adminError) {
+        console.log('관리자 로그인 실패, 카페 로그인 시도:', adminError);
+
+        // 관리자 로그인 실패 시 카페 로그인 시도
+        try {
+          console.log('카페 로그인 시도 중...');
+          const data = await cafeLogin(adminId, password);
+
+          console.log('카페 로그인 성공:', data);
+
+          // 설정 접근용일 경우
+          if (forSettings) {
+            // 로그인만 확인하고 설정 모달로
+            onLoginSuccess(data.cafe);
+            return;
+          }
+
+          // 설정 접근용이 아닐 때만 토큰 저장 및 페이지 이동
+          localStorage.setItem('authToken', data.token);
+          localStorage.setItem('userType', 'cafe_stats'); // 통계 보기용 카페 로그인
+          localStorage.setItem('userData', JSON.stringify(data.cafe));
+
+          console.log('localStorage 저장 완료:', {
+            authToken: localStorage.getItem('authToken'),
+            userType: localStorage.getItem('userType'),
+            userData: localStorage.getItem('userData')
+          });
+
+          // 카페 통계 페이지로 이동 (먼저 navigate, 그 다음 모달 닫기)
+          navigate('/cafe-stats', { replace: true });
+          onClose();
+          return;
+        } catch (cafeError) {
+          // 둘 다 실패
+          console.error('카페 로그인 실패:', cafeError);
+          throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
+        }
+      }
     } catch (error) {
-      setErrorMessage(error.error || '로그인 중 오류가 발생했습니다.');
+      console.error('최종 로그인 실패:', error);
+      setErrorMessage(error.message || error.error || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +119,7 @@ function AdminLogin({ onClose, onLoginSuccess }) {
         <div className="admin-login-content">
           {/* Title */}
           <h2 className="admin-login-title">리턴미컵 관리 시스템</h2>
-          <p className="admin-login-subtitle">관리자 로그인</p>
+          <p className="admin-login-subtitle">관리자 또는 카페 ID로 로그인</p>
 
           {/* Login Form */}
           <div className="admin-login-form">

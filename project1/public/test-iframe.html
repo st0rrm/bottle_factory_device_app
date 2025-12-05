@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bottleclub-tree iframe 테스트</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: sans-serif;
+    }
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: 2px solid #333;
+    }
+    .info {
+      background: #f0f0f0;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h2>bottleclub-tree iframe 연결 테스트</h2>
+    <p>이 페이지는 bottleclub-tree.web.app을 iframe으로 로드할 수 있는지 테스트합니다.</p>
+    <p>아래 iframe에 나무가 표시되면 성공입니다.</p>
+  </div>
+
+  <div>
+    <button onclick="sendInit()">Init 메시지 전송</button>
+    <button onclick="sendGrow()">Grow 메시지 전송</button>
+    <button onclick="checkConsole()">콘솔 확인</button>
+  </div>
+
+  <iframe
+    id="tree-iframe"
+    src="https://bottleclub-tree.web.app/"
+    sandbox="allow-scripts allow-same-origin allow-forms"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; storage-access"
+  ></iframe>
+
+  <div class="info" id="log">
+    <h3>로그:</h3>
+    <div id="log-content"></div>
+  </div>
+
+  <script>
+    const iframe = document.getElementById('tree-iframe');
+    const logContent = document.getElementById('log-content');
+
+    function log(message) {
+      const time = new Date().toLocaleTimeString();
+      logContent.innerHTML += `<p>[${time}] ${message}</p>`;
+      console.log(message);
+    }
+
+    // 메시지 수신
+    window.addEventListener('message', (event) => {
+      if (event.origin.includes('bottleclub-tree') ||
+          event.origin.includes('bottlefactory') ||
+          event.origin.includes('localhost')) {
+
+        try {
+          const data = JSON.parse(event.data);
+          log(`✅ 메시지 수신: ${JSON.stringify(data)}`);
+
+          if (data.type === 'COMMAND' && data.message === 'hello') {
+            log('🎉 나무가 준비되었습니다! (hello 수신)');
+          }
+        } catch (e) {
+          log(`ℹ️ Non-JSON 메시지: ${event.data}`);
+        }
+      }
+    });
+
+    // iframe 로드 이벤트
+    iframe.addEventListener('load', () => {
+      log('📦 iframe 로드 완료');
+    });
+
+    iframe.addEventListener('error', () => {
+      log('❌ iframe 로드 실패');
+    });
+
+    function sendInit() {
+      const message = {
+        type: 'init',
+        uid: 'test_cafe_123',
+        total: 900,
+        force: true,
+        count: 30,
+        score: 0
+      };
+
+      iframe.contentWindow.postMessage(JSON.stringify(message), '*');
+      log(`📤 Init 메시지 전송: ${JSON.stringify(message)}`);
+    }
+
+    function sendGrow() {
+      const message = {
+        type: 'grow',
+        uid: 'test_cafe_123',
+        total: 930,
+        force: true,
+        count: 31,
+        score: 30
+      };
+
+      iframe.contentWindow.postMessage(JSON.stringify(message), '*');
+      log(`📤 Grow 메시지 전송: ${JSON.stringify(message)}`);
+    }
+
+    function checkConsole() {
+      log('💡 브라우저 개발자 도구 콘솔을 확인하세요 (F12)');
+    }
+
+    log('🚀 테스트 페이지 로드됨');
+  </script>
+</body>
+</html>

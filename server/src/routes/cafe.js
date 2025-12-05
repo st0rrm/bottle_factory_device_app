@@ -146,7 +146,11 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
     res.json({ message: 'Cafe deleted successfully' });
   } catch (err) {
     console.error('Delete cafe error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error details:', err.message, err.code);
+    res.status(500).json({
+      error: 'Failed to delete cafe',
+      details: err.message
+    });
   }
 });
 

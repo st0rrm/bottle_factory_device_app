@@ -1,0 +1,512 @@
+const express = require('express');
+const multer = require('multer');
+const OpenAI = require('openai');
+const Anthropic = require('@anthropic-ai/sdk');
+const { authenticateToken } = require('../middleware/auth');
+const VoiceStats = require('../models/VoiceStats');
+
+const router = express.Router();
+
+// 메모리에 파일 저장 (임시)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB 제한
+  },
+});
+
+// OpenAI 클라이언트 초기화 (API 키가 있을 때만)
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+}) : null;
+
+// Anthropic 클라이언트 초기화 (API 키가 있을 때만)
+const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+}) : null;
+
+// 서버 시작 시 API 키 상태 확인
+console.log('🔑 API 키 상태 확인:');
+console.log(`  - OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? '✅ 설정됨 (길이: ' + process.env.OPENAI_API_KEY.length + ')' : '❌ 없음'}`);
+console.log(`  - ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? '✅ 설정됨 (길이: ' + process.env.ANTHROPIC_API_KEY.length + ')' : '❌ 없음'}`);
+
+/**
+ * POST /api/voice/analyze
+ * 음성을 텍스트로 변환하고 포장 의도를 분석합니다.
+ *
+ * Request:
+ *   - multipart/form-data
+ *   - audio: 음성 파일 (webm, mp3, wav 등)
+ *
+ * Response:
+ *   {
+ *     text: string,           // 인식된 텍스트
+ *     takeout: boolean,       // 포장 의도 여부
+ *     confidence: number,     // 확신도 (0.0 ~ 1.0)
+ *     reason: string          // 판단 근거
+ *   }
+ */
+router.post('/analyze', authenticateToken, upload.single('audio'), async (req, res) => {
+  try {
+    // API 키 확인
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('❌ OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.');
+      return res.status(500).json({
+        error: 'OpenAI API 키가 설정되지 않았습니다.',
+        code: 'MISSING_OPENAI_KEY'
+      });
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('❌ ANTHROPIC_API_KEY 환경 변수가 설정되지 않았습니다.');
+      return res.status(500).json({
+        error: 'Anthropic API 키가 설정되지 않았습니다.',
+        code: 'MISSING_ANTHROPIC_KEY'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: '음성 파일이 필요합니다.' });
+    }
+
+    const startTime = Date.now();
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎙️ 음성 분석 시작:', {
+      timestamp: new Date().toISOString(),
+      size: `${(req.file.size / 1024).toFixed(2)} KB`,
+      mimetype: req.file.mimetype,
+      cafe: req.user.cafeName,
+      cafeId: req.user.cafeId,
+    });
+
+    // Step 1: OpenAI GPT-4o-mini-transcribe로 음성을 텍스트로 변환
+    console.log('🎤 [1/2] GPT-4o-mini-transcribe API 호출 시작...');
+    const transcribeStartTime = Date.now();
+
+    try {
+      // OpenAI SDK를 위한 File 객체 생성
+      const audioFile = new File(
+        [req.file.buffer],
+        'audio.webm',
+        { type: req.file.mimetype || 'audio/webm' }
+      );
+
+      console.log('   → 오디오 파일 준비 완료:', {
+        name: audioFile.name,
+        size: `${(audioFile.size / 1024).toFixed(2)} KB`,
+        type: audioFile.type,
+      });
+
+      const TRANSCRIPTION_PROMPT = '카페 키오스크 주문: 포장, 테이크아웃, 매장 이용, 가져갈게요, 들고갈게요';
+
+      const transcription = await openai.audio.transcriptions.create({
+        file: audioFile,
+        model: 'gpt-4o-mini-transcribe',
+        language: 'ko',
+        response_format: 'text',
+        prompt: TRANSCRIPTION_PROMPT,
+      });
+
+      const recognizedText = transcription.trim();
+      const transcribeDuration = Date.now() - transcribeStartTime;
+      console.log(`✅ GPT-4o-mini-transcribe 완료 (${transcribeDuration}ms)`);
+      console.log('   → 인식된 텍스트:', recognizedText || '(없음)');
+      console.log('   → 텍스트 길이:', recognizedText.length, '자');
+
+      // 프롬프트 반환 감지 (빈 음성일 때 발생)
+      // 공백, 특수문자, 구두점 제거 후 비교
+      const normalizeText = (text) => {
+        return text
+          .replace(/[\s\.,;:!?。，、；：！？]/g, '') // 공백 및 모든 구두점 제거
+          .toLowerCase();
+      };
+
+      const normalizedPrompt = normalizeText(TRANSCRIPTION_PROMPT);
+      const normalizedRecognized = normalizeText(recognizedText);
+
+      // 정규화된 프롬프트에 정규화된 인식 텍스트가 포함되거나 그 반대인 경우
+      const isPromptEcho =
+        normalizedPrompt.includes(normalizedRecognized) ||
+        normalizedRecognized.includes(normalizedPrompt) ||
+        normalizedRecognized.length > 5 && normalizedPrompt.includes(normalizedRecognized.substring(0, 10));
+
+      if (isPromptEcho) {
+        console.log('⚠️ 프롬프트 반환 감지 (빈 음성)');
+        console.log('   → 원본:', recognizedText);
+        console.log('   → 정규화:', normalizedRecognized);
+        const totalDuration = Date.now() - startTime;
+        console.log(`⏱️ 총 소요 시간: ${totalDuration}ms`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        return res.json({
+          text: '',
+          takeout: false,
+          confidence: 0,
+          reason: '음성이 인식되지 않았습니다.',
+        });
+      }
+
+      // 환각(hallucination) 패턴 감지
+      const hallucinationPatterns = [
+        /시청.*감사/,
+        /구독.*좋아요/,
+        /댓글.*부탁/,
+        /자막[:：]/,
+        /번역[:：]/,
+        /thank you for watching/i,
+        /please subscribe/i,
+        /subtitle/i,
+      ];
+
+      const isHallucination = hallucinationPatterns.some(pattern =>
+        pattern.test(recognizedText)
+      );
+
+      if (!recognizedText || isHallucination) {
+        if (isHallucination) {
+          console.log('⚠️ GPT-4o-mini-transcribe 환각 패턴 감지:', recognizedText);
+        } else {
+          console.log('⚠️ 음성이 인식되지 않음.');
+        }
+        const totalDuration = Date.now() - startTime;
+        console.log(`⏱️ 총 소요 시간: ${totalDuration}ms`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        return res.json({
+          text: '',
+          takeout: false,
+          confidence: 0,
+          reason: '음성이 인식되지 않았습니다.',
+        });
+      }
+
+      // Step 2: Claude Haiku로 포장 의도 분석
+      console.log('🤖 [2/2] Claude API 호출 시작...');
+      const claudeStartTime = Date.now();
+
+      const message = await anthropic.messages.create({
+        model: 'claude-3-5-haiku-20241022',
+        max_tokens: 150,
+        temperature: 0.1,
+        messages: [
+          {
+            role: 'user',
+            content: `당신은 카페 키오스크 음성 분석 전문가입니다.
+
+고객 발화: "${recognizedText}"
+
+작업: 위 발화에서 "포장/테이크아웃 의도"가 있는지 판단하세요.
+
+판단 기준:
+✅ TRUE인 경우 (포장 의도 명확):
+- "포장이요", "포장해주세요", "포장으로"
+- "테이크아웃이요", "테이크아웃으로", "테이크아웃 해주세요"
+- "가져갈게요", "들고갈게요", "가지고 갈게요"
+- "싸주세요", "싸서 주세요", "포장해 주세요"
+
+❌ FALSE인 경우 (포장 의도 없음):
+- "매장에서요", "여기서요", "여기서 먹을게요"
+- 인사말 ("안녕하세요", "감사합니다", "좋은 하루 되세요")
+- 주문과 무관한 대화 ("화장실 어디예요?", "메뉴판 보여주세요")
+- 메뉴 문의 ("뭐가 있어요?", "추천 메뉴는?")
+- 불명확하거나 침묵/소음
+
+중요: 명시적 컨텍스트가 없는 애매한 경우는 모두 false로 판단 (오탐 방지)
+
+JSON만 출력:
+{"takeout":true|false,"confidence":0.0~1.0,"reason":"한국어로 간단히"}`
+          }
+        ]
+      });
+
+      const claudeDuration = Date.now() - claudeStartTime;
+      console.log(`✅ Claude 완료 (${claudeDuration}ms)`);
+
+      // Claude 응답 파싱
+      const responseText = message.content[0].text;
+      console.log('   → Claude 원본 응답:', responseText);
+
+      let result;
+
+      try {
+        // JSON 추출 (코드 블록이 있을 수 있음)
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          result = JSON.parse(jsonMatch[0]);
+          console.log('   → JSON 파싱 성공');
+        } else {
+          throw new Error('JSON 형식이 아님');
+        }
+      } catch (parseError) {
+        console.error('❌ Claude 응답 파싱 실패:', parseError.message);
+        console.error('   → 원본 응답:', responseText);
+        // 파싱 실패 시 기본값 반환
+        result = {
+          takeout: false,
+          confidence: 0,
+          reason: 'AI 응답 파싱 실패',
+        };
+      }
+
+      // 최종 응답
+      const response = {
+        text: recognizedText,
+        takeout: result.takeout || false,
+        confidence: result.confidence || 0,
+        reason: result.reason || '분석 완료',
+      };
+
+      const totalDuration = Date.now() - startTime;
+      console.log('🎉 최종 분석 결과:', {
+        text: response.text,
+        takeout: response.takeout,
+        confidence: response.confidence,
+        reason: response.reason,
+      });
+      console.log(`⏱️ 총 소요 시간: ${totalDuration}ms (GPT-4o-mini-transcribe: ${transcribeDuration}ms, Claude: ${claudeDuration}ms)`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+      // 음성인식 통계 기록
+      try {
+        // LLM API 호출 통계 기록
+        await VoiceStats.addStat(req.user.id, 'llm_api_call', {
+          recognizedText: recognizedText,
+          duration: totalDuration
+        });
+
+        // 포장 의도 감지 시 통계 기록
+        if (response.takeout && response.confidence >= 0.7) {
+          await VoiceStats.addStat(req.user.id, 'takeout_detected', {
+            confidence: response.confidence,
+            text: response.text,
+            reason: response.reason
+          });
+        }
+      } catch (statsError) {
+        console.error('⚠️ 통계 기록 실패 (응답은 정상 처리):', statsError.message);
+      }
+
+      res.json(response);
+
+    } catch (innerError) {
+      // GPT-4o-mini-transcribe 또는 Claude API 호출 중 에러
+      throw innerError;
+    }
+
+  } catch (error) {
+    console.error('❌ 음성 분석 오류:', error);
+    console.error('에러 상세:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      type: error.type,
+    });
+
+    // 에러 타입에 따른 응답
+    if (error.code === 'insufficient_quota' || error.status === 429) {
+      return res.status(429).json({
+        error: 'API 할당량이 초과되었습니다. 잠시 후 다시 시도해주세요.',
+        code: 'QUOTA_EXCEEDED',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+
+    // OpenAI API 에러
+    if (error.code === 'invalid_api_key' || error.status === 401) {
+      return res.status(500).json({
+        error: 'API 인증 실패. API 키를 확인해주세요.',
+        code: 'INVALID_API_KEY',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+
+    // Anthropic API 에러
+    if (error.type === 'authentication_error') {
+      return res.status(500).json({
+        error: 'Claude API 인증 실패. API 키를 확인해주세요.',
+        code: 'INVALID_ANTHROPIC_KEY',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+
+    // 타임아웃 에러
+    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+      return res.status(504).json({
+        error: 'API 응답 시간 초과. 다시 시도해주세요.',
+        code: 'TIMEOUT',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+
+    // 일반 에러
+    res.status(500).json({
+      error: '음성 분석 중 오류가 발생했습니다.',
+      code: 'INTERNAL_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
+/**
+ * POST /api/voice/log-rms
+ * RMS 값 로그 출력 전용 엔드포인트
+ */
+router.post('/log-rms', authenticateToken, async (req, res) => {
+  try {
+    const { rmsValues } = req.body;
+
+    if (!rmsValues || !Array.isArray(rmsValues)) {
+      return res.status(400).json({ error: 'rmsValues 배열이 필요합니다.' });
+    }
+
+    // ✅ PostgreSQL에 저장
+    const pool = require('../config/database');
+    await pool.query(
+      `INSERT INTO voice_rms_logs
+       (cafe_id, cafe_name, rms_values, segment_count)
+       VALUES ($1, $2, $3, $4)`,
+      [
+        req.user.id,
+        req.user.cafeName,
+        rmsValues,  // PostgreSQL INTEGER[] 타입
+        rmsValues.length
+      ]
+    );
+
+    console.log('📊 RMS 로그 DB 저장 완료:', {
+      cafe: req.user.cafeName,
+      count: rmsValues.length
+    });
+
+    res.json({ success: true, logged: rmsValues.length });
+  } catch (error) {
+    console.error('❌ RMS 로그 저장 오류:', error);
+    res.status(500).json({ error: 'RMS 로그 저장 실패' });
+  }
+});
+
+/**
+ * POST /api/voice/log-api-call
+ * LLM API 호출 기록 저장
+ *
+ * Request body:
+ *   - audioSizeKb: 오디오 크기 (KB)
+ *   - segmentCount: 세그먼트 개수
+ *   - analysisMode: 'cumulative' | 'sliding'
+ *   - transcribedText: 변환된 텍스트
+ *   - takeoutDetected: 테이크아웃 감지 여부
+ *   - confidence: 신뢰도 (0-1)
+ *   - reason: 판단 이유
+ *   - apiDurationMs: API 응답 시간 (ms)
+ *   - action: 'confirmed' | 'continue' | 'restart'
+ */
+router.post('/log-api-call', authenticateToken, async (req, res) => {
+  try {
+    const {
+      audioSizeKb,
+      segmentCount,
+      analysisMode,
+      transcribedText,
+      takeoutDetected,
+      confidence,
+      reason,
+      apiDurationMs,
+      action
+    } = req.body;
+
+    if (!audioSizeKb || !segmentCount || !analysisMode || !action) {
+      return res.status(400).json({
+        error: 'audioSizeKb, segmentCount, analysisMode, action 필드가 필요합니다.'
+      });
+    }
+
+    // ✅ PostgreSQL에 저장
+    const pool = require('../config/database');
+    await pool.query(
+      `INSERT INTO voice_api_calls
+       (cafe_id, cafe_name, audio_size_kb, segment_count, analysis_mode,
+        transcribed_text, takeout_detected, confidence, reason,
+        api_duration_ms, action)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        req.user.id,
+        req.user.cafeName,
+        parseFloat(audioSizeKb),
+        parseInt(segmentCount),
+        analysisMode,
+        transcribedText || '',
+        takeoutDetected || false,
+        confidence ? parseFloat(confidence) : null,
+        reason || '',
+        apiDurationMs ? parseInt(apiDurationMs) : null,
+        action
+      ]
+    );
+
+    console.log('📊 LLM API 호출 기록 DB 저장 완료:', {
+      cafe: req.user.cafeName,
+      action,
+      takeout: takeoutDetected,
+      confidence
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ LLM API 호출 기록 저장 오류:', error);
+    res.status(500).json({ error: 'LLM API 호출 기록 저장 실패' });
+  }
+});
+
+/**
+ * POST /api/voice/log-stat
+ * 음성인식 통계 기록 (프론트엔드에서 호출)
+ *
+ * Request body:
+ *   - statType: 'help_modal_opened' | 'returnmecup_menu_entered'
+ *   - metadata: 추가 정보 (선택)
+ */
+router.post('/log-stat', authenticateToken, async (req, res) => {
+  try {
+    const { statType, metadata } = req.body;
+
+    if (!statType || !['help_modal_opened', 'returnmecup_menu_entered'].includes(statType)) {
+      return res.status(400).json({
+        error: 'Valid statType required (help_modal_opened or returnmecup_menu_entered)'
+      });
+    }
+
+    const result = await VoiceStats.addStat(req.user.id, statType, metadata || null);
+
+    console.log(`📊 음성인식 통계 기록: ${statType} (cafe: ${req.user.cafeName})`);
+
+    res.json({
+      success: true,
+      statId: result.id,
+      statType: statType
+    });
+  } catch (error) {
+    console.error('❌ 음성인식 통계 기록 오류:', error);
+    res.status(500).json({ error: '통계 기록 실패' });
+  }
+});
+
+/**
+ * GET /api/voice/status
+ * 음성 인식 시스템 상태 확인 (API 키 유효성 체크)
+ */
+router.get('/status', authenticateToken, async (req, res) => {
+  try {
+    const status = {
+      transcribe: !!process.env.OPENAI_API_KEY,
+      claude: !!process.env.ANTHROPIC_API_KEY,
+      enabled: !!(process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY),
+    };
+
+    res.json(status);
+  } catch (error) {
+    console.error('상태 확인 오류:', error);
+    res.status(500).json({ error: '상태 확인 실패' });
+  }
+});
+
+module.exports = router;

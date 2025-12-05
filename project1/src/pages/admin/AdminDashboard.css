@@ -309,6 +309,15 @@
   background-color: #c0392b;
 }
 
+.btn-reset {
+  background-color: #ff9800;
+  color: white;
+}
+
+.btn-reset:hover {
+  background-color: #e68900;
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;
@@ -407,6 +416,135 @@
 
 .btn-submit:hover {
   background-color: #357ABD;
+}
+
+/* Period Selector for Daily Stats */
+.admin-dashboard .period-selector {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-dashboard .period-btn {
+  background-color: white;
+  border: 2px solid #e5e7eb;
+  color: #000000;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-dashboard .period-btn:hover {
+  border-color: #d1d5db;
+  background-color: #f9fafb;
+}
+
+.admin-dashboard .period-btn.active {
+  color: #4A90E2;
+  border-color: #4A90E2;
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+}
+
+.admin-dashboard .period-btn.active:hover {
+  border-color: #357ABD;
+}
+
+/* Cafe Filter Select for Daily Stats */
+.cafe-filter-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Pretendard', sans-serif;
+  background-color: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 200px;
+}
+
+.cafe-filter-select:hover {
+  border-color: #9ca3af;
+}
+
+.cafe-filter-select:focus {
+  outline: none;
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* Date Range Selector for Custom Date */
+.date-range-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.date-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Pretendard', sans-serif;
+  background-color: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 160px;
+}
+
+.date-input:hover {
+  border-color: #9ca3af;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.date-separator {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* Transaction Badges */
+.transaction-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.transaction-badge.transaction-borrow {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.transaction-badge.transaction-return {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.transaction-badge.transaction-do {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
 /* Responsive */

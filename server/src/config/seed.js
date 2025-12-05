@@ -23,6 +23,16 @@ async function seedDemoData() {
         password: 'demo1234',
         cafeName: '투썸플레이스 홍대점',
       },
+      {
+        cafeId: 'demo-cafe4',
+        password: 'demo1234',
+        cafeName: '이디야커피 신촌점',
+      },
+      {
+        cafeId: 'demo-cafe5',
+        password: 'demo1234',
+        cafeName: '할리스커피 압구정점',
+      },
     ];
 
     // 관리자 ID 가져오기

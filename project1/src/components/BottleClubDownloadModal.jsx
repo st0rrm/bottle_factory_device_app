@@ -1,6 +1,7 @@
 import React from 'react';
 import './BottleClubDownloadModal.css';
 import xIcon from '../assets/images/x_icon.svg';
+import qrCode from '../assets/images/application_qr.svg';
 
 export default function BottleClubDownloadModal({ onClose }) {
   return (
@@ -17,7 +18,7 @@ export default function BottleClubDownloadModal({ onClose }) {
         {/* QR Code */}
         <div className="qr-code-container">
           <div className="qr-code-box">
-            <img src="/bottle-club-app-qr-code.jpg" alt="Bottle Club QR Code" className="qr-code-image" />
+            <img src={qrCode} alt="Bottle Club QR Code" className="qr-code-image" />
           </div>
         </div>
 

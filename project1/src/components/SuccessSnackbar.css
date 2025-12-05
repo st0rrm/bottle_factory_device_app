@@ -1,0 +1,76 @@
+/* Success Snackbar Container */
+.success-snackbar {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  animation: snackbar-fade-in 0.3s ease-out;
+}
+
+/* Snackbar Content Wrapper */
+.snackbar-content {
+  position: relative;
+  width: clamp(18rem, 50vw, 42.375rem);
+  height: clamp(4rem, 12vh, 7.1875rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Snackbar Background */
+.snackbar-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(248, 248, 248, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: clamp(0.75rem, 2vw, 1.5rem);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Snackbar Text */
+.snackbar-text {
+  position: relative;
+  color: #44748a;
+  font-family: 'Pretendard', sans-serif;
+  font-size: clamp(1rem, 2.5vw + 1vh, 2.5rem);
+  font-weight: var(--pretendard-semibold);
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  padding: 0 clamp(1rem, 3vw, 2rem);
+  z-index: 1;
+}
+
+/* Fade In Animation */
+@keyframes snackbar-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Fade Out Animation (triggered before unmount) */
+@keyframes snackbar-fade-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -55%);
+  }
+}
+
+.success-snackbar.fade-out {
+  animation: snackbar-fade-out 0.3s ease-in forwards;
+}

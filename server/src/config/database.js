@@ -9,7 +9,8 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
   max: 20, // maximum number of clients in the pool
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000, // 10초로 증가 (Firebase 리스너에서 동시 요청 처리)
+  query_timeout: 15000, // 쿼리 실행 타임아웃 15초
 });
 
 // Test database connection

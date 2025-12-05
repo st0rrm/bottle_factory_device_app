@@ -3,23 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import { getCafes, createCafe, updateCafe, updateCafePassword, deleteCafe } from '../../api/cafe';
 import { logout } from '../../api/auth';
-import { getAllCafesStats } from '../../api/statistics';
-import { getAllCafesBehaviorStats } from '../../api/behaviors';
+import { getAllCafesStats, resetCafeStats, getCafeTransactionDetails, getAllActiveRentals } from '../../api/statistics';
+import { getAllCafesBehaviorStats, getAllCafesDailyStats } from '../../api/behaviors';
 import * as XLSX from 'xlsx';
 
 function AdminDashboard() {
   const [cafes, setCafes] = useState([]);
   const [cafesStats, setCafesStats] = useState([]);
   const [behaviorStats, setBehaviorStats] = useState([]);
+  const [dailyStats, setDailyStats] = useState([]);
+  const [activeRentalsSummary, setActiveRentalsSummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCafe, setSelectedCafe] = useState(null);
   const [adminInfo, setAdminInfo] = useState(null);
   const [showStatsView, setShowStatsView] = useState(false);
+  const [showDailyView, setShowDailyView] = useState(false);
+  const [showTransactionsView, setShowTransactionsView] = useState(false);
+  const [showRentalsView, setShowRentalsView] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [selectedTransactionCafe, setSelectedTransactionCafe] = useState('all');
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('cafe_name'); // cafe_name, total_transactions, today_count, weekly_count
   const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
+  const [statsDays, setStatsDays] = useState(7); // 일별 통계 기간
+  const [selectedCafeFilter, setSelectedCafeFilter] = useState('all'); // 일별 통계 카페 필터
+  const [dateMode, setDateMode] = useState('preset'); // 'preset' or 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
 
   // 폼 데이터
@@ -74,22 +88,135 @@ function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      const [stats, behaviors] = await Promise.all([
+      const [stats, behaviors, rentals] = await Promise.all([
         getAllCafesStats(),
-        getAllCafesBehaviorStats()
+        getAllCafesBehaviorStats(),
+        getAllActiveRentals()
       ]);
       setCafesStats(stats);
       setBehaviorStats(behaviors);
+      setActiveRentalsSummary(rentals.data || []);
     } catch (error) {
       console.error('통계 불러오기 실패:', error);
       alert('통계를 불러오는데 실패했습니다.');
     }
   };
 
+  const loadDailyStats = async () => {
+    try {
+      let daily;
+      if (dateMode === 'custom' && startDate && endDate) {
+        // 날짜 유효성 검증: 종료일이 시작일보다 이른지 확인
+        if (new Date(endDate) < new Date(startDate)) {
+          alert('종료일은 시작일보다 이후여야 합니다.');
+          return;
+        }
+        // 사용자 정의 날짜 범위로 조회
+        daily = await getAllCafesDailyStats(7, startDate, endDate);
+      } else if (dateMode === 'custom') {
+        // 사용자 지정 모드인데 날짜가 모두 선택되지 않은 경우
+        return;
+      } else {
+        // 기본 기간(days)으로 조회
+        daily = await getAllCafesDailyStats(statsDays);
+      }
+      setDailyStats(daily);
+    } catch (error) {
+      console.error('일별 통계 불러오기 실패:', error);
+      alert('일별 통계를 불러오는데 실패했습니다.');
+    }
+  };
+
   const handleShowStats = () => {
     loadStats();
     setShowStatsView(true);
+    setShowDailyView(false);
+    setShowTransactionsView(false);
+    setShowRentalsView(false);
   };
+
+  const handleShowDailyStats = () => {
+    loadDailyStats();
+    setShowDailyView(true);
+    setShowStatsView(false);
+    setShowTransactionsView(false);
+    setShowRentalsView(false);
+  };
+
+  const handleShowTransactions = () => {
+    setShowTransactionsView(true);
+    setShowStatsView(false);
+    setShowDailyView(false);
+    setShowRentalsView(false);
+
+    // 카페가 없으면 경고
+    if (cafes.length === 0) {
+      alert('등록된 카페가 없습니다.');
+    }
+    // selectedTransactionCafe가 'all'로 설정되어 있으므로 useEffect가 자동으로 모든 카페의 거래 내역 로딩
+  };
+
+  const handleShowRentals = () => {
+    loadStats();
+    setShowRentalsView(true);
+    setShowStatsView(false);
+    setShowDailyView(false);
+    setShowTransactionsView(false);
+  };
+
+  const loadTransactionDetails = async (cafeId) => {
+    if (!cafeId) {
+      console.error('Invalid cafeId:', cafeId);
+      alert('카페를 선택해주세요.');
+      return;
+    }
+
+    try {
+      const options = {
+        limit: 100,
+        offset: 0,
+        type: transactionTypeFilter === 'all' ? null : transactionTypeFilter
+      };
+
+      // '전체' 선택 시 모든 카페의 거래 내역 가져오기
+      if (cafeId === 'all') {
+        const allTransactions = [];
+        for (const cafe of cafes) {
+          try {
+            const result = await getCafeTransactionDetails(cafe.id, options);
+            if (result.data && result.data.length > 0) {
+              allTransactions.push(...result.data);
+            }
+          } catch (err) {
+            console.error(`카페 ${cafe.cafe_name} 거래 내역 불러오기 실패:`, err);
+          }
+        }
+        // 거래 일시 기준 내림차순 정렬
+        allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setTransactions(allTransactions);
+      } else {
+        const result = await getCafeTransactionDetails(cafeId, options);
+        setTransactions(result.data || []);
+      }
+    } catch (error) {
+      console.error('거래 내역 불러오기 실패:', error);
+      alert('거래 내역을 불러오는데 실패했습니다.');
+    }
+  };
+
+  // statsDays, dateMode, startDate, endDate가 변경되면 일별 통계 다시 불러오기
+  useEffect(() => {
+    if (showDailyView) {
+      loadDailyStats();
+    }
+  }, [statsDays, dateMode, startDate, endDate]);
+
+  // 거래 내역 필터 변경 시 다시 불러오기
+  useEffect(() => {
+    if (showTransactionsView && selectedTransactionCafe) {
+      loadTransactionDetails(selectedTransactionCafe);
+    }
+  }, [transactionTypeFilter, selectedTransactionCafe, showTransactionsView]);
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -170,6 +297,24 @@ function AdminDashboard() {
       loadCafes();
     } catch (error) {
       alert(error.error || '카페 삭제에 실패했습니다.');
+    }
+  };
+
+  // 카페별 통계 초기화
+  const handleResetCafeStats = async (cafeId, cafeName) => {
+    if (!confirm(`"${cafeName}" 카페의 모든 통계 데이터가 삭제됩니다.\n(거래 기록, 행동 데이터, 음성 인식 통계)\n정말 초기화하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const result = await resetCafeStats(cafeId);
+      alert(`카페 통계가 초기화되었습니다.\n- 대여 현황: ${result.deletedActiveRentals}개\n- 행동 데이터: ${result.deletedBehaviors}개\n- 거래 기록: ${result.deletedTransactions}개\n- 음성 통계: ${result.deletedVoiceStats}개\n총 ${result.deletedCount}개 삭제`);
+
+      // 통계 다시 불러오기
+      loadStats();
+    } catch (error) {
+      console.error('카페 통계 초기화 오류:', error);
+      alert(error.error || '카페 통계 초기화 중 오류가 발생했습니다.');
     }
   };
 
@@ -254,14 +399,26 @@ function AdminDashboard() {
       '카페명': cafe.cafe_name,
       '카페 ID': cafe.cafe_id,
       '총 거래': cafe.total_transactions || 0,
+      '총 대여': cafe.total_borrow || 0,
+      '총 반납': cafe.total_return || 0,
+      '총 실천': cafe.total_do || 0,
       '오늘 거래': cafe.today_count || 0,
+      '오늘 대여': cafe.today_borrow || 0,
+      '오늘 반납': cafe.today_return || 0,
+      '오늘 실천': cafe.today_do || 0,
       '주간 거래': cafe.weekly_count || 0,
+      '주간 대여': cafe.weekly_borrow || 0,
+      '주간 반납': cafe.weekly_return || 0,
+      '주간 실천': cafe.weekly_do || 0,
+      '보틀': cafe.total_score || 0,
       'QR 탭 (총)': cafe.qr_tab_clicks || 0,
       'QR 대여': cafe.qr_borrow_clicks || 0,
       'QR 반납': cafe.qr_return_clicks || 0,
+      'QR 실천': cafe.qr_do_clicks || 0,
       '전화 탭 (총)': cafe.phone_tab_clicks || 0,
       '전화 대여': cafe.phone_borrow_clicks || 0,
       '전화 반납': cafe.phone_return_clicks || 0,
+      '전화 실천': cafe.phone_do_clicks || 0,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -269,6 +426,51 @@ function AdminDashboard() {
     XLSX.utils.book_append_sheet(workbook, worksheet, '카페 통계');
 
     const fileName = `카페통계_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  // 거래 내역 엑셀 다운로드
+  const handleExportTransactionsToExcel = () => {
+    if (transactions.length === 0) {
+      alert('다운로드할 거래 내역이 없습니다.');
+      return;
+    }
+
+    const selectedCafe = cafes.find(c => c.id === parseInt(selectedTransactionCafe));
+    const cafeName = selectedTransactionCafe === 'all' ? '전체카페' : (selectedCafe?.cafe_name || '알 수 없음');
+
+    const excelData = transactions.map(txn => {
+      const data = {
+        'ID': txn.id,
+        '거래 유형': txn.transaction_type_kr,
+        '사용자 구분': txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존',
+        '전화번호': txn.phone_number,
+        '수량': txn.quantity,
+        '포인트': txn.score,
+        '거래 일시': new Date(txn.created_at).toLocaleString('ko-KR')
+      };
+
+      // '전체' 선택 시 카페명 추가
+      if (selectedTransactionCafe === 'all') {
+        return {
+          'ID': data.ID,
+          '카페명': txn.cafe_name,
+          '거래 유형': data['거래 유형'],
+          '사용자 구분': data['사용자 구분'],
+          '전화번호': data['전화번호'],
+          '수량': data['수량'],
+          '포인트': data['포인트'],
+          '거래 일시': data['거래 일시']
+        };
+      }
+      return data;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '거래 내역');
+
+    const fileName = `${cafeName}_거래내역_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(workbook, fileName);
   };
 
@@ -281,6 +483,42 @@ function AdminDashboard() {
       setSortOrder('asc');
     }
   };
+
+  // 통계 초기화
+  const handleResetStats = async () => {
+    if (!confirm('모든 거래 기록이 삭제됩니다. 정말 초기화하시겠습니까?')) {
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const authToken = localStorage.getItem('authToken');
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://returnmecup-api-dev.onrender.com/api';
+
+      const response = await fetch(`${apiUrl}/statistics/reset`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('통계 초기화 실패');
+      }
+
+      const result = await response.json();
+      alert(`통계가 초기화되었습니다. (${result.deletedCount}개 삭제)`);
+
+      // 통계 다시 불러오기
+      loadStats();
+    } catch (error) {
+      console.error('통계 초기화 오류:', error);
+      alert('통계 초기화 중 오류가 발생했습니다.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
 
   return (
     <div className="admin-dashboard">
@@ -298,11 +536,13 @@ function AdminDashboard() {
       {/* Main Content */}
       <main className="dashboard-content">
         <div className="content-header">
-          <h2 className="section-title">{showStatsView ? '카페 통계' : '카페 관리'}</h2>
+          <h2 className="section-title">
+            {showRentalsView ? '대여 현황' : showTransactionsView ? '거래 내역' : showDailyView ? '일별 통계' : showStatsView ? '카페 통계' : '카페 관리'}
+          </h2>
           <div className="header-buttons">
             <button
-              className={showStatsView ? 'view-button' : 'view-button active'}
-              onClick={() => setShowStatsView(false)}
+              className={!showStatsView && !showDailyView && !showTransactionsView && !showRentalsView ? 'view-button active' : 'view-button'}
+              onClick={() => { setShowStatsView(false); setShowDailyView(false); setShowTransactionsView(false); setShowRentalsView(false); }}
             >
               카페 관리
             </button>
@@ -313,9 +553,27 @@ function AdminDashboard() {
               통계 보기
             </button>
             <button
+              className={showDailyView ? 'view-button active' : 'view-button'}
+              onClick={handleShowDailyStats}
+            >
+              일별 통계
+            </button>
+            <button
+              className={showRentalsView ? 'view-button active' : 'view-button'}
+              onClick={handleShowRentals}
+            >
+              대여 현황
+            </button>
+            <button
+              className={showTransactionsView ? 'view-button active' : 'view-button'}
+              onClick={handleShowTransactions}
+            >
+              거래 내역
+            </button>
+            <button
               className="create-button"
               onClick={openCreateModal}
-              style={{ visibility: showStatsView ? 'hidden' : 'visible' }}
+              style={{ visibility: showStatsView || showDailyView || showTransactionsView || showRentalsView ? 'hidden' : 'visible' }}
             >
               + 카페 추가
             </button>
@@ -323,49 +581,353 @@ function AdminDashboard() {
         </div>
 
         {/* 검색 및 필터 바 */}
-        <div className="filter-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="카페명 또는 ID로 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <div className="filter-controls">
-            <select
-              className="sort-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="cafe_name">카페명</option>
-              <option value="cafe_id">카페 ID</option>
+        {!showDailyView && !showTransactionsView && !showRentalsView && (
+          <div className="filter-bar">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="카페명 또는 ID로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="filter-controls">
+              <select
+                className="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="cafe_name">카페명</option>
+                <option value="cafe_id">카페 ID</option>
+                {showStatsView && (
+                  <>
+                    <option value="total_transactions">총 거래</option>
+                    <option value="today_count">오늘 거래</option>
+                    <option value="weekly_count">주간 거래</option>
+                    <option value="total_score">보틀</option>
+                    <option value="qr_tab_clicks">QR 탭</option>
+                    <option value="phone_tab_clicks">전화 탭</option>
+                  </>
+                )}
+                {!showStatsView && <option value="created_at">생성일</option>}
+              </select>
+              <button
+                className="sort-order-button"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              >
+                {sortOrder === 'asc' ? '↑ 오름차순' : '↓ 내림차순'}
+              </button>
               {showStatsView && (
                 <>
-                  <option value="total_transactions">총 거래</option>
-                  <option value="today_count">오늘 거래</option>
-                  <option value="weekly_count">주간 거래</option>
-                  <option value="qr_tab_clicks">QR 탭</option>
-                  <option value="phone_tab_clicks">전화 탭</option>
+                  <button className="export-button" onClick={handleExportToExcel}>
+                    📊 엑셀 다운로드
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={handleResetStats}
+                    disabled={resetLoading}
+                    style={{ marginLeft: '10px' }}
+                  >
+                    {resetLoading ? '초기화 중...' : '🗑️ 통계 초기화'}
+                  </button>
                 </>
               )}
-              {!showStatsView && <option value="created_at">생성일</option>}
-            </select>
-            <button
-              className="sort-order-button"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            </div>
+          </div>
+        )}
+
+        {/* 거래 내역 필터 바 */}
+        {showTransactionsView && (
+          <div className="filter-bar">
+            <select
+              className="cafe-filter-select"
+              value={selectedTransactionCafe}
+              onChange={(e) => setSelectedTransactionCafe(e.target.value)}
+              disabled={cafes.length === 0}
             >
-              {sortOrder === 'asc' ? '↑ 오름차순' : '↓ 내림차순'}
+              {cafes.length === 0 ? (
+                <option value="">카페 없음</option>
+              ) : (
+                <>
+                  <option value="all">전체 카페</option>
+                  {cafes.map((cafe) => (
+                    <option key={cafe.id} value={cafe.id}>
+                      {cafe.cafe_name}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+
+            <select
+              className="sort-select"
+              value={transactionTypeFilter}
+              onChange={(e) => setTransactionTypeFilter(e.target.value)}
+            >
+              <option value="all">전체 거래</option>
+              <option value="borrow">대여</option>
+              <option value="return">반납</option>
+              <option value="do">실천</option>
+            </select>
+
+            <button className="export-button" onClick={handleExportTransactionsToExcel}>
+              📊 엑셀 다운로드
             </button>
-            {showStatsView && (
-              <button className="export-button" onClick={handleExportToExcel}>
-                📊 엑셀 다운로드
+          </div>
+        )}
+
+        {/* 일별 통계 기간 선택 및 카페 필터 */}
+        {showDailyView && (
+          <div className="filter-bar">
+            {/* 카페 필터 드롭다운 */}
+            <select
+              className="cafe-filter-select"
+              value={selectedCafeFilter}
+              onChange={(e) => setSelectedCafeFilter(e.target.value)}
+            >
+              <option value="all">전체 카페</option>
+              {cafes.map((cafe) => (
+                <option key={cafe.id} value={cafe.cafe_id}>
+                  {cafe.cafe_name}
+                </option>
+              ))}
+            </select>
+
+            {/* 기간 선택 버튼 */}
+            <div className="period-selector">
+              <button
+                className={dateMode === 'preset' && statsDays === 7 ? 'period-btn active' : 'period-btn'}
+                onClick={() => { setDateMode('preset'); setStatsDays(7); }}
+              >
+                최근 일주일
               </button>
+              <button
+                className={dateMode === 'preset' && statsDays === 14 ? 'period-btn active' : 'period-btn'}
+                onClick={() => { setDateMode('preset'); setStatsDays(14); }}
+              >
+                최근 2주
+              </button>
+              <button
+                className={dateMode === 'preset' && statsDays === 30 ? 'period-btn active' : 'period-btn'}
+                onClick={() => { setDateMode('preset'); setStatsDays(30); }}
+              >
+                최근 한 달
+              </button>
+              <button
+                className={dateMode === 'custom' ? 'period-btn active' : 'period-btn'}
+                onClick={() => setDateMode('custom')}
+              >
+                사용자 지정
+              </button>
+            </div>
+
+            {/* 사용자 지정 날짜 선택 */}
+            {dateMode === 'custom' && (
+              <div className="date-range-selector">
+                <input
+                  type="date"
+                  className="date-input"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate || undefined}
+                  placeholder="시작일"
+                />
+                <span className="date-separator">~</span>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || undefined}
+                  placeholder="종료일"
+                />
+              </div>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Stats View */}
-        {showStatsView ? (
+        {/* Rentals View */}
+        {showRentalsView ? (
+          <div className="rentals-summary">
+            {/* Summary Cards */}
+            <div className="summary-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+              {(() => {
+                const totalRented = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.rented_cups) || 0), 0);
+                const totalActive = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.active_rentals) || 0), 0);
+                const totalOverdue = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.overdue_rentals) || 0), 0);
+                const totalExpired = activeRentalsSummary.reduce((sum, cafe) => sum + (parseInt(cafe.expired_rentals) || 0), 0);
+
+                return (
+                  <>
+                    <div className="summary-card">
+                      <div className="card-label">전체 대여 중</div>
+                      <div className="card-value">{totalRented}개</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="card-label">정상 대여</div>
+                      <div className="card-value" style={{ color: '#4caf50' }}>{totalActive}개</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="card-label">연체</div>
+                      <div className="card-value" style={{ color: '#ff9800' }}>{totalOverdue}개</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="card-label">분실</div>
+                      <div className="card-value" style={{ color: '#f44336' }}>{totalExpired}개</div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Cafe-wise Rental Table */}
+            <div className="cafe-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>카페명</th>
+                    <th>총 컵 개수</th>
+                    <th>대여 중</th>
+                    <th>정상 대여</th>
+                    <th>연체</th>
+                    <th>분실</th>
+                    <th>매장 재고</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeRentalsSummary.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center' }}>
+                        대여 현황 데이터가 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    activeRentalsSummary.map((cafe) => (
+                      <tr key={cafe.cafe_id}>
+                        <td>{cafe.cafe_name}</td>
+                        <td>{cafe.total_cups || 0}개</td>
+                        <td>
+                          <strong>{parseInt(cafe.rented_cups) || 0}개</strong>
+                        </td>
+                        <td style={{ color: '#4caf50' }}>{parseInt(cafe.active_rentals) || 0}개</td>
+                        <td style={{ color: '#ff9800' }}>{parseInt(cafe.overdue_rentals) || 0}개</td>
+                        <td style={{ color: '#f44336' }}>{parseInt(cafe.expired_rentals) || 0}개</td>
+                        <td>
+                          <strong>{parseInt(cafe.available_cups) || 0}개</strong>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : showDailyView ? (
+          <div className="cafe-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>카페명</th>
+                  <th>날짜</th>
+                  <th>대여 모달</th>
+                  <th>반납 모달</th>
+                  <th>QR 탭</th>
+                  <th>QR 대여</th>
+                  <th>QR 반납</th>
+                  <th>QR 실천</th>
+                  <th>전화 탭</th>
+                  <th>전화 대여</th>
+                  <th>전화 반납</th>
+                  <th>전화 실천</th>
+                  <th>인증 시도</th>
+                  <th>총 액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  // 카페 필터 적용
+                  const filteredStats = selectedCafeFilter === 'all'
+                    ? dailyStats
+                    : dailyStats.filter(stat => stat.cafe_id === selectedCafeFilter);
+
+                  if (filteredStats.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan="14" style={{ textAlign: 'center' }}>
+                          통계 데이터가 없습니다.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return filteredStats.map((stat, index) => (
+                    <tr key={index}>
+                      <td>{stat.cafe_name}</td>
+                      <td>{stat.date ? new Date(stat.date).toLocaleDateString('ko-KR') : '-'}</td>
+                      <td>{stat.borrow_modal_opens}</td>
+                      <td>{stat.return_modal_opens}</td>
+                      <td>{stat.qr_tab_clicks}</td>
+                      <td>{stat.qr_borrow_clicks}</td>
+                      <td>{stat.qr_return_clicks}</td>
+                      <td>{stat.qr_do_clicks || 0}</td>
+                      <td>{stat.phone_tab_clicks}</td>
+                      <td>{stat.phone_borrow_clicks}</td>
+                      <td>{stat.phone_return_clicks}</td>
+                      <td>{stat.phone_do_clicks || 0}</td>
+                      <td>{stat.verification_attempts}</td>
+                      <td><strong>{stat.total_actions}</strong></td>
+                    </tr>
+                  ));
+                })()}
+              </tbody>
+            </table>
+          </div>
+        ) : showTransactionsView ? (
+          /* Transactions View */
+          <div className="cafe-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  {selectedTransactionCafe === 'all' && <th>카페명</th>}
+                  <th>거래 유형</th>
+                  <th>사용자 구분</th>
+                  <th>전화번호</th>
+                  <th>수량</th>
+                  <th>포인트</th>
+                  <th>거래 일시</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={selectedTransactionCafe === 'all' ? 8 : 7} style={{ textAlign: 'center' }}>
+                      거래 내역이 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  transactions.map((txn) => (
+                    <tr key={txn.id}>
+                      <td>{txn.id}</td>
+                      {selectedTransactionCafe === 'all' && <td>{txn.cafe_name}</td>}
+                      <td>
+                        <span className={`transaction-badge transaction-${txn.transaction_type}`}>
+                          {txn.transaction_type_kr}
+                        </span>
+                      </td>
+                      <td>
+                        {txn.is_new_user === null ? '기존' : txn.is_new_user ? '신규' : '기존'}
+                      </td>
+                      <td>{txn.phone_number}</td>
+                      <td>{txn.quantity}</td>
+                      <td>{txn.score}</td>
+                      <td>{new Date(txn.created_at).toLocaleString('ko-KR')}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : showStatsView ? (
           <div className="cafe-table">
             <table>
               <thead>
@@ -375,12 +937,15 @@ function AdminDashboard() {
                   <th>총 거래</th>
                   <th>오늘</th>
                   <th>주간</th>
+                  <th>보틀</th>
                   <th>QR 탭 (총)</th>
                   <th>QR 대여</th>
                   <th>QR 반납</th>
+                  <th>QR 실천</th>
                   <th>전화 탭 (총)</th>
                   <th>전화 대여</th>
                   <th>전화 반납</th>
+                  <th>전화 실천</th>
                 </tr>
               </thead>
               <tbody>
@@ -389,7 +954,7 @@ function AdminDashboard() {
                   if (filteredStats.length === 0) {
                     return (
                       <tr>
-                        <td colSpan="11" style={{ textAlign: 'center' }}>
+                        <td colSpan="14" style={{ textAlign: 'center' }}>
                           {searchQuery ? '검색 결과가 없습니다.' : '통계 데이터가 없습니다.'}
                         </td>
                       </tr>
@@ -399,15 +964,33 @@ function AdminDashboard() {
                     <tr key={cafe.id}>
                       <td>{cafe.cafe_name}</td>
                       <td>{cafe.cafe_id}</td>
-                      <td>{cafe.total_transactions || 0}</td>
-                      <td>{cafe.today_count || 0}</td>
-                      <td>{cafe.weekly_count || 0}</td>
+                      <td>
+                        <div>{cafe.total_transactions || 0}회</div>
+                        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+                          대여 {cafe.total_borrow || 0} · 반납 {cafe.total_return || 0} · 실천 {cafe.total_do || 0}
+                        </div>
+                      </td>
+                      <td>
+                        <div>{cafe.today_count || 0}회</div>
+                        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+                          대여 {cafe.today_borrow || 0} · 반납 {cafe.today_return || 0} · 실천 {cafe.today_do || 0}
+                        </div>
+                      </td>
+                      <td>
+                        <div>{cafe.weekly_count || 0}회</div>
+                        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+                          대여 {cafe.weekly_borrow || 0} · 반납 {cafe.weekly_return || 0} · 실천 {cafe.weekly_do || 0}
+                        </div>
+                      </td>
+                      <td>{cafe.total_score || 0}</td>
                       <td>{cafe.qr_tab_clicks || 0}</td>
                       <td>{cafe.qr_borrow_clicks || 0}</td>
                       <td>{cafe.qr_return_clicks || 0}</td>
+                      <td>{cafe.qr_do_clicks || 0}</td>
                       <td>{cafe.phone_tab_clicks || 0}</td>
                       <td>{cafe.phone_borrow_clicks || 0}</td>
                       <td>{cafe.phone_return_clicks || 0}</td>
+                      <td>{cafe.phone_do_clicks || 0}</td>
                     </tr>
                   ));
                 })()}
@@ -466,6 +1049,13 @@ function AdminDashboard() {
                               onClick={() => handleChangePassword(cafe.id)}
                             >
                               비밀번호
+                            </button>
+                            <button
+                              className="btn-reset"
+                              onClick={() => handleResetCafeStats(cafe.id, cafe.cafe_name)}
+                              title="이 카페의 통계 데이터 초기화"
+                            >
+                              통계 초기화
                             </button>
                             <button
                               className="btn-delete"

@@ -56,3 +56,47 @@ export const getCafeRecentBehaviors = async (cafeId, limit = 100) => {
     throw error.response?.data || { error: '카페 행동 내역을 가져오는 중 오류가 발생했습니다.' };
   }
 };
+
+// 현재 카페의 일별 통계 조회 (카페 전용)
+export const getMyDailyStats = async (days = 7) => {
+  try {
+    const response = await apiClient.get('/behaviors/my-daily-stats', {
+      params: { days }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '일별 통계를 가져오는 중 오류가 발생했습니다.' };
+  }
+};
+
+// 특정 카페의 일별 통계 조회 (관리자 전용)
+export const getCafeDailyStats = async (cafeId, days = 7) => {
+  try {
+    const response = await apiClient.get(`/behaviors/cafe/${cafeId}/daily-stats`, {
+      params: { days }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '카페 일별 통계를 가져오는 중 오류가 발생했습니다.' };
+  }
+};
+
+// 모든 카페의 일별 통계 조회 (관리자 전용)
+export const getAllCafesDailyStats = async (days = 7, startDate = null, endDate = null) => {
+  try {
+    const params = {};
+
+    // startDate와 endDate가 있으면 날짜 범위로, 없으면 days로
+    if (startDate && endDate) {
+      params.startDate = startDate;
+      params.endDate = endDate;
+    } else {
+      params.days = days;
+    }
+
+    const response = await apiClient.get('/behaviors/all-cafes-daily', { params });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '모든 카페 일별 통계를 가져오는 중 오류가 발생했습니다.' };
+  }
+};

@@ -4,7 +4,7 @@
   max-width: 100%;
   height: 100vh;
   height: 100dvh; /* Use dynamic viewport height for mobile browsers */
-  background-color: #e2e2e2;
+  background-color: transparent;
   display: flex;
   flex-direction: column;
   font-family: 'Pretendard', sans-serif;
@@ -13,27 +13,47 @@
   margin: 0 auto;
 }
 
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .home-container {
+    overflow-y: auto;
+  }
+}
+
 /* Header Section */
 .header-section {
-  width: 100%;
-  max-width: 100%;
-  padding: clamp(1rem, 3vh, 2.5rem) clamp(1.5rem, 5vw, 3rem);
-  flex-shrink: 0;
   box-sizing: border-box;
+  background-color: transparent; /* 투명 배경 */
+  position: absolute; /* tree-section 위에 떠있도록 */
+  top: clamp(40px, 8vh, 84px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10; /* 나무 위에 표시 */
+  pointer-events: none; /* 배경 클릭이 tree-section으로 전달되도록 */
+  align-items: center;
+  text-align: center;
+  width: 90%;
+  max-width: 600px;
+}
+
+/* header-section 내부 요소들은 클릭 가능하도록 */
+.header-section > * {
+  pointer-events: auto;
 }
 
 .header-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: clamp(0.5rem, 1vh, 1.5rem);
+  justify-content: center;
 }
 
 .cafe-name {
-  font-size: clamp(1.75rem, 3.5vw, 3.5rem);
-  font-weight: var(--pretendard-bold);
-  color: #000000;
-  margin: 0;
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: var(--pretendard-light);
+  color: #666666;
+  letter-spacing: 0;
+  text-align: center;
 }
 
 .logout-btn {
@@ -54,45 +74,132 @@
   background-color: #c0392b;
 }
 
-.total-count {
+/* Settings Button - 우측 상단 */
+.settings-button {
+  position: absolute;
+  top: clamp(12px, 2vh, 20px);
+  right: clamp(12px, 2vw, 20px);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  width: clamp(36px, 6vw, 48px);
+  height: clamp(36px, 6vw, 48px);
+  font-size: clamp(18px, 3vw, 24px);
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: clamp(0.5rem, 1.5vw, 1rem);
-  margin-bottom: clamp(0.5rem, 1vh, 1rem);
+  justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  z-index: 100;
+  transition: filter 0.2s, transform 0.2s;
 }
 
-.droplet-icon {
-  width: clamp(2rem, 5vw, 4rem);
-  height: clamp(2rem, 5vw, 4rem);
+.settings-button:hover {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+  transform: scale(1.1);
+}
+
+.settings-button:active {
+  transform: scale(0.95);
+}
+
+.total-score {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: clamp(0.5rem, 1vh, 1rem);
+  justify-content: center;
+}
+
+.waterpoint-image {
+  width: clamp(40px, 8vw, 65px);
+  height: clamp(40px, 8vw, 65px);
   color: #497fc6;
   flex-shrink: 0;
 }
 
-.count-number {
-  font-size: clamp(2.5rem, 5vw, 5rem);
-  font-weight: var(--pretendard-bold);
+.score-number {
+  font-size: clamp(48px, 12vw, 96px);
+  font-family: 'Binggrae-bold';
   color: #497fc6;
+  line-height: 1;
+  display: block;
+}
+.flow-container {
+  /* 기존: height: 39px; 대신 */
+  min-height: 46px;               /* 글자 + 이모지 여유 있게 들어가도록 */
+
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;            /* 세로 가운데 정렬 */
+  margin-top: 8px;
+  color: #6288A9;
+
+  background-color: #FFFFFFB3;    /* 기존 70% 투명 흰색 유지 */
+  border-radius: 40px;
+  overflow: hidden;
+
+  padding: 4px 16px;              /* 위아래 margin 대신 컨테이너 padding */
+  box-sizing: border-box;
 }
 
-.sub-stats {
-  font-size: clamp(1rem, 2vw, 1.75rem);
-  color: #8798a1;
+.flow-text {
+  /* 폰트 크기를 화면에 따라 살짝 조절 (모바일에서 잘림 방지) */
+  font-size: clamp(16px, 2.4vw, 22px);
+  line-height: 1.2;
+
+  /* 기존 margin: 5px; 제거 -> 컨테이너 padding으로 처리 */
+  margin: 0;
+
+  font-weight: var(--pretendard-regular);
+  white-space: nowrap;            /* 한 줄 유지 */
+  animation: slideFadeIn 0.5s ease;
 }
 
-.stat-value {
-  font-weight: var(--pretendard-semibold);
+/* 아래는 "아래에서 위로 올라오면서 나타나는" 느낌 */
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Tree Section - Placeholder for background image */
+
+/* Tree Section */
 .tree-section {
   flex: 1;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: clamp(150px, 25vh, 400px);
+  min-height: 100%; /* header 영역까지 확장 */
   overflow: hidden;
-  background-color: #e2e2e2;
+  background-color: transparent; /* 투명 배경 */
+  padding-bottom: 0; /* JS로 동적 설정: action-bar 높이만큼 */
+  box-sizing: border-box;
+  /* header-section이 absolute이므로 tree-section이 전체 높이 차지 */
+  margin-top: 0;
+}
+
+.hill-section {
+  position : fixed;
+  bottom: clamp(120px, 20vh, 200px);
+  width: 100%;
+  max-width: 100%;
+  z-index: 3;
+  height: clamp(120px, 20vh, 190px);
+  justify-content: center;
+}
+
+.hill-image {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
 }
 
 /* Action Bar */
@@ -102,16 +209,26 @@
   width: 100%;
   max-width: 100%;
   background-color: #478a81;
-  padding: clamp(1.5rem, 3vh, 3rem) clamp(1rem, 3vw, 2rem) clamp(0.75rem, 2vh, 2rem);
+  display: flex;
+  flex-direction: column;
+  padding: clamp(8px, 1.5vh, 10px) clamp(16px, 4vw, 40px) clamp(30px, 6vh, 50px);
   flex-shrink: 0;
   box-sizing: border-box;
+  z-index: 3;
+  gap: clamp(6px, 1.2vh, 10px);
 }
 
 .action-bar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
+}
+
+.cup-info{
+  display: flex;
+  align-items: left;
+  gap: 20px;
+  flex-shrink: 0;
 }
 
 .brand-info {
@@ -119,65 +236,87 @@
   align-items: center;
   gap: clamp(0.375rem, 1vw, 0.625rem);
   color: white;
+  background-color: #28568F;
   flex-shrink: 0;
-}
-
-.clock-icon {
-  width: clamp(1.25rem, 2.5vw, 1.75rem);
-  height: clamp(1.25rem, 2.5vw, 1.75rem);
-  flex-shrink: 0;
+  border-radius: clamp(6px, 1vw, 8px);
+  min-width: clamp(80px, 15vw, 109px);
+  height: clamp(32px, 5vh, 39px);
+  padding: clamp(4px, 0.8vh, 5px) clamp(10px, 2vw, 13px);
 }
 
 .brand-name {
-  font-size: clamp(0.875rem, 2vw, 1.25rem);
-  font-weight: var(--pretendard-semibold);
+  font-size: clamp(16px, 3vw, 24px);
+  font-weight: var(--pretendard-medium);
+  white-space: nowrap;
+
+}
+
+
+/* Help Section */
+.help-section {
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 1vw, 7px);
+  flex-shrink: 0;
+  cursor: pointer;
+  background-color: #F8F8F8;
+  border-radius: 9999px;
+  padding: clamp(6px, 1.2vh, 8px) clamp(4px, 0.8vw, 5px) clamp(8px, 1.5vh, 11px) clamp(4px, 0.8vw, 5px);
+  color: #4381CF;
+  border: 2px;
+  border-color: #4381CF;
+  min-width: clamp(85px, 15vw, 112px);
+  height: clamp(32px, 5vh, 39px);
+}
+
+.question-mark{
+  display: flex;
+  width: clamp(4rem, 8vw + 3vh, 10rem);
+  height: clamp(4rem, 8vw + 3vh, 10rem);
+  object-fit: contain;
+}
+
+.help-text {
+  display: flex;
+  font-size: clamp(16px, 3vw, 24px);
+  font-weight: var(--pretendard-bold);
   white-space: nowrap;
 }
 
-.divider-line {
-  flex: 1;
-  min-width: 1rem;
-  margin: 0 clamp(0.5rem, 2vw, 1rem);
-  border-top: 2px dashed rgba(255, 255, 255, 0.3);
-}
-
-.reward-info {
+.do-section{
   display: flex;
+  min-width: clamp(140px, 22vw, 198px);
+  height: clamp(32px, 5vh, 39px);
+  padding: clamp(4px, 0.8vh, 5px) clamp(10px, 2vw, 13px);
+  background-color: #146E3F;
+  color: #F8F8F8;
   align-items: center;
-  gap: clamp(0.25rem, 0.5vw, 0.5rem);
-  color: white;
-  flex-shrink: 0;
+  border-radius: clamp(6px, 1vw, 8px);
 }
 
-.droplet-icon-small {
-  width: clamp(1.25rem, 2.5vw, 1.75rem);
-  height: clamp(1.25rem, 2.5vw, 1.75rem);
-  flex-shrink: 0;
-}
-
-.reward-value {
-  font-size: clamp(1rem, 2vw, 1.5rem);
-  font-weight: var(--pretendard-bold);
+.do-text{
+  font-size: clamp(16px, 3vw, 24px);
+  font-weight: var(--pretendard-medium);
+  white-space: nowrap;
 }
 
 /* Button Group */
 .button-group {
   display: flex;
   align-items: flex-end;
-  gap: clamp(1rem, 3vw, 2rem);
-  margin-top: clamp(-1rem, -2vh, -0.5rem);
+  gap: clamp(8px, 2vw, 15px);
 }
 
 .action-button {
   flex: 1;
   min-width: 0; /* Prevent flex items from overflowing */
   color: white;
-  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
   font-weight: var(--pretendard-bold);
-  padding: clamp(0.6rem, 1.5vh, 1.2rem) clamp(1.5rem, 3vw, 3rem);
-  aspect-ratio: 2.5 / 1;
-  border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
-  border: none;
+  font-size: clamp(24px, 5vw, 42px);
+  padding: clamp(16px, 3vh, 31px) clamp(40px, 10vw, 91px);
+  border-radius: clamp(8px, 1.2vw, 10px);
+  border-width: clamp(3px, 0.6vw, 5px);
+  border-style: solid;
   cursor: pointer;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
   font-family: 'Pretendard', sans-serif;
@@ -186,158 +325,66 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  max-height: 125px;
+  min-height: clamp(80px, 15vh, 120px);
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .button-group {
+    gap: 8px;
+  }
+
+  .action-button {
+    padding: 16px 20px;
+    font-size: 24px;
+    min-height: 80px;
+  }
 }
 
 .rent-button {
-  background-color: #4067A3;
+  background-color: #F8F8F8;
+  color: #438ECF;
+  border-color: #438ECF;
 }
 
 .rent-button:hover {
-  background-color: #497fc6;
+  background-color: #f8f8f8a8;
 }
 
 .rent-button:active {
   transform: scale(0.98);
+  color: #396FB2;
+  border-color: #396FB2;
+  background-color: #BEC0CB;
 }
 
 .return-button {
-  background-color: #3C9D79;
+  background-color: #F8F8F8;
+  color: #438ECF;
+  border-color: #438ECF;
 }
 
 .return-button:hover {
-  background-color: #478a81;
+  background-color: #f8f8f8a8;
 }
 
 .return-button:active {
   transform: scale(0.98);
+  color: #396FB2;
+  border-color: #396FB2;
+  background-color: #BEC0CB;
 }
 
-/* Help Section */
-.help-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(0.25rem, 0.5vh, 0.5rem);
-  flex-shrink: 0;
-  cursor: pointer;
+.do-button {
+  background-color: #F8F8F8;
+  color: #47A976;
+  border-color: #47A976;
 }
 
-.help-image {
-  width: clamp(6rem, 12vw + 4vh, 10rem);
-  height: clamp(6rem, 12vw + 4vh, 10rem);
-  object-fit: contain;
+.do-button:hover {
+  background-color: #f8f8f8a8;
 }
 
-.bird-container {
-  position: relative;
-  width: clamp(4rem, 7vw, 6rem);
-  height: clamp(4rem, 7vw, 6rem);
-  background-color: #6e88a9;
-  border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
+.do-button:active {
+  transform: scale(0.98);
 }
-
-.bird-container:hover {
-  transform: scale(1.05);
-}
-
-.bird-container:active {
-  transform: scale(0.95);
-}
-
-.bird {
-  position: relative;
-  transform: scale(0.9);
-}
-
-.bird-body {
-  width: 3.5rem;
-  height: 4rem;
-  background-color: #f8f8f8;
-  border-radius: 50%;
-}
-
-.bird-head {
-  position: absolute;
-  top: -0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3rem;
-  height: 3rem;
-  background-color: #6e88a9;
-  border-radius: 50%;
-}
-
-.bird-beak {
-  position: absolute;
-  top: 0.5rem;
-  left: -0.5rem;
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-right: 10px solid #deb044;
-}
-
-.bird-eye {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  width: 0.375rem;
-  height: 0.25rem;
-  background-color: #000000;
-  border-radius: 50%;
-}
-
-.bird-cheek {
-  position: absolute;
-  top: 1.25rem;
-  left: 0.5rem;
-  width: 0.625rem;
-  height: 0.375rem;
-  background-color: #deb044;
-  border-radius: 50%;
-  opacity: 0.4;
-}
-
-.speech-bubble {
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  background-color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #6e88a9;
-  font-size: 0.875rem;
-  font-weight: var(--pretendard-bold);
-}
-
-.help-text {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.2rem, 0.5vw, 0.375rem);
-  color: white;
-  font-size: clamp(0.625rem, 1.5vw, 0.875rem);
-  white-space: nowrap;
-}
-
-.help-icon {
-  width: clamp(0.625rem, 1.5vw, 1rem);
-  height: clamp(0.625rem, 1.5vw, 1rem);
-  flex-shrink: 0;
-}
-
-/* All responsive sizing is now handled by clamp() in the base styles above.
-   No media queries needed - elements scale smoothly with viewport size. */
-

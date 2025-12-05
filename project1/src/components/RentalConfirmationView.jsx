@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import './RentalConfirmationView.css';
 import returnmecup from '../assets/images/returnmecup.svg';
+import RewardsInfoModal from './RewardsInfoModal';
 
 export default function RentalConfirmationView({
   quantity,
-  smsNotification,
-  onToggleSms,
   onCancel,
   onConfirm,
 }) {
@@ -14,6 +13,8 @@ export default function RentalConfirmationView({
   const today = new Date();
   const returnDate = new Date(today);
   returnDate.setDate(returnDate.getDate() + 14);
+
+  const rewardPoints = quantity * 10; // 10 bottles per cup (반납 시 지급)
 
   const formatDate = (date) => {
     const year = date.getFullYear();
@@ -49,10 +50,10 @@ export default function RentalConfirmationView({
           <span className="info-value">{formatDate(returnDate)}</span>
         </div>
 
-        {/* Reward */}
+        {/* Bottle Info */}
         <div className="info-row">
           <div className="reward-label-container">
-            <span className="info-label">보상</span>
+            <span className="info-label" style={{ fontWeight: '700', color: '#4481D1' }}>보틀 적립 안내</span>
             <button
               onClick={() => setShowRewardsInfo(true)}
               className="help-button"
@@ -64,34 +65,17 @@ export default function RentalConfirmationView({
               </svg>
             </button>
           </div>
-          <div className="reward-value-container">
-            <svg className="coins-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="8" cy="8" r="6" strokeWidth="2" />
-              <path d="M18.09 10.37A6 6 0 1 1 10.34 18" strokeWidth="2" />
-              <circle cx="16" cy="16" r="6" strokeWidth="2" />
-            </svg>
-            <span className="reward-value">20보틀</span>
-          </div>
         </div>
       </div>
 
-      {/* SMS Notification Checkbox */}
+      {/* Info Text */}
       <div className="sms-notification-container">
-        <button
-          onClick={onToggleSms}
-          className={`sms-toggle-button ${smsNotification ? 'sms-active' : 'sms-inactive'}`}
-        >
-          <div className={`checkbox-circle ${smsNotification ? 'checkbox-checked' : 'checkbox-unchecked'}`}>
-            {smsNotification && (
-              <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <polyline points="20 6 9 17 4 12" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </div>
-          <span className={`sms-text ${smsNotification ? 'sms-text-active' : 'sms-text-inactive'}`}>
-            반납일자 알림 문자를 받겠습니다.
-          </span>
-        </button>
+        <div className="sms-info-text">
+          보상은 리턴미컵을 반납한 이후 적립됩니다.
+        </div>
+        <div className="sms-info-text">
+          반납일자 알림 문자가 자동으로 발송됩니다.
+        </div>
       </div>
 
       {/* Action Buttons */}
@@ -105,10 +89,7 @@ export default function RentalConfirmationView({
       </div>
 
       {showRewardsInfo && (
-        <div className="rewards-modal-placeholder">
-          <p>RewardsInfoModal 구현 필요</p>
-          <button onClick={() => setShowRewardsInfo(false)}>닫기</button>
-        </div>
+        <RewardsInfoModal onClose={() => setShowRewardsInfo(false)} />
       )}
     </div>
   );

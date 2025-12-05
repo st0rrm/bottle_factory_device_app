@@ -1,46 +1,241 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './home.css';
 import VerifyModal from '../../components/VerifyModal';
 import ReturnModal from '../../components/ReturnModal';
+import DoModal from '../../components/DoModal';
+import SettingsModal from '../../components/SettingsModal';
+import AdminLogin from '../admin/AdminLogin';
 import helpIcon from '../../assets/images/help.svg';
+import hillImage from '../../assets/images/front_hills_new 2.png'
+import Waterpoint from '../../assets/images/waterpoint.png'
 import HelpModal from '../../components/HelpModal';
+import SuccessSnackbar from '../../components/SuccessSnackbar';
+import SurveyQRModal from '../../components/SurveyQRModal';
+import TreeContainer from '../../components/TreeContainer';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
+import { db } from '../../firebase/config';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { usePicovoice } from '../../hooks/usePicovoice';
+import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (GPT-4o-mini-transcribe + Claude)
+import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
+import { getShopByName } from '../../firebase/firestore';
 
 function HomeScreen() {
   const navigate = useNavigate();
+  const { currentBackground, showObjects } = useBackground();
+
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
+  const [showDoModal, setShowDoModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const [showSurveyQRModal, setShowSurveyQRModal] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [cafeInfo, setCafeInfo] = useState(null);
+  const [firebaseShopId, setFirebaseShopId] = useState(null); // Firebase shops document ID
+
   const [stats, setStats] = useState({
-    total: 0,
+    totalScore: 0,
+    totalCount: 0,
     today: 0,
     weekly: 0
   });
 
+  const [treeType, setTreeType] = useState('init');
+  const [treeScore, setTreeScore] = useState(0);
+  const messages = [
+  ' 환경을 위하는 아름다운 당신! 😊 ',
+  ' 당신의 참여가 동네를 푸르게 만들어요 🤝 ',
+  ' 함께한 손길이 숲을 키우고 있어요 🕊️ ',
+  ' 일회용컵 대신 리턴미컵! 나무에게 물을 주세요🌲 ',
+  ' 지속가능한 습관, 우리 함께해요 🌏 ',
+  ' 리턴미컵으로 테이크아웃하면 나무가 자라요! 🪴 ',
+  ' 일상에서 불필요한 쓰레기를 줄일 수 있다면? 🤔 '
+];
+
+const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  // --------------------------------------------------------------------
+  // FLOW TEXT SECTION: REF + EFFECT
+  // --------------------------------------------------------------------
+  const flowContainerRef = useRef(null);
+  const flowInnerRef = useRef(null);
+
   useEffect(() => {
-    // localStorage에서 카페 정보 가져오기
+    const container = flowContainerRef.current;
+    const inner = flowInnerRef.current;
+    if (!container || !inner) return;
+
+    const items = [...inner.querySelectorAll('.item')];
+
+    let index = 0;
+    let offset = 0;
+
+    function next() {
+      offset += items[index].offsetHeight;
+      inner.style.transform = `translateY(${-offset}px)`;
+
+      index++;
+      if (index >= items.length) {
+        index = 0;
+        offset = 0;
+
+        setTimeout(() => {
+          inner.style.transition = "none";
+          inner.style.transform = "translateY(0)";
+          void inner.offsetHeight; // reflow 강제
+          inner.style.transition = "transform 0.8s ease";
+        }, 900);
+      }
+    }
+
+    const interval = setInterval(next, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % messages.length);
+    }, 5000); // 5초마다 변경
+
+    return () => clearInterval(interval);
+  }, [messages.length]);
+  // --------------------------------------------------------------------
+
+
+  // action-bar bottom padding and tree-container positioning adjustment
+  useEffect(() => {
+    const updateTreeLayout = () => {
+      const actionBar = document.querySelector('.action-bar');
+      const treeSection = document.querySelector('.tree-section');
+      const flowContainer = document.querySelector('.flow-container');
+      const treeContainer = document.querySelector('.tree-container');
+
+      if (actionBar && treeSection) {
+        treeSection.style.paddingBottom = `${actionBar.offsetHeight}px`;
+      }
+
+      if (flowContainer && actionBar && treeContainer) {
+        const flowRect = flowContainer.getBoundingClientRect();
+        const actionBarRect = actionBar.getBoundingClientRect();
+
+        const topPosition = flowRect.bottom;
+        const bottomPosition = actionBarRect.top;
+        const height = bottomPosition - topPosition;
+
+        // tree-container의 위치와 크기 설정
+        treeContainer.style.position = 'fixed';
+        treeContainer.style.top = `${topPosition}px`;
+        treeContainer.style.left = '0';
+        treeContainer.style.width = '100%';
+        treeContainer.style.height = `${height}px`;
+      }
+    };
+
+    const timer = setTimeout(updateTreeLayout, 100);
+    window.addEventListener('resize', updateTreeLayout);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateTreeLayout);
+    };
+  }, [cafeInfo]);
+
+  const handleWakeWordDetected = useCallback(async (keywordIndex) => {
+    // 다른 모달이 이미 열려있으면 무시
+    const isModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
+    if (isModalOpen) {
+      console.log('⚠️ 다른 모달이 열려있어 도움말 모달 열기 무시');
+      return;
+    }
+
+    setShowHelpModal(true);
+
+    // 도움말 모달 열림 통계 기록
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      await fetch(`${apiBaseUrl}/voice/log-stat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          statType: 'help_modal_opened',
+          metadata: { trigger: 'voice' }
+        })
+      });
+    } catch (error) {
+      console.error('통계 기록 실패:', error);
+    }
+  }, [showVerifyModal, showReturnModal, showDoModal, showHelpModal, showSettingsModal, showSurveyQRModal]);
+
+  // 모달이 열려있는지 확인 (모달이 열려있으면 음성인식 비활성화)
+  const isAnyModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
+
+  // 음성 인식 방법 선택
+
+  // 방법 1: Picovoice (현재 사용 중)
+  // const { isListening, error: picoError, hasPermission, requestPermission } =
+  //   usePicovoice(!isAnyModalOpen, handleWakeWordDetected);
+
+  // 방법 2: LLM 기반 (GPT-4o-mini-transcribe + Claude)
+  const { isListening, error: picoError, hasPermission, requestPermission, startRecording } =
+    useVoiceRecognition(!isAnyModalOpen, handleWakeWordDetected, {
+      segmentDuration: 5000,         // 5초마다 분석
+      lowThreshold: 0.4,             // 0.4 미만 → 폐기
+      highThreshold: 0.7,            // 0.7 이상 → 확정
+      maxCumulativeDuration: 15000,  // 최대 15초 누적
+      windowSize: 15000,             // 슬라이딩 윈도우 15초
+      maxTotalDuration: 30000,       // 최대 30초
+      vadThreshold: 10,              // VAD 음량 임계값 (RMS 기반, 0-255)
+                                     // 15 = 배경 소음 차단, 정상 대화 감지
+      rmsLogBatchSize: 60,           // RMS 로그 배치 크기 (60개마다 전송)
+    });
+
+  // load café info
+  useEffect(() => {
     const userData = localStorage.getItem('userData');
     const userType = localStorage.getItem('userType');
     const authToken = localStorage.getItem('authToken');
 
     if (!userData || !authToken || userType !== 'cafe') {
-      // 로그인하지 않았으면 로그인 페이지로
       navigate('/login', { replace: true });
       return;
     }
 
     const cafe = JSON.parse(userData);
+
+    // 화면 표시용 이름 추가 (cafeName은 원본 유지 - Firebase/API용)
+    const customCafeName = localStorage.getItem('customCafeName');
+    cafe.displayName = customCafeName || cafe.cafeName;
+
     setCafeInfo(cafe);
 
-    // 서버에서 통계 데이터 가져오기
+    // Firebase shops document ID 조회 (실시간 리스너용)
+    const fetchFirebaseShopId = async () => {
+      try {
+        const shopResult = await getShopByName(cafe.cafeName);
+        if (shopResult.success) {
+          const shopId = shopResult.data.id;
+          setFirebaseShopId(shopId);
+          console.log('🔑 Firebase shopId 설정:', shopId);
+        } else {
+          console.warn('⚠️ Firebase shops에서 카페를 찾을 수 없음:', cafe.cafeName);
+        }
+      } catch (error) {
+        console.error('❌ Firebase shopId 조회 실패:', error);
+      }
+    };
+
+    fetchFirebaseShopId();
     fetchStats();
 
-    // 브라우저 뒤로가기 방지
     const handlePopState = () => {
-      // 뒤로가기 시 다시 현재 페이지로
       window.history.pushState(null, '', window.location.pathname);
     };
 
@@ -52,27 +247,161 @@ function HomeScreen() {
     };
   }, [navigate]);
 
+  // 마이크 권한이 없을 때만 요청 (한 번만 실행)
+  useEffect(() => {
+    if (!hasPermission) {
+      console.log('⚠️ 마이크 권한이 없습니다. 권한을 요청합니다...');
+      requestPermission();
+    }
+  }, [hasPermission, requestPermission]);
+
+  // iOS Safari: 첫 번째 사용자 터치 시 AudioContext 활성화
+  useEffect(() => {
+    const handleFirstTouch = () => {
+      console.log('👆 첫 번째 사용자 터치 감지 (iOS AudioContext 활성화)');
+
+      // AudioContext resume 시도 (iOS Safari 호환)
+      if (window.AudioContext || window.webkitAudioContext) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const tempContext = new AudioContextClass();
+
+        if (tempContext.state === 'suspended') {
+          tempContext.resume().then(() => {
+            console.log('✅ 전역 AudioContext resumed');
+          }).catch(err => {
+            console.warn('⚠️ 전역 AudioContext resume 실패:', err);
+          });
+        }
+      }
+
+      // 한 번만 실행하고 리스너 제거
+      document.removeEventListener('touchstart', handleFirstTouch);
+      document.removeEventListener('click', handleFirstTouch);
+    };
+
+    // iOS에서는 touchstart, 데스크톱에서는 click
+    document.addEventListener('touchstart', handleFirstTouch, { once: true, passive: true });
+    document.addEventListener('click', handleFirstTouch, { once: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleFirstTouch);
+      document.removeEventListener('click', handleFirstTouch);
+    };
+  }, []);
+
+  // Firebase 실시간 리스너: QR 적립 즉시 반영
+  useEffect(() => {
+    if (!firebaseShopId) return;
+
+    console.log('🔥 Firebase 실시간 리스너 시작 (collect_history):', firebaseShopId);
+
+    let isInitialLoad = true; // 초기 로드 플래그
+
+    const q = query(
+      collection(db, 'collect_history'),
+      where('shop_id', '==', firebaseShopId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      // 초기 로드는 무시 (기존 문서들이 모두 'added'로 감지됨)
+      if (isInitialLoad) {
+        isInitialLoad = false;
+        console.log('📚 초기 데이터 로드 완료 (기존 문서 무시)');
+        return;
+      }
+
+      // 실제 새로운 변경사항만 처리
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          // source가 없으면 = 기존 앱 QR 적립
+          if (!data.source) {
+            console.log('✨ bottleclub 앱 QR 반납 감지! 통계 업데이트...');
+            fetchStats();
+
+            // ✨ QR 모달이 열려있으면 먼저 닫기
+            setShowReturnModal(false);
+
+            // ✨ QR 반납 후 1.5초 뒤 설문 QR 모달 표시
+            setTimeout(() => {
+              setShowSurveyQRModal(true);
+            }, 1500);
+          }
+        }
+      });
+    }, (error) => {
+      console.error('❌ Firebase 리스너 에러 (collect_history):', error);
+    });
+
+    return () => {
+      console.log('🔥 Firebase 리스너 종료 (collect_history)');
+      unsubscribe();
+    };
+  }, [firebaseShopId]);
+
+  // Firebase 실시간 리스너: QR 대여 즉시 반영
+  useEffect(() => {
+    if (!firebaseShopId) return;
+
+    console.log('🔥 Firebase 실시간 리스너 시작 (rents):', firebaseShopId);
+
+    let isInitialLoad = true; // 초기 로드 플래그
+
+    const q = query(
+      collection(db, 'rents'),
+      where('rented_shop_id', '==', firebaseShopId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      // 초기 로드는 무시 (기존 문서들이 모두 'added'로 감지됨)
+      if (isInitialLoad) {
+        isInitialLoad = false;
+        console.log('📱 초기 대여 데이터 로드 완료 (기존 문서 무시)');
+        return;
+      }
+
+      // 실제 새로운 변경사항만 처리
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          // source가 'web'이 아니면 = bottleclub 앱 QR 대여
+          if (data.source !== 'web') {
+            console.log('📱 bottleclub 앱 QR 대여 감지! 통계 업데이트... (+30점)');
+            fetchStats();
+
+            // ✨ QR 모달이 열려있으면 먼저 닫기
+            setShowVerifyModal(false);
+
+            // ✨ QR 대여 후 1.5초 뒤 설문 QR 모달 표시
+            setTimeout(() => {
+              setShowSurveyQRModal(true);
+            }, 1500);
+          }
+        }
+      });
+    }, (error) => {
+      console.error('❌ Firebase 리스너 에러 (rents):', error);
+    });
+
+    return () => {
+      console.log('🔥 Firebase 리스너 종료 (rents)');
+      unsubscribe();
+    };
+  }, [firebaseShopId]);
+
   const fetchStats = async () => {
     try {
       const data = await getMyStats();
       setStats(data);
     } catch (error) {
       console.error('통계 불러오기 실패:', error);
-      // 에러 발생 시 기본값 유지
     }
   };
 
-  const handleBorrowCupAction = () => {
-    setShowVerifyModal(true);
-  };
-
-  const handleReturnCupAction = () => {
-    setShowReturnModal(true);
-  };
-
-  const handleHelpAction = () => {
-    setShowHelpModal(true);
-  };
+  const handleBorrowCupAction = () => setShowVerifyModal(true);
+  const handleReturnCupAction = () => setShowReturnModal(true);
+  const handleDoAction = () => setShowDoModal(true);
+  const handleHelpAction = () => setShowHelpModal(true);
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
@@ -81,7 +410,58 @@ function HomeScreen() {
     }
   };
 
-  // 로딩 중이거나 카페 정보가 없으면 빈 화면
+  const handleRentalSuccess = () => {
+    setSnackbarMessage('🌱 대여가 완료되었습니다');
+    setShowSuccessSnackbar(true);
+    setTreeType('grow');
+    setTreeScore(30);
+    fetchStats();
+    setTimeout(() => {
+      setTreeType('init');
+      setTreeScore(0);
+    }, 3000);
+
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
+    setTimeout(() => {
+      setShowSurveyQRModal(true);
+    }, 1500);
+  };
+
+  const handleReturnSuccess = () => {
+    setSnackbarMessage('🌱 반납이 완료되었습니다');
+    setShowSuccessSnackbar(true);
+    setTreeType('grow');
+    setTreeScore(30);
+    fetchStats();
+    setTimeout(() => {
+      setTreeType('init');
+      setTreeScore(0);
+    }, 3000);
+
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
+    setTimeout(() => {
+      setShowSurveyQRModal(true);
+    }, 1500);
+  };
+
+  const handleDoSuccess = (score) => {
+    setSnackbarMessage('🌱 제로웨이스트 실천이 기록되었습니다');
+    setShowSuccessSnackbar(true);
+    setTreeType('grow');
+    setTreeScore(score || 30);
+    fetchStats();
+    setTimeout(() => {
+      setTreeType('init');
+      setTreeScore(0);
+    }, 3000);
+
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
+    setTimeout(() => {
+      setShowSurveyQRModal(true);
+    }, 1500);
+  };
+
+  // loading state
   if (!cafeInfo) {
     return <div className="home-container">Loading...</div>;
   }
@@ -91,73 +471,182 @@ function HomeScreen() {
       {/* Header Section */}
       <div className="header-section">
         <div className="header-top">
-          <h1 className="cafe-name">{cafeInfo.cafeName}</h1>
-          <button className="logout-btn" onClick={handleLogout}>
-            로그아웃
-          </button>
+          <h1 className="cafe-name">{cafeInfo.displayName || cafeInfo.cafeName}</h1>
         </div>
-        <div className="total-count">
-          <svg className="droplet-icon" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-          </svg>
-          <span className="count-number">{stats.total}</span>
+
+        <div className="total-score">
+          <img src={Waterpoint} alt="waterpoint" className="waterpoint-image" />
+          <span className="score-number">{stats.totalScore || 0}</span>
         </div>
-        <p className="sub-stats">
-          오늘 <span className="stat-value">{stats.today}</span>회 | 주간 <span className="stat-value">{stats.weekly}</span>회
-        </p>
+
+        {/* ----------------- FLOWING TEXT AREA ----------------- */}
+        <div className="flow-container">
+          <div
+            key={currentMessageIndex}   // key를 바꿔서 애니메이션 매번 다시 트리거
+            className="flow-text"
+          >
+            {messages[currentMessageIndex]}
+          </div>
+        </div>
+        {/* ------------------------------------------------------ */}
       </div>
 
-      {/* Tree Illustration Section - Placeholder for background image */}
+      {/* Settings Button */}
+      <button
+        className="settings-button"
+        onClick={() => setShowAdminLoginModal(true)}
+        aria-label="설정"
+      >
+        ⚙️
+      </button>
+
+      {/* Tree Section */}
       <div className="tree-section">
-        {/* Background image will be added here */}
+        <TreeContainer
+          type={treeType}
+          score={treeScore}
+          cafeId={cafeInfo?.cafeId || 'demo_cafe'}
+          totalScore={stats.totalScore}
+          totalCount={stats.totalCount}
+          cafeInfo={cafeInfo}
+          backgroundImage={currentBackground.backgroundImage}
+          objectImage={showObjects ? OBJECTS_IMAGE : null}
+        />
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* 2. Bottom Action Bar (모달 개방 여부와 관계없이 항상 렌더링) */}
-      {/* ------------------------------------------------------------- */}
-      <div className="action-bar">
-        <div className="action-bar-header">
-          <div className="brand-info">
-            <svg className="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-            <span className="brand-name">리턴미컵</span>
+      <div className="hill-section">
+        <img src={hillImage} alt="hill" className="hill-image" />
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="action-section">
+        <div className="action-bar">
+          <div className="action-bar-header">
+            <div className="cup-info">
+              <div className="brand-info">
+                <span className="brand-name">리턴미컵</span>
+              </div>
+              <div className="help-section" onClick={handleHelpAction}>
+                <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="11.5" cy="11.5" r="11.5" fill="#438ECF"/> 
+                  <text 
+                    x="50%" 
+                    y="70%" 
+                    text-anchor="middle" 
+                    font-family="Arial, sans-serif" 
+                    font-size="16" 
+                    fill="white" 
+                    font-weight="bold">
+                    ?
+                  </text>
+                </svg>
+                <span className="help-text">도움말</span>
+              </div>
+            </div>
+
+            <div className="do-section">
+              <span className="do-text">기타 제로웨이스트</span>
+            </div>
           </div>
-          <div className="divider-line"></div>
-          <div className="reward-info">
-            <svg className="droplet-icon-small" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-            </svg>
-            <span className="reward-value">+1</span>
-          </div>
-        </div>
 
-        <div className="button-group">
-          {/* Rent Button */}
-          <button className="action-button rent-button" onClick={handleBorrowCupAction}>
-            대여
-          </button>
+          <div className="button-group">
+            <button className="action-button rent-button" onClick={handleBorrowCupAction}>
+              대여
+            </button>
 
-          {/* Return Button */}
-          <button className="action-button return-button" onClick={handleReturnCupAction}>
-            반납
-          </button>
+            <button className="action-button return-button" onClick={handleReturnCupAction}>
+              반납
+            </button>
 
-          {/* Help Section */}
-          {/* 도움말 버튼은 Action Bar 외부에 있었으나, 이제 Action Bar 내부에 포함됩니다. */}
-          <div className="help-section" onClick={handleHelpAction}>
-            <img src={helpIcon} alt="Help" className="help-image" />
+            <button className="action-button do-button" onClick={handleDoAction}>
+              실천
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* 3. Modals (항상 최상단에 조건부 렌더링) */}
-      {/* ------------------------------------------------------------- */}
-      {showVerifyModal && <VerifyModal onClose={() => setShowVerifyModal(false)} />}
-      {showReturnModal && <ReturnModal onClose={() => setShowReturnModal(false)} />}
-      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
+      {/* Modals */}
+      {showVerifyModal && (
+        <VerifyModal
+          onClose={() => setShowVerifyModal(false)}
+          onOpenReturn={() => {
+            setShowVerifyModal(false);
+            setShowReturnModal(true);
+          }}
+          onSuccess={handleRentalSuccess}
+        />
+      )}
+
+      {showReturnModal && (
+        <ReturnModal
+          onClose={() => setShowReturnModal(false)}
+          onSuccess={handleReturnSuccess}
+        />
+      )}
+
+      {showDoModal && (
+        <DoModal
+          onClose={() => setShowDoModal(false)}
+          onSuccess={handleDoSuccess}
+        />
+      )}
+
+      {showHelpModal &&
+        <HelpModal
+          onClose={() => {
+            setShowHelpModal(false);
+            // 도움말 닫으면 음성인식 재시작
+            setTimeout(() => {
+              if (startRecording) {
+                startRecording();
+              }
+            }, 500);
+          }}
+          onUseButtonClick={handleBorrowCupAction}
+        />
+      }
+
+      {/* Admin Login Modal (설정 접근용) */}
+      {showAdminLoginModal && (
+        <AdminLogin
+          onClose={() => setShowAdminLoginModal(false)}
+          onLoginSuccess={() => {
+            setShowAdminLoginModal(false);
+            setShowSettingsModal(true);
+          }}
+          forSettings={true}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          onCafeNameChange={(newName) => {
+            // 화면 표시용 이름만 변경 (cafeName은 원본 유지)
+            setCafeInfo(prev => ({
+              ...prev,
+              displayName: newName
+            }));
+          }}
+        />
+      )}
+
+      {showSuccessSnackbar && (
+        <SuccessSnackbar
+          message={snackbarMessage}
+          onClose={() => setShowSuccessSnackbar(false)}
+          duration={800}
+        />
+      )}
+
+      {showSurveyQRModal && (
+        <SurveyQRModal
+          onClose={() => setShowSurveyQRModal(false)}
+          autoCloseDuration={15000}
+        />
+      )}
     </div>
   );
 }

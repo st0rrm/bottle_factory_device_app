@@ -175,3 +175,77 @@
   height: clamp(2rem, 4vw + 2vh, 3rem);
   object-fit: contain;
 }
+
+/* QR Code Loading State */
+.qr-loading {
+  width: clamp(8rem, 15vw + 10vh, 12rem);
+  height: clamp(8rem, 15vw + 10vh, 12rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border-radius: clamp(0.5rem, 1vw, 1rem);
+  color: #44748a;
+  font-size: clamp(0.875rem, 1.5vw + 0.75vh, 1.25rem);
+  font-weight: var(--pretendard-medium);
+  margin-bottom: clamp(1rem, 2vh, 3rem);
+}
+
+/* QR Code Error State */
+.qr-error {
+  width: clamp(8rem, 15vw + 10vh, 12rem);
+  height: clamp(8rem, 15vw + 10vh, 12rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff5f5;
+  border: 2px dashed #ff6b6b;
+  border-radius: clamp(0.5rem, 1vw, 1rem);
+  padding: clamp(0.75rem, 1.5vw, 1.5rem);
+  margin-bottom: clamp(1rem, 2vh, 3rem);
+  gap: clamp(0.5rem, 1vh, 0.75rem);
+}
+
+.qr-error-icon {
+  font-size: clamp(2rem, 4vw + 2vh, 3rem);
+  line-height: 1;
+}
+
+.qr-error-message {
+  font-size: clamp(0.75rem, 1.5vw + 0.75vh, 1rem);
+  font-weight: var(--pretendard-semibold);
+  color: #ff6b6b;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.qr-error-detail {
+  font-size: clamp(0.625rem, 1.25vw + 0.5vh, 0.875rem);
+  font-weight: var(--pretendard-regular);
+  color: #999;
+  display: block;
+  margin-top: clamp(0.25rem, 0.5vh, 0.5rem);
+}
+
+/* 반응형 스타일 - 가로 레이아웃에서도 에러/로딩 적용 */
+@media (max-height: 700px) and (min-width: 600px), (min-width: 1200px) {
+  .qr-loading,
+  .qr-error {
+    width: clamp(6rem, 12vw + 18vh, 14rem);
+    height: clamp(6rem, 12vw + 18vh, 14rem);
+    margin-bottom: 0;
+  }
+
+  .qr-error-icon {
+    font-size: clamp(1.5rem, 3vw + 1.5vh, 2.5rem);
+  }
+
+  .qr-error-message {
+    font-size: clamp(0.625rem, 1.25vw + 0.5vh, 0.875rem);
+  }
+
+  .qr-error-detail {
+    font-size: clamp(0.5rem, 1vw + 0.375vh, 0.75rem);
+  }
+}

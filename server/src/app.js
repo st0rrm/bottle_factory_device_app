@@ -4,11 +4,20 @@ const adminRoutes = require('./routes/admin');
 const cafeRoutes = require('./routes/cafe');
 const statisticsRoutes = require('./routes/statistics');
 const behaviorsRoutes = require('./routes/behaviors');
+const userRoutes = require('./routes/users');
+const voiceRoutes = require('./routes/voice');
 
 const app = express();
 
 // Middleware
-app.use(cors());
+// CORS configuration - read allowed origins from environment variable
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -23,6 +32,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/cafe', cafeRoutes);
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/behaviors', behaviorsRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/voice', voiceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -39,6 +50,8 @@ app.get('/', (req, res) => {
       cafe: '/api/cafe',
       statistics: '/api/statistics',
       behaviors: '/api/behaviors',
+      users: '/api/users',
+      voice: '/api/voice',
       health: '/health'
     }
   });

@@ -10,7 +10,7 @@ export default function ReturnConfirmationView({
   onCancel,
   onConfirm,
 }) {
-  const rewardPoints = quantity * 20; // 20 bottles per cup
+  const rewardPoints = quantity * 10; // 10 bottles per cup
 
   return (
     <div className="return-confirmation-overlay">

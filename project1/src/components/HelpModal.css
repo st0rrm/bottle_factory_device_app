@@ -1,4 +1,4 @@
-/* --- 모달 오버레이 --- */
+/* --- 공통: 오버레이 --- */
 .help-modal-overlay {
   position: fixed;
   inset: 0;
@@ -10,94 +10,72 @@
   font-family: 'Pretendard', sans-serif;
 }
 
-/* --- 모달 콘텐츠 (중앙 카드 + 새 이미지) --- */
+/* --- 모달 콘텐츠 전체 컨테이너 --- */
 .help-modal-content {
-  /* 컨테이너의 최대 너비, 높이 조정 */
-  width: clamp(280px, 90%, 300rem);
-  max-height: 95vh;
-  max-height: 95dvh;
-  margin-top: 0;
-  
-  /* 배경색과 그림자는 modal-card로 옮김 */
-  background-color: transparent; /* 배경 투명하게 */
-  border-radius: 0; /* 불필요한 border-radius 제거 */
-  padding: 0; /* 불필요한 padding 제거 */
-  box-shadow: none; /* 그림자 제거 */
-  
-  position: absolute;
-  top: 334px;
-  left: 78px;
+  position: relative;
+  width: clamp(320px, 90%, 800px);
+  max-height: 90vh;
+  background: transparent;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: visible; /* 헤더가 밖으로 나갈 수 있도록 */
-  overflow-x: hidden;
+  box-shadow: none;
   
-  /* 모달의 전체 높이 제한 */
-  max-height: 90vh; /* 뷰포트 대비 최대 높이 */
 }
 
-/* 닫기 버튼 (X 표시) */
+/* --- 닫기 버튼 (X) --- */
 .close-button {
   position: absolute;
-  /* 말풍선 오른쪽 위로 이동, 절대적인 위치 부여 */
-  top: 1.5rem; /* 고정값 */
-  right: 1.5rem; /* 고정값 */
+  top: 0.75rem;
+  right: 0.75rem;
   background: none;
   border: none;
-  font-size: 2rem;
-  color: #a0a0a0; /* 말풍선 색상과 대비되도록 */
   cursor: pointer;
-  z-index: 100; /* 말풍선보다 위에 오도록 */
+  z-index: 200;
+  opacity: 0.8;
+}
+
+.close-button:hover {
   opacity: 1;
 }
 
-/* --- 헤더 (새 이미지 + 말풍선) --- */
+/* =================================================================== */
+/* ===============  새 이미지 + 말풍선 (카드 상단 고정)  =============== */
+/* =================================================================== */
 .header-message-area {
-  /* header-message-area 자체는 flex container로 유지하되, */
-  /* 새와 말풍선은 absolute로 배치 */
-  width: 100%;
-  height: 100px; /* 새와 말풍선을 담을 공간 확보, 필요에 따라 조절 */
-  position: absolute; /* 모달 콘텐츠 기준 절대 위치 */
-  top: 0;
-  left: 0;
-  pointer-events: none; /* 클릭 이벤트가 하단 모달로 전달되도록 */
-  z-index: 100; /* modal-card보다 위에 오도록 */
-  align-items: flex-start;
+  position: absolute;
+  top: 0;                /* 카드의 "상단" 기준 */
+  left: clamp(35%, 40%, 45%);            /* 오른쪽으로 이동 */
+  transform: translate(-50%, -55%);  /* 위로 살짝 띄워 카드 경계에 딱 걸치기 */
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 100;
+  pointer-events: none; /* 내부 요소만 클릭 가능하도록 */
 }
 
+/* 새 이미지 */
 .bird-image {
-  position: absolute;
-  /* 절대적인 위치와 크기 */
-  height: auto;
-  top: 145px; /* modal-content 기준 상단 */
-  left: 90px; /* modal-content 기준 왼쪽 */
-  z-index: 31;
-  pointer-events: auto; /* 새 이미지는 클릭 가능하도록 (없으면 마우스 이벤트가 박스로 넘어감) */
+  width: clamp(50px, 12vw, 80px);
+  pointer-events: auto;
 }
 
+/* 말풍선 */
 .speech-bubble {
-  background-color: #ffffff;
-  border-radius: 1.2rem 1.2rem 1.2rem 0.2rem;
-  padding: 1.25rem; /* 고정 패딩 */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  
-  position: absolute;
-  /* 절대적인 위치와 크기 */
-  width: 385px; /* 고정값 */
-  height: 130px;
-  top: 175px; /* modal-content 기준 상단 */
-  left: 340px;
-  z-index: 30;
-  pointer-events: auto; /* 말풍선은 클릭 가능하도록 */
-  
-  text-align: left; /* 텍스트 정렬은 유지 */
+  background: #ffffff;
+  border-radius: 1.2rem 1.2rem 1.2rem 0.4rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: clamp(240px, 58vw, 360px);
+  pointer-events: auto;
 }
 
 .bubble-text {
-  font-size: 1.1rem; /* 고정 폰트 크기 */
-  line-height: 1.4;
-  color: #333;
   margin: 0;
+  font-size: clamp(0.85rem, 2.3vw, 1.1rem);
+  color: #333;
+  line-height: 1.4;
+  white-space: normal;
 }
 
 .bold-choice {
@@ -106,175 +84,188 @@
 }
 
 .cup-name {
-  font-size: 1.5rem; /* 고정 폰트 크기 */
   font-weight: bold;
   color: #4ac295;
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
 }
 
-/* --- 메인 카드 영역 --- */
+/* =================================================================== */
+/* ======================  메인 카드 영역  ============================ */
+/* =================================================================== */
+
 .modal-card {
-  background-color: #ffffff;
-  border-radius: clamp(1rem, 2vw, 1.5rem); /* 모달 콘텐츠의 border-radius를 여기로 옮김 */
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* 그림자도 여기로 옮김 */
-  
-  /* 새와 말풍선이 위로 올라온 만큼 상단 패딩을 조정하여 콘텐츠가 겹치지 않게 합니다. */
-  /* clamp(최소, 뷰포트 비례, 최대) */
-  padding: clamp(3rem, 5vh, 4rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 3vh, 2.5rem); 
-  padding-top: clamp(6rem, 15vh, 8rem); /* 새/말풍선 높이 고려하여 충분한 상단 패딩 */
-  
   position: relative;
-  /* height: 100%; (help-modal-content에서 flex-direction: column을 사용하므로, 자동으로 남은 공간을 채움) */
-  flex-grow: 1; /* 남은 공간을 차지하도록 */
-  overflow-y: auto; /* 카드 내용이 길어질 경우 스크롤 */
-  overflow-x: hidden;
+  flex-grow: 1;
+  background: #ffffff;
+  border-radius: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(5rem, 12vh, 7rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 3vh, 2.5rem);
+  /* ↑ 새+말풍선 높이만큼 상단 패딩 확보 */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow-y: auto;
+  overflow: visible;
 }
 
-/* --- 탭 네비게이션 --- */
+/* =================================================================== */
+/* ====================== 탭 네비게이션 ============================= */
+/* =================================================================== */
+
 .tab-navigation {
   display: flex;
   justify-content: space-between;
   position: absolute;
-  top: 4.5rem; /* modal-card 상단에 맞춰 위치 조정 */
+  top: clamp(4rem, 9vh, 5rem);
   left: 0;
   right: 0;
-  padding: 0 clamp(1rem, 3vw, 2rem); /* modal-card의 좌우 패딩과 일치하도록 조정 */
-  transform: translateY(-50%); 
-  z-index: 40; /* 탭 버튼이 카드 위에 보이도록 */
+  padding: 0 clamp(1rem, 3vw, 2rem);
+  transform: translateY(-50%);
+  z-index: 60;
 }
 
 .tab-button {
   flex-grow: 1;
-  padding: clamp(0.75rem, 2vw, 1.25rem) clamp(0.5rem, 1vw, 1rem); /* 패딩 조정 */
-  margin: 0 0.25rem;
   background-color: #e0e0e0;
   border: none;
+  padding: clamp(0.6rem, 2vw, 1rem);
+  margin: 0 0.25rem;
+  border-radius: 0.75rem 0.75rem 0 0;
   cursor: pointer;
-  font-size: clamp(0.9rem, 2.8vw, 1.1rem); /* 폰트 크기 조정 */
-  color: #666;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  
-  /* 탭 모양 */
-  border-radius: 0.75rem 0.75rem 0 0; 
+  font-size: clamp(0.85rem, 2.3vw, 1rem);
+  color: #555;
+  transition: all 0.2s;
 }
 
 .tab-button.active {
-  background-color: #ffffff;
+  background: #ffffff;
   color: #478a81;
   font-weight: bold;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   border: 1px solid #eee;
   border-bottom: none;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
 }
 
-/* --- 탭 콘텐츠 --- */
+/* =================================================================== */
+/* =========================== 탭 콘텐츠 ============================= */
+/* =================================================================== */
+
 .tab-content {
-  padding-top: clamp(0.5rem, 1vh, 1rem); 
-  min-height: 250px; 
+  padding-top: 1.2rem;
+  min-height: 260px;
 }
 
-/* "무엇인가요?" 플레이스홀더 스타일 */
 .modal-content-placeholder {
   text-align: center;
-  padding: 2rem 0;
 }
+
+.image-area {
+  width: 100%;
+}
+
+.content-image {
+  width: 100%;
+  border-radius: 0.5rem;
+}
+
+/* --- 문장 스타일 --- */
 .modal-content-placeholder p {
   font-size: clamp(0.9rem, 2.5vw, 1rem);
   color: #555;
   line-height: 1.5;
 }
 
-
-/* "어떻게 사용하나요?" 스텝 스타일 */
+/* --- 사용 방법 (스텝) --- */
 .how-to-use-steps {
   display: flex;
   flex-direction: column;
-  gap: clamp(1.5rem, 5vw, 2.5rem); 
-  padding-top: 1rem;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
   align-items: center;
+  padding-top: 0.5rem;
 }
 
 .step-item {
   display: flex;
   align-items: flex-start;
-  gap: clamp(0.75rem, 3vw, 1rem);
-  width: 468px;
+  gap: 1rem;
+  width: clamp(260px, 70%, 460px);
 }
 
 .step-icon-wrapper {
-  width: clamp(60px, 14vw, 70px); 
-  height: clamp(60px, 14vw, 70px); 
+  width: clamp(55px, 12vw, 70px);
+  height: clamp(55px, 12vw, 70px);
+  border-radius: 50%;
+  background: #eef7f4;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #eef7f4;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .step-icon {
   width: 80%;
   height: 80%;
-  object-fit: contain;
 }
 
 .step-text {
   flex-grow: 1;
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem); 
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
   color: #333;
-  line-height: 1.5;
-  margin: 0;
+  line-height: 1.4;
 }
 
-/* --- 하단 버튼 영역 --- */
+/* =================================================================== */
+/* ======================= 하단 버튼 ================================ */
+/* =================================================================== */
+
 .button-area {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-top: clamp(2rem, 6vw, 3rem); 
+  margin-top: clamp(1.8rem, 5vw, 2.5rem);
   padding-top: clamp(1rem, 3vw, 1.5rem);
   border-top: 1px solid #eee;
 }
 
+.later-button,
+.use-button {
+  padding: clamp(0.8rem, 2.5vw, 1.1rem);
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
 .later-button {
   flex-grow: 1;
-  padding: clamp(0.75rem, 2.5vw, 1.1rem);
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-  background-color: #f0f0f0;
+  background: #f0f0f0;
   color: #555;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
 }
 
 .use-button {
-  flex-grow: 2; 
-  padding: clamp(0.75rem, 2.5vw, 1.1rem);
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-  font-weight: bold;
+  flex-grow: 2;
   background-color: #478a81;
   color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  font-weight: bold;
 }
 
-.later-button:hover, .use-button:hover {
-  background-color: #e0e0e0;
+.later-button:hover {
+  background: #e0e0e0;
 }
 
 .use-button:hover {
-  background-color: #3d7871;
+  background: #3d7871;
 }
 
-/* 작은 화면 (모바일) 대응 */
+/* =================================================================== */
+/* ======================= 모바일 대응 ============================= */
+/* =================================================================== */
+
 @media (max-width: 450px) {
   .button-area {
-    flex-direction: column; 
+    flex-direction: column;
   }
-  .use-button, .later-button {
-    flex-grow: 1; 
+
+  .use-button,
+  .later-button {
+    flex-grow: 1;
   }
 }

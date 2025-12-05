@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './RewardsInfoModal.css';
 import xIcon from '../assets/images/x_icon.svg';
+import qrCode from '../assets/images/application_qr.svg';
 
 export default function RewardsInfoModal({ onClose }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,14 +52,14 @@ export default function RewardsInfoModal({ onClose }) {
                 보틀은 다회용컵 대여 등 일상 속 친환경 실천을 통해 적립할 수 있는 점수입니다.
               </p>
 
-              {/* Illustration */}
-              <div className="rewards-illustration-container">
+              {/* Illustration - 이미지 없음 (추후 추가 예정) */}
+              {/* <div className="rewards-illustration-container">
                 <img
                   src="/hand-holding-phone-with-bottle-points-and-green-pl.jpg"
                   alt="보틀 적립 일러스트"
                   className="rewards-illustration-image"
                 />
-              </div>
+              </div> */}
             </div>
           )}
 
@@ -73,11 +74,7 @@ export default function RewardsInfoModal({ onClose }) {
               <div className="rewards-grid">
                 {/* Reward Item 1 */}
                 <div className="reward-item">
-                  <img
-                    src="/americano-coffee-cup.jpg"
-                    alt="아메리카노"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">☕</div>
                   <h3 className="reward-item-title">아메리카노 1잔</h3>
                   <p className="reward-item-points">300 보틀</p>
                   <p className="reward-item-store">버터앤커피</p>
@@ -85,33 +82,21 @@ export default function RewardsInfoModal({ onClose }) {
 
                 {/* Reward Item 2 */}
                 <div className="reward-item">
-                  <img
-                    src="/ugly-hot-craft-making.jpg"
-                    alt="어글리핫"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">🎨</div>
                   <h3 className="reward-item-title">어글리핫 만들기</h3>
                   <p className="reward-item-points">100 보틀</p>
                 </div>
 
                 {/* Reward Item 3 */}
                 <div className="reward-item">
-                  <img
-                    src="/yoga-class-exercise.jpg"
-                    alt="요가 클래스"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">🧘</div>
                   <h3 className="reward-item-title">요가 클래스</h3>
                   <p className="reward-item-points">200 보틀</p>
                 </div>
 
                 {/* Reward Item 4 */}
                 <div className="reward-item">
-                  <img
-                    src="/and-now-book-cover.jpg"
-                    alt="앤드 나우 책"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">📚</div>
                   <h3 className="reward-item-title">『앤드 나우』책 한 권</h3>
                   <p className="reward-item-points">300 보틀</p>
                   <p className="reward-item-store">달빛서재</p>
@@ -119,11 +104,7 @@ export default function RewardsInfoModal({ onClose }) {
 
                 {/* Reward Item 5 */}
                 <div className="reward-item">
-                  <img
-                    src="/bakery-croissant-pastry.jpg"
-                    alt="베이커리"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">🥐</div>
                   <h3 className="reward-item-title">베이커리류 1개 교환권</h3>
                   <p className="reward-item-points">100 보틀</p>
                   <p className="reward-item-store">달콤상점</p>
@@ -131,22 +112,14 @@ export default function RewardsInfoModal({ onClose }) {
 
                 {/* Reward Item 6 */}
                 <div className="reward-item">
-                  <img
-                    src="/ansan-mountain-walking-guide.jpg"
-                    alt="안산 산책"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">🏞️</div>
                   <h3 className="reward-item-title">안산 산책 가이드</h3>
                   <p className="reward-item-points">100 보틀</p>
                 </div>
 
                 {/* Reward Item 7 */}
                 <div className="reward-item">
-                  <img
-                    src="/ollo-50-percent-coupon.jpg"
-                    alt="올로 쿠폰"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">🎫</div>
                   <h3 className="reward-item-title">올로 50% 쿠폰</h3>
                   <p className="reward-item-points">400 보틀</p>
                   <p className="reward-item-store">라벤더팩토리</p>
@@ -154,11 +127,7 @@ export default function RewardsInfoModal({ onClose }) {
 
                 {/* Reward Item 8 */}
                 <div className="reward-item">
-                  <img
-                    src="/scrap-paper-notebook-making.jpg"
-                    alt="이면지 노트"
-                    className="reward-item-image"
-                  />
+                  <div className="reward-item-placeholder">📓</div>
                   <h3 className="reward-item-title">이면지 노트 만들기</h3>
                   <p className="reward-item-points">100 보틀</p>
                 </div>
@@ -178,7 +147,7 @@ export default function RewardsInfoModal({ onClose }) {
               <div className="rewards-qr-container">
                 <div className="rewards-qr-box">
                   <img
-                    src="/qr-code-black-and-white.jpg"
+                    src={qrCode}
                     alt="보틀클럽 QR 코드"
                     className="rewards-qr-image"
                   />

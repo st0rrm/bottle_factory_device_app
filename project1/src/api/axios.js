@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // API 베이스 URL (환경 변수에서 가져오기)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+// 개발환경: /api = Vite 프록시 사용 (/api -> https://returnmecup-api-dev.onrender.com/api)
+// 프로덕션: 전체 URL 사용
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Axios 인스턴스 생성
 const apiClient = axios.create({
@@ -35,7 +37,9 @@ apiClient.interceptors.response.use(
       console.error('API Error:', error.response.data);
 
       // 401 Unauthorized: 토큰 만료 또는 인증 실패
-      if (error.response.status === 401) {
+      // BUT: 로그인 엔드포인트에서는 자동 리디렉션 하지 않음 (로그인 폼에서 처리)
+      const isLoginEndpoint = error.config.url?.includes('/login');
+      if (error.response.status === 401 && !isLoginEndpoint) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userType');
         localStorage.removeItem('userData');
