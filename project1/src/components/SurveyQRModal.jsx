@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import './SurveyQRModal.css';
-import surveyQRImage from '../assets/images/survey_qr.jpeg';
+import surveyQRImage from '../assets/images/survey_qr.png';
 import xIcon from '../assets/images/x_icon.svg';
 
 export default function SurveyQRModal({ onClose, autoCloseDuration = 20000 }) {
