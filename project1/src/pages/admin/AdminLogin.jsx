@@ -4,7 +4,7 @@ import xIcon from '../../assets/images/x_icon.svg';
 import { adminLogin, cafeLogin } from '../../api/auth';
 import { useNavigate } from 'react-router-dom';
 
-function AdminLogin({ onClose, onLoginSuccess, forSettings = false }) {
+function AdminLogin({ onClose, onLoginSuccess, forSettings = false, currentCafeId }) {
   const navigate = useNavigate();
   const [adminId, setAdminId] = useState('');
   const [password, setPassword] = useState('');
@@ -68,7 +68,10 @@ function AdminLogin({ onClose, onLoginSuccess, forSettings = false }) {
 
           // 설정 접근용일 경우
           if (forSettings) {
-            // 로그인만 확인하고 설정 모달로
+            // 현재 접속 중인 카페 계정인지 확인
+            if (currentCafeId && data.cafe.id !== currentCafeId) {
+              throw new Error('현재 접속 중인 카페 계정으로만 접근할 수 있습니다.');
+            }
             onLoginSuccess(data.cafe);
             return;
           }

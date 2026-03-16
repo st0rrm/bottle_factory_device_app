@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useBackground } from '../contexts/BackgroundContext';
 import { logout } from '../api/auth';
+import { changeCafePassword } from '../api/cafe';
 import { useNavigate } from 'react-router-dom';
 import xIcon from '../assets/images/x_icon.svg';
 import './SettingsModal.css';
 
-function SettingsModal({ isOpen, onClose, onCafeNameChange }) {
+function SettingsModal({ isOpen, onClose, onCafeNameChange, onTreeRegenerate }) {
   const navigate = useNavigate();
   const { currentBackground, changeBackground, availableBackgrounds, showObjects, toggleObjects } = useBackground();
 
@@ -14,7 +15,15 @@ function SettingsModal({ isOpen, onClose, onCafeNameChange }) {
   const [originalCafeName, setOriginalCafeName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
 
-  // localStorage에서 가게 이름 로드
+  // 비밀번호 변경 상태
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+
+  // localStorage에서 가게 이름 로드, 모달 닫힐 때 비밀번호 폼 초기화
   useEffect(() => {
     if (isOpen) {
       const userData = localStorage.getItem('userData');
@@ -26,6 +35,12 @@ function SettingsModal({ isOpen, onClose, onCafeNameChange }) {
         const savedCustomName = localStorage.getItem('customCafeName');
         setCustomCafeName(savedCustomName || cafe.cafeName || '');
       }
+    } else {
+      setIsEditingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordError('');
     }
   }, [isOpen]);
 
@@ -60,6 +75,35 @@ function SettingsModal({ isOpen, onClose, onCafeNameChange }) {
       }
 
       alert('기본 가게 이름으로 복원되었습니다.');
+    }
+  };
+
+  // 비밀번호 변경
+  const handleChangePassword = async () => {
+    setPasswordError('');
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('모든 항목을 입력해주세요.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('새 비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    try {
+      await changeCafePassword(currentPassword, newPassword);
+      alert('비밀번호가 변경되었습니다.');
+      setIsEditingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      setPasswordError(error.error || '비밀번호 변경에 실패했습니다.');
+    } finally {
+      setIsPasswordLoading(false);
     }
   };
 
@@ -186,6 +230,86 @@ function SettingsModal({ isOpen, onClose, onCafeNameChange }) {
               </span>
             </label>
           </div>
+        </section>
+
+        {/* 비밀번호 변경 */}
+        <section className="settings-section">
+          <h3>비밀번호 변경</h3>
+          {!isEditingPassword ? (
+            <button
+              className="edit-name-btn"
+              onClick={() => setIsEditingPassword(true)}
+            >
+              비밀번호 변경
+            </button>
+          ) : (
+            <div className="password-edit">
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="현재 비밀번호"
+                className="cafe-name-input"
+              />
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="새 비밀번호"
+                className="cafe-name-input"
+              />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="새 비밀번호 확인"
+                className="cafe-name-input"
+              />
+              {passwordError && (
+                <p className="password-error">{passwordError}</p>
+              )}
+              <div className="cafe-name-edit-buttons">
+                <button
+                  onClick={handleChangePassword}
+                  className="save-name-btn"
+                  disabled={isPasswordLoading}
+                >
+                  {isPasswordLoading ? '변경 중...' : '저장'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditingPassword(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setPasswordError('');
+                  }}
+                  className="cancel-name-btn"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* 나무 관리 */}
+        <section className="settings-section">
+          <h3>나무 관리</h3>
+          <p className="tree-regen-desc">
+            현재 점수 수준은 유지하면서 나무 모양을 새로 생성합니다.
+          </p>
+          <button
+            className="tree-regen-btn"
+            onClick={() => {
+              if (window.confirm('나무를 새로 생성하시겠습니까?\n현재 점수 수준은 유지됩니다.')) {
+                onTreeRegenerate?.();
+                onClose();
+              }
+            }}
+          >
+            나무 다시 생성
+          </button>
         </section>
 
         {/* 계정 관리 */}

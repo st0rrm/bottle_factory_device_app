@@ -13,7 +13,23 @@ let listener = null;
 const syncingDocs = new Set(); // 현재 동기화 중인 문서 ID 추적 (중복 방지)
 
 /**
+ * Mask phone number for privacy (010-0000-xxxx format)
+ * Same format as used in routes/users.js and syncQRRentals.js
+ */
+function maskPhoneNumber(phone) {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length !== 11 || !digits.startsWith('010')) {
+    return null;
+  }
+  const lastFour = digits.slice(-4);
+  return `010-0000-${lastFour}`;
+}
+
+/**
  * 단일 QR 적립을 PostgreSQL에 동기화
+ * - 반납(return)과 실천(do) 트랜잭션을 담당
+ * - 대여(borrow)는 syncQRRentals.js에서 처리
  */
 async function syncSingleCollection(docId, data) {
   // 이미 동기화 중이면 스킵
@@ -35,8 +51,24 @@ async function syncSingleCollection(docId, data) {
 
   try {
     const shopId = data.shop_id;
+    const userUid = data.uid;
     const score = data.score || 0;
     const RETURNMECUP_ITEM_ID = 'AESpVawGP202Tg4QOmvH'; // 리턴미컵(텀블러) 아이템 ID
+
+    // 사용자 정보 조회 (전화번호 확인)
+    let maskedPhone = null;
+    if (userUid) {
+      try {
+        const userDoc = await db.collection('users').doc(userUid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          maskedPhone = maskPhoneNumber(userData.mobile);
+        }
+      } catch (userError) {
+        console.warn(`⚠️ [syncQRCollection] 사용자 조회 실패: ${userUid}`, userError.message);
+        // 전화번호 없이 계속 진행
+      }
+    }
 
     // collect_items로 반납/실천 판단 및 총 개수 계산
     let actionType = 'return'; // 기본값
@@ -100,16 +132,13 @@ async function syncSingleCollection(docId, data) {
 
     // PostgreSQL에 transaction 기록
     const transactionType = actionType === 'do' ? 'do' : 'return';
-
-    // 웹 적립은 이미 routes/users.js에서 quantity 포함하여 처리됨
-    // QR 적립만 여기서 실제 개수로 카운팅
-    const quantity = (data.source === 'web') ? 0 : totalItemCount;
+    const quantity = totalItemCount;
 
     await Statistics.addTransaction(
       cafeId,
       transactionType,  // 'return' 또는 'do'
-      null,             // QR 적립은 전화번호 없음 (웹은 routes/users.js에서 처리)
-      quantity,         // 웹: 0 (중복 방지), QR: 1 (카운팅)
+      maskedPhone,      // uid로 조회한 마스킹된 전화번호
+      quantity,         // 실제 개수
       score,            // collect_history의 score
       false,            // isNewUser: QR 스캔 = 앱 설치 기존 유저
       'qr'              // source: QR 스캔
@@ -122,7 +151,7 @@ async function syncSingleCollection(docId, data) {
     });
 
     const actionLabel = transactionType === 'do' ? '실천' : '반납';
-    console.log(`✅ [syncQRCollection] 실시간 동기화 완료: ${docId} (${shopName}) ${actionLabel} +${score}점`);
+    console.log(`✅ [syncQRCollection] 실시간 동기화 완료: ${docId} (${shopName}) ${actionLabel} +${score}점 ${maskedPhone || '(phone N/A)'}`);
 
   } catch (error) {
     console.error(`❌ [syncQRCollection] 동기화 실패: ${docId}`, error);

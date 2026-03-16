@@ -42,6 +42,19 @@ export const updateCafePassword = async (cafeId, newPassword) => {
   }
 };
 
+// 카페 비밀번호 변경 (카페 자체)
+export const changeCafePassword = async (currentPassword, newPassword) => {
+  try {
+    const response = await apiClient.put('/cafe/me/password', {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: '비밀번호 변경 중 오류가 발생했습니다.' };
+  }
+};
+
 // 카페 삭제 (관리자 전용)
 export const deleteCafe = async (cafeId) => {
   try {

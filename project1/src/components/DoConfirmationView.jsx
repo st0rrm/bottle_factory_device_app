@@ -90,20 +90,20 @@ export default function DoConfirmationView({
 
           {/* Buttons */}
           <div className="do-confirmation-buttons">
-            <div
+            <button
               onClick={onCancel}
               className="do-confirmation-cancel-button"
               disabled={isLoading}
             >
               뒤로
-            </div>
-            <div
+            </button>
+            <button
               onClick={onConfirm}
               className="do-confirmation-confirm-button"
               disabled={isLoading}
             >
               {isLoading ? '처리 중...' : '확인'}
-            </div>
+            </button>
           </div>
         </div>
       </div>

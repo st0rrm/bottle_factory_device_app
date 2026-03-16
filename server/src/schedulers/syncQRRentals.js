@@ -66,7 +66,19 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
   try {
     const rentedShopId = data.rented_shop_id;
     const userUid = data.uid;
-    const status = data.status; // 'rent' or 'return'
+
+    // 반납(return)은 syncQRCollections에서 처리 (collect_history 기반, score 포함)
+    // 여기서는 플래그만 설정하여 중복 처리 방지
+    if (isReturnUpdate) {
+      await db.collection('rents').doc(docId).update({
+        [flagField]: true,
+        pg_synced_at: FieldValue.serverTimestamp()
+      });
+      console.log(`⏭️ [syncQRRental] 반납은 syncQRCollections에서 처리: ${docId} (플래그만 설정)`);
+      return;
+    }
+
+    // 이하 대여(borrow)만 처리
 
     // 사용자 정보 조회 (전화번호 확인)
     const userDoc = await db.collection('users').doc(userUid).get();
@@ -75,7 +87,7 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
       await db.collection('rents').doc(docId).update({
         pg_sync_error: 'user_not_found'
       });
-      syncingDocs.delete(docId);
+      syncingDocs.delete(syncKey);
       return;
     }
 
@@ -90,7 +102,7 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
       await db.collection('rents').doc(docId).update({
         pg_sync_error: 'shop_not_found'
       });
-      syncingDocs.delete(docId);
+      syncingDocs.delete(syncKey);
       return;
     }
 
@@ -107,34 +119,30 @@ async function syncSingleRental(docId, data, isReturnUpdate = false) {
       await db.collection('rents').doc(docId).update({
         pg_sync_error: 'cafe_not_found'
       });
-      syncingDocs.delete(docId);
+      syncingDocs.delete(syncKey);
       return;
     }
 
     const cafeId = cafeResult.rows[0].id;
 
-    // status에 따라 대여 또는 반납 처리
-    const transactionType = status === 'return' ? 'return' : 'borrow';
-
-    // PostgreSQL에 transaction 기록 (QR 대여/반납 - 적립 없음)
-    // 마스킹된 전화번호를 phone_number로 저장 (웹 앱과 동일한 형식으로 active_rentals 매칭 가능)
+    // PostgreSQL에 대여(borrow) 기록
     await Statistics.addTransaction(
       cafeId,
-      transactionType,
-      maskedPhone,  // 마스킹된 전화번호 사용 (크로스 반납 지원)
-      1,     // 1개 대여/반납
-      0,     // 적립 없음
+      'borrow',
+      maskedPhone,
+      1,     // 1개 대여
+      0,     // 대여 시 적립 없음
       false, // isNewUser: QR 스캔 = 앱 설치 기존 유저
       'qr'   // source: QR 스캔
     );
 
-    // 동기화 완료: 플래그와 타임스탬프 설정 (PostgreSQL 성공 후에만 설정)
+    // 동기화 완료: 플래그와 타임스탬프 설정
     await db.collection('rents').doc(docId).update({
       [flagField]: true,
       pg_synced_at: FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ [syncQRRental] 실시간 동기화 완료: ${docId} (${shopName}) ${transactionType} - ${maskedPhone}`);
+    console.log(`✅ [syncQRRental] 대여 동기화 완료: ${docId} (${shopName}) borrow - ${maskedPhone}`);
 
   } catch (error) {
     console.error(`❌ [syncQRRental] 동기화 실패: ${docId}`, error);

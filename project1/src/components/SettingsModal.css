@@ -330,3 +330,39 @@
   color: #666;
   font-style: italic;
 }
+
+/* Password Change */
+.password-edit {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 12px);
+}
+
+.password-error {
+  margin: 0;
+  font-size: clamp(12px, 2vw, 14px);
+  color: #f44336;
+}
+
+/* Tree Regeneration */
+.tree-regen-desc {
+  margin: 0 0 clamp(10px, 1.8vh, 12px) 0;
+  font-size: clamp(12px, 2vw, 14px);
+  color: #666;
+}
+
+.tree-regen-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: clamp(10px, 1.8vh, 12px) clamp(18px, 3vw, 24px);
+  border-radius: clamp(6px, 1vw, 8px);
+  cursor: pointer;
+  font-size: clamp(14px, 2.5vw, 16px);
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.tree-regen-btn:hover {
+  background: #45a049;
+}

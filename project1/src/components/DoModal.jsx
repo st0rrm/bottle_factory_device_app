@@ -320,6 +320,8 @@ export default function DoModal({ onClose, onSuccess }) {
   };
 
   const handleFinalConfirm = async () => {
+    if (isLoading) return;
+
     if (!currentUser || selectedActions.length === 0) {
       console.error('❌ 사용자 또는 실천 선택 정보가 없습니다.');
       return;

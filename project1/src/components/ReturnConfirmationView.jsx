@@ -9,6 +9,7 @@ export default function ReturnConfirmationView({
   onClose,
   onCancel,
   onConfirm,
+  isLoading,
 }) {
   const rewardPoints = quantity * 10; // 10 bottles per cup
 
@@ -52,8 +53,8 @@ export default function ReturnConfirmationView({
             <button onClick={onCancel} className="return-cancel-button">
               취소
             </button>
-            <button onClick={onConfirm} className="return-confirm-action-button">
-              확인
+            <button onClick={onConfirm} className="return-confirm-action-button" disabled={isLoading}>
+              {isLoading ? '처리 중...' : '확인'}
             </button>
           </div>
         </div>

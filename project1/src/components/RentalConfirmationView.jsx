@@ -7,6 +7,7 @@ export default function RentalConfirmationView({
   quantity,
   onCancel,
   onConfirm,
+  isLoading,
 }) {
   const [showRewardsInfo, setShowRewardsInfo] = useState(false);
 
@@ -83,8 +84,8 @@ export default function RentalConfirmationView({
         <button onClick={onCancel} className="cancel-button">
           취소
         </button>
-        <button onClick={onConfirm} className="confirm-button">
-          확인
+        <button onClick={onConfirm} className="confirm-button" disabled={isLoading}>
+          {isLoading ? '처리 중...' : '확인'}
         </button>
       </div>
 

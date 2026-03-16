@@ -32,27 +32,18 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
   useEffect(() => {
     trackBehavior('modal_open', 'borrow');
 
-    // 리턴미컵 메뉴 진입 통계 기록
-    const logMenuEntry = async () => {
-      try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-        await fetch(`${apiBaseUrl}/voice/log-stat`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            statType: 'returnmecup_menu_entered',
-            metadata: { menu: 'borrow' }
-          })
-        });
-      } catch (error) {
-        console.error('통계 기록 실패:', error);
-      }
-    };
-
-    logMenuEntry();
+    // [음성인식 비활성화] 리턴미컵 메뉴 진입 통계 기록 (/voice/log-stat)
+    // const logMenuEntry = async () => {
+    //   try {
+    //     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    //     await fetch(`${apiBaseUrl}/voice/log-stat`, {
+    //       method: 'POST',
+    //       headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}`, 'Content-Type': 'application/json' },
+    //       body: JSON.stringify({ statType: 'returnmecup_menu_entered', metadata: { menu: 'borrow' } })
+    //     });
+    //   } catch (error) { console.error('통계 기록 실패:', error); }
+    // };
+    // logMenuEntry();
   }, []);
   const [phoneNumber, setPhoneNumber] = useState('010');
   const [verificationCode, setVerificationCode] = useState('');
@@ -320,6 +311,8 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
   };
 
   const handleFinalConfirm = async () => {
+    if (isLoading) return;
+
     if (!currentUser || !selectedTicket) {
       console.error('❌ 사용자 또는 티켓 정보가 없습니다.');
       return;
@@ -453,6 +446,7 @@ export default function VerifyModal({ onClose, onOpenReturn, onSuccess }) {
             quantity={quantity}
             onCancel={handleConfirmationCancel}
             onConfirm={handleFinalConfirm}
+            isLoading={isLoading}
           />
         ) : showQuantitySelection ? (
           <QuantitySelectionView

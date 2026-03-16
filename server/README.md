@@ -33,8 +33,8 @@ npm start
 
 서버를 처음 실행하면 기본 관리자 계정이 자동으로 생성됩니다:
 
-- **아이디**: `admin`
-- **비밀번호**: `admin1234`
+- **아이디**: ####
+- **비밀번호**: ####
 
 ⚠️ **보안 주의**: 프로덕션 환경에서는 반드시 비밀번호를 변경하세요!
 
@@ -48,8 +48,8 @@ POST /api/admin/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "admin1234"
+  "username": ####
+  "password": ####
 }
 ```
 

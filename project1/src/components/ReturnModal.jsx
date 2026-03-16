@@ -58,9 +58,17 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
         setTimer((prev) => prev - 1);
       }, 1000);
       return () => clearInterval(interval);
-    } else if (timer === 0) {
-      setIsError(true);
-      setErrorMessage('인증 시간이 만료되었습니다. 다시 시도해주세요.');
+    } else if (showVerification && timer === 0) {
+      // 타이머 만료 시 VerifyModal과 동일하게 전화번호 입력 화면으로 자동 복귀
+      setTimeout(() => {
+        setShowVerification(false);
+        setPhoneNumber('010');
+        setVerificationCode('');
+        setTimer(180);
+        setAttempts(0);
+        setIsError(false);
+        setErrorMessage('');
+      }, 500);
     }
   }, [showVerification, timer]);
 
@@ -286,6 +294,8 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
   };
 
   const handleFinalConfirm = async () => {
+    if (isLoading) return;
+
     if (!currentUser || !userRentals || userRentals.length === 0) {
       console.error('❌ 사용자 또는 대여 기록 정보가 없습니다.');
       return;
@@ -328,7 +338,7 @@ export default function ReturnModal({ onClose, onOpenRental, onSuccess }) {
         setIsLoading(false);
 
         // 바로 모달 닫고 성공 스낵바 표시
-        onSuccess?.(); // 성공 스낵바 표시
+        onSuccess?.(result.score); // 실제 반납 점수 전달 (컵 수 × 10)
         onClose();
       } else {
         console.error('❌ 반납 실패:', result.error);

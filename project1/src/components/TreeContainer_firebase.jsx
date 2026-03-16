@@ -12,6 +12,7 @@ import './TreeContainer.css';
  * @param {number} props.totalCount - 총 적립 횟수 (나무 가지 개수 결정)
  * @param {string} props.backgroundImage - 배경 이미지 경로 (선택)
  * @param {string} props.objectImage - 오브젝트 이미지 경로 (선택)
+ * @param {boolean} props.forceRegen - true가 되면 iframe 리로드 후 force=true로 나무 재생성
  */
 function TreeContainer({
   type = 'init',
@@ -20,12 +21,14 @@ function TreeContainer({
   totalScore = 0,
   totalCount = 0,
   backgroundImage,
-  objectImage
+  objectImage,
+  forceRegen = false
 }) {
   const iframeRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [isTreeInitialized, setIsTreeInitialized] = useState(false); // 나무 초기화 여부
   const countRef = useRef(-1); // grow 메시지 중복 실행 방지용
+  const forceInitRef = useRef(false); // 재생성 시 다음 init에서 force=true 사용하도록 플래그 보관
 
   // 환경변수에서 Tree URL 가져오기 + noBackground 파라미터 추가
   const treeUrl = import.meta.env.VITE_TREE_URL || 'https://bottleclub-tree.web.app/';
@@ -60,6 +63,29 @@ function TreeContainer({
     };
   }, []);
 
+  // 나무 재생성: iframe 리로드로 Three.js 상태(poolCount 등)를 완전히 초기화한 뒤
+  // force=true init으로 동일 레벨의 새 배치를 생성
+  // (postMessage init만으로는 기존 instancedMesh pool이 누적되어 나무가 커지는 문제 발생)
+  useEffect(() => {
+    if (!forceRegen) return;
+
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    // 다음 init useEffect 실행 시 force=true를 쓰도록 플래그 설정
+    forceInitRef.current = true;
+
+    // 상태 리셋 → 기존 handleLoad 리스너가 새 load 이벤트를 받아 isReady=true로 재전환
+    setIsReady(false);
+    setIsTreeInitialized(false);
+    countRef.current = -1;
+
+    const src = iframe.src;
+    iframe.src = '';
+    setTimeout(() => { iframe.src = src; }, 100);
+    console.log('🔄 TreeContainer: 나무 재생성 - iframe 리로드 시작');
+  }, [forceRegen]);
+
   // 초기화: isReady가 true가 되면 load 시도, 실패하면 init
   useEffect(() => {
     if (!isReady || !cafeId || isTreeInitialized) {
@@ -69,30 +95,43 @@ function TreeContainer({
     const iframe = document.querySelector('.tree-iframe');
     if (!iframe?.contentWindow) return;
 
-    // 1. 먼저 저장된 나무 불러오기 시도
-    try {
-      const loadMessage = {
-        type: 'load',
-        uid: cafeId
-      };
-      iframe.contentWindow.postMessage(JSON.stringify(loadMessage), '*');
-      console.log('🌳 TreeContainer: load 시도', cafeId);
+    const isForceRegen = forceInitRef.current;
 
-      // load 성공 여부와 관계없이 500ms 후 init 시도 (bottler_tree_app에서 저장된 데이터 없으면 자동으로 init)
+    try {
+      if (!isForceRegen) {
+        // 일반 초기화: IndexedDB에 저장된 나무 불러오기 시도
+        iframe.contentWindow.postMessage(JSON.stringify({ type: 'load', uid: cafeId }), '*');
+        console.log('🌳 TreeContainer: load 시도', cafeId);
+      }
+
+      // 500ms 후 init 전송
+      // - 일반(force=false): IndexedDB 데이터 있으면 유지, 없으면 새로 생성
+      // - 재생성(force=true): IndexedDB 무시, 동일 레벨(total/count)로 새 배치 생성
       setTimeout(() => {
-        if (!isTreeInitialized) {
-          const initMessage = {
-            type: 'init',
-            uid: cafeId,
-            total: totalScore,
-            count: totalCount,
-            score: 0,
-            force: false  // force=false: 저장된 데이터가 있으면 사용, 없으면 새로 생성
-          };
-          iframe.contentWindow.postMessage(JSON.stringify(initMessage), '*');
-          console.log('🌱 TreeContainer: init 완료', { cafeId, totalScore, totalCount });
-          setIsTreeInitialized(true);
+        if (isTreeInitialized) return; // 중복 방지
+
+        iframe.contentWindow.postMessage(JSON.stringify({
+          type: 'init',
+          uid: cafeId,
+          total: totalScore,
+          count: totalCount,
+          force: isForceRegen
+        }), '*');
+        console.log(
+          isForceRegen ? '🔄 TreeContainer: 재생성 init (force=true)' : '🌱 TreeContainer: init (force=false)',
+          { cafeId, totalScore, totalCount }
+        );
+
+        if (isForceRegen) {
+          // 재생성 완료 후 IndexedDB에 새 나무 저장 (이후 새로고침 시 새 나무 유지)
+          setTimeout(() => {
+            iframe.contentWindow.postMessage(JSON.stringify({ type: 'save', uid: cafeId }), '*');
+            console.log('💾 TreeContainer: 재생성 save 완료', cafeId);
+          }, 500);
+          forceInitRef.current = false; // 플래그 리셋
         }
+
+        setIsTreeInitialized(true);
       }, 500);
     } catch (error) {
       console.error('TreeContainer: 초기화 실패', error);
@@ -137,14 +176,14 @@ function TreeContainer({
   }, [isReady, cafeId, isTreeInitialized, type, score, totalScore, totalCount]);
 
   return (
-    <div className="tree-container">
-      {/* 배경 레이어 1: 메인 배경 이미지 */}
+    <>
+      {/* 배경 레이어 1: 메인 배경 이미지 (화면 전체, z-index:1) */}
       <div
         className="tree-background"
         style={{ backgroundImage: `url(${backgroundImage})` }}
       />
 
-      {/* 배경 레이어 2: 오브젝트 이미지 (선택) */}
+      {/* 배경 레이어 2: 오브젝트 이미지 (화면 전체, z-index:2) */}
       {objectImage && (
         <div
           className="tree-objects"
@@ -152,16 +191,19 @@ function TreeContainer({
         />
       )}
 
-      {/* 전경: 투명 배경의 나무 iframe */}
-      <iframe
-        ref={iframeRef}
-        src={treeUrlWithParams}
-        title="보틀 나무"
-        className="tree-iframe"
-        sandbox="allow-scripts allow-same-origin allow-forms"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; storage-access"
-      />
-    </div>
+      {/* tree-container: iframe만 포함 (home.jsx JS로 위치 동적 조정, z-index:4) */}
+      <div className="tree-container">
+        {/* 전경: 투명 배경의 나무 iframe */}
+        <iframe
+          ref={iframeRef}
+          src={treeUrlWithParams}
+          title="보틀 나무"
+          className="tree-iframe"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; storage-access"
+        />
+      </div>
+    </>
   );
 }
 

@@ -12,15 +12,18 @@ import Waterpoint from '../../assets/images/waterpoint.png'
 import HelpModal from '../../components/HelpModal';
 import SuccessSnackbar from '../../components/SuccessSnackbar';
 import SurveyQRModal from '../../components/SurveyQRModal';
-import TreeContainer from '../../components/TreeContainer';
+// import TreeContainer from '../../components/TreeContainer';
+import TreeContainer from '../../components/TreeContainer_firebase';
 import { getMyStats } from '../../api/statistics';
 import { logout } from '../../api/auth';
 import { db } from '../../firebase/config';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { usePicovoice } from '../../hooks/usePicovoice';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // LLM 기반 음성 인식 (GPT-4o-mini-transcribe + Claude)
+// import { usePicovoice } from '../../hooks/usePicovoice'; // 음성인식 비활성화
+// import { useVoiceRecognition } from '../../hooks/useVoiceRecognition'; // 음성인식 비활성화 (LLM 기반 음성 인식 GPT-4o-mini-transcribe + Claude)
 import { useBackground, OBJECTS_IMAGE } from '../../contexts/BackgroundContext';
 import { getShopByName } from '../../firebase/firestore';
+
+const INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 3분
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -47,6 +50,7 @@ function HomeScreen() {
 
   const [treeType, setTreeType] = useState('init');
   const [treeScore, setTreeScore] = useState(0);
+  const [treeForceRegen, setTreeForceRegen] = useState(false);
   const messages = [
   ' 환경을 위하는 아름다운 당신! 😊 ',
   ' 당신의 참여가 동네를 푸르게 만들어요 🤝 ',
@@ -64,6 +68,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   // --------------------------------------------------------------------
   const flowContainerRef = useRef(null);
   const flowInnerRef = useRef(null);
+  const inactivityTimerRef = useRef(null);
 
   useEffect(() => {
     const container = flowContainerRef.current;
@@ -145,57 +150,78 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     };
   }, [cafeInfo]);
 
-  const handleWakeWordDetected = useCallback(async (keywordIndex) => {
-    // 다른 모달이 이미 열려있으면 무시
-    const isModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
-    if (isModalOpen) {
-      console.log('⚠️ 다른 모달이 열려있어 도움말 모달 열기 무시');
+  // 비활성 타임아웃: 모달이 열린 상태에서 3분간 입력 없으면 홈 화면 복귀
+  const closeAllModals = useCallback(() => {
+    setShowVerifyModal(false);
+    setShowReturnModal(false);
+    setShowDoModal(false);
+    setShowHelpModal(false);
+    setShowAdminLoginModal(false);
+    setShowSettingsModal(false);
+    setShowSurveyQRModal(false);
+  }, []);
+
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = setTimeout(closeAllModals, INACTIVITY_TIMEOUT);
+  }, [closeAllModals]);
+
+  useEffect(() => {
+    const isAnyModalOpen =
+      showVerifyModal || showReturnModal || showDoModal ||
+      showHelpModal || showAdminLoginModal || showSettingsModal || showSurveyQRModal;
+
+    if (!isAnyModalOpen) {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
       return;
     }
 
-    setShowHelpModal(true);
+    const events = ['touchstart', 'click', 'mousemove', 'keydown'];
+    resetInactivityTimer();
+    events.forEach(e => window.addEventListener(e, resetInactivityTimer));
 
-    // 도움말 모달 열림 통계 기록
-    try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-      await fetch(`${apiBaseUrl}/voice/log-stat`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          statType: 'help_modal_opened',
-          metadata: { trigger: 'voice' }
-        })
-      });
-    } catch (error) {
-      console.error('통계 기록 실패:', error);
-    }
-  }, [showVerifyModal, showReturnModal, showDoModal, showHelpModal, showSettingsModal, showSurveyQRModal]);
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetInactivityTimer));
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    };
+  }, [showVerifyModal, showReturnModal, showDoModal, showHelpModal,
+      showAdminLoginModal, showSettingsModal, showSurveyQRModal, resetInactivityTimer]);
 
-  // 모달이 열려있는지 확인 (모달이 열려있으면 음성인식 비활성화)
-  const isAnyModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
+  // [음성인식 비활성화] handleWakeWordDetected - wake word 감지 시 도움말 모달 열기
+  // const handleWakeWordDetected = useCallback(async (keywordIndex) => {
+  //   const isModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
+  //   if (isModalOpen) return;
+  //   setShowHelpModal(true);
+  //   try {
+  //     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+  //     await fetch(`${apiBaseUrl}/voice/log-stat`, {
+  //       method: 'POST',
+  //       headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}`, 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ statType: 'help_modal_opened', metadata: { trigger: 'voice' } })
+  //     });
+  //   } catch (error) { console.error('통계 기록 실패:', error); }
+  // }, [showVerifyModal, showReturnModal, showDoModal, showHelpModal, showSettingsModal, showSurveyQRModal]);
 
-  // 음성 인식 방법 선택
-
-  // 방법 1: Picovoice (현재 사용 중)
+  // [음성인식 비활성화] isAnyModalOpen, 음성 인식 훅 초기화
+  // const isAnyModalOpen = showVerifyModal || showReturnModal || showDoModal || showHelpModal || showSettingsModal || showSurveyQRModal;
+  // 방법 1: Picovoice
   // const { isListening, error: picoError, hasPermission, requestPermission } =
   //   usePicovoice(!isAnyModalOpen, handleWakeWordDetected);
-
   // 방법 2: LLM 기반 (GPT-4o-mini-transcribe + Claude)
-  const { isListening, error: picoError, hasPermission, requestPermission, startRecording } =
-    useVoiceRecognition(!isAnyModalOpen, handleWakeWordDetected, {
-      segmentDuration: 5000,         // 5초마다 분석
-      lowThreshold: 0.4,             // 0.4 미만 → 폐기
-      highThreshold: 0.7,            // 0.7 이상 → 확정
-      maxCumulativeDuration: 15000,  // 최대 15초 누적
-      windowSize: 15000,             // 슬라이딩 윈도우 15초
-      maxTotalDuration: 30000,       // 최대 30초
-      vadThreshold: 10,              // VAD 음량 임계값 (RMS 기반, 0-255)
-                                     // 15 = 배경 소음 차단, 정상 대화 감지
-      rmsLogBatchSize: 60,           // RMS 로그 배치 크기 (60개마다 전송)
-    });
+  // const { isListening, error: picoError, hasPermission, requestPermission, startRecording } =
+  //   useVoiceRecognition(!isAnyModalOpen, handleWakeWordDetected, {
+  //     segmentDuration: 5000, lowThreshold: 0.4, highThreshold: 0.7,
+  //     maxCumulativeDuration: 15000, windowSize: 15000, maxTotalDuration: 30000,
+  //     vadThreshold: 10, rmsLogBatchSize: 60,
+  //   });
 
   // load café info
   useEffect(() => {
@@ -247,47 +273,31 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     };
   }, [navigate]);
 
-  // 마이크 권한이 없을 때만 요청 (한 번만 실행)
-  useEffect(() => {
-    if (!hasPermission) {
-      console.log('⚠️ 마이크 권한이 없습니다. 권한을 요청합니다...');
-      requestPermission();
-    }
-  }, [hasPermission, requestPermission]);
+  // [음성인식 비활성화] 마이크 권한 요청
+  // useEffect(() => {
+  //   if (!hasPermission) {
+  //     requestPermission();
+  //   }
+  // }, [hasPermission, requestPermission]);
 
-  // iOS Safari: 첫 번째 사용자 터치 시 AudioContext 활성화
-  useEffect(() => {
-    const handleFirstTouch = () => {
-      console.log('👆 첫 번째 사용자 터치 감지 (iOS AudioContext 활성화)');
-
-      // AudioContext resume 시도 (iOS Safari 호환)
-      if (window.AudioContext || window.webkitAudioContext) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        const tempContext = new AudioContextClass();
-
-        if (tempContext.state === 'suspended') {
-          tempContext.resume().then(() => {
-            console.log('✅ 전역 AudioContext resumed');
-          }).catch(err => {
-            console.warn('⚠️ 전역 AudioContext resume 실패:', err);
-          });
-        }
-      }
-
-      // 한 번만 실행하고 리스너 제거
-      document.removeEventListener('touchstart', handleFirstTouch);
-      document.removeEventListener('click', handleFirstTouch);
-    };
-
-    // iOS에서는 touchstart, 데스크톱에서는 click
-    document.addEventListener('touchstart', handleFirstTouch, { once: true, passive: true });
-    document.addEventListener('click', handleFirstTouch, { once: true });
-
-    return () => {
-      document.removeEventListener('touchstart', handleFirstTouch);
-      document.removeEventListener('click', handleFirstTouch);
-    };
-  }, []);
+  // [음성인식 비활성화] iOS Safari: 첫 번째 사용자 터치 시 AudioContext 활성화
+  // useEffect(() => {
+  //   const handleFirstTouch = () => {
+  //     if (window.AudioContext || window.webkitAudioContext) {
+  //       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  //       const tempContext = new AudioContextClass();
+  //       if (tempContext.state === 'suspended') tempContext.resume();
+  //     }
+  //     document.removeEventListener('touchstart', handleFirstTouch);
+  //     document.removeEventListener('click', handleFirstTouch);
+  //   };
+  //   document.addEventListener('touchstart', handleFirstTouch, { once: true, passive: true });
+  //   document.addEventListener('click', handleFirstTouch, { once: true });
+  //   return () => {
+  //     document.removeEventListener('touchstart', handleFirstTouch);
+  //     document.removeEventListener('click', handleFirstTouch);
+  //   };
+  // }, []);
 
   // Firebase 실시간 리스너: QR 적립 즉시 반영
   useEffect(() => {
@@ -314,18 +324,32 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const data = change.doc.data();
-          // source가 없으면 = 기존 앱 QR 적립
+          // source가 없으면 = bottleclub 앱 QR 반납/실천
           if (!data.source) {
-            console.log('✨ bottleclub 앱 QR 반납 감지! 통계 업데이트...');
+            console.log('✨ bottleclub 앱 QR 반납/실천 감지! 통계 업데이트...');
             fetchStats();
 
             // ✨ QR 모달이 열려있으면 먼저 닫기
             setShowReturnModal(false);
 
-            // ✨ QR 반납 후 1.5초 뒤 설문 QR 모달 표시
-            setTimeout(() => {
-              setShowSurveyQRModal(true);
-            }, 1500);
+            // ✨ 가게 나무 grow 신호 전달 (웹 반납과 동일한 패턴)
+            // collect_history 문서의 score 필드 사용 (반납: 10, 실천: 5~30)
+            // score가 유효한 양수인 경우에만 grow 트리거 (undefined·0 방어)
+            const qrScore = data.score;
+            if (qrScore > 0) {
+              setTreeType('grow');
+              setTreeScore(qrScore);
+              // 웹 처리와 동일하게 3초 후 init 상태로 복귀
+              setTimeout(() => {
+                setTreeType('init');
+                setTreeScore(0);
+              }, 3000);
+            }
+
+            // ✨ QR 반납 후 1.5초 뒤 설문 QR 모달 표시 (비활성화)
+            // setTimeout(() => {
+            //   setShowSurveyQRModal(true);
+            // }, 1500);
           }
         }
       });
@@ -366,16 +390,17 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
           const data = change.doc.data();
           // source가 'web'이 아니면 = bottleclub 앱 QR 대여
           if (data.source !== 'web') {
-            console.log('📱 bottleclub 앱 QR 대여 감지! 통계 업데이트... (+30점)');
+            // 대여는 점수 없음 (score=0) → 웹 대여와 동일하게 grow 처리 없음
+            console.log('📱 bottleclub 앱 QR 대여 감지! 통계 업데이트... (점수 없음, 반납 시 적립)');
             fetchStats();
 
             // ✨ QR 모달이 열려있으면 먼저 닫기
             setShowVerifyModal(false);
 
-            // ✨ QR 대여 후 1.5초 뒤 설문 QR 모달 표시
-            setTimeout(() => {
-              setShowSurveyQRModal(true);
-            }, 1500);
+            // ✨ QR 대여 후 1.5초 뒤 설문 QR 모달 표시 (비활성화)
+            // setTimeout(() => {
+            //   setShowSurveyQRModal(true);
+            // }, 1500);
           }
         }
       });
@@ -398,6 +423,14 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     }
   };
 
+  // 나무 재생성: TreeContainer의 forceRegen prop을 트리거하여 iframe 리로드 후 새 배치 생성
+  // (직접 postMessage 방식은 기존 Three.js pool이 초기화되지 않아 나무가 누적되는 문제 발생)
+  const handleTreeRegenerate = () => {
+    setTreeForceRegen(true);
+    // TreeContainer의 forceRegen useEffect 실행 후 플래그 리셋 (다음 재생성을 위해)
+    setTimeout(() => setTreeForceRegen(false), 200);
+  };
+
   const handleBorrowCupAction = () => setShowVerifyModal(true);
   const handleReturnCupAction = () => setShowReturnModal(true);
   const handleDoAction = () => setShowDoModal(true);
@@ -414,34 +447,34 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     setSnackbarMessage('🌱 대여가 완료되었습니다');
     setShowSuccessSnackbar(true);
     setTreeType('grow');
-    setTreeScore(30);
+    setTreeScore(0); // 대여 시 보틀 적립 없음 (반납 시 지급)
     fetchStats();
     setTimeout(() => {
       setTreeType('init');
       setTreeScore(0);
     }, 3000);
 
-    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
-    setTimeout(() => {
-      setShowSurveyQRModal(true);
-    }, 1500);
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시 (비활성화)
+    // setTimeout(() => {
+    //   setShowSurveyQRModal(true);
+    // }, 1500);
   };
 
-  const handleReturnSuccess = () => {
+  const handleReturnSuccess = (score) => {
     setSnackbarMessage('🌱 반납이 완료되었습니다');
     setShowSuccessSnackbar(true);
     setTreeType('grow');
-    setTreeScore(30);
+    setTreeScore(score || 0); // 실제 반납 점수 (컵 수 × 10)
     fetchStats();
     setTimeout(() => {
       setTreeType('init');
       setTreeScore(0);
     }, 3000);
 
-    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
-    setTimeout(() => {
-      setShowSurveyQRModal(true);
-    }, 1500);
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시 (비활성화)
+    // setTimeout(() => {
+    //   setShowSurveyQRModal(true);
+    // }, 1500);
   };
 
   const handleDoSuccess = (score) => {
@@ -455,10 +488,10 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
       setTreeScore(0);
     }, 3000);
 
-    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시
-    setTimeout(() => {
-      setShowSurveyQRModal(true);
-    }, 1500);
+    // 스낵바 종료 후 1.5초 후 설문 QR 모달 표시 (비활성화)
+    // setTimeout(() => {
+    //   setShowSurveyQRModal(true);
+    // }, 1500);
   };
 
   // loading state
@@ -509,6 +542,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
           totalScore={stats.totalScore}
           totalCount={stats.totalCount}
           cafeInfo={cafeInfo}
+          forceRegen={treeForceRegen}
           backgroundImage={currentBackground.backgroundImage}
           objectImage={showObjects ? OBJECTS_IMAGE : null}
         />
@@ -595,12 +629,8 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
         <HelpModal
           onClose={() => {
             setShowHelpModal(false);
-            // 도움말 닫으면 음성인식 재시작
-            setTimeout(() => {
-              if (startRecording) {
-                startRecording();
-              }
-            }, 500);
+            // [음성인식 비활성화] 도움말 닫으면 음성인식 재시작
+            // setTimeout(() => { if (startRecording) startRecording(); }, 500);
           }}
           onUseButtonClick={handleBorrowCupAction}
         />
@@ -615,6 +645,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
             setShowSettingsModal(true);
           }}
           forSettings={true}
+          currentCafeId={cafeInfo?.id}
         />
       )}
 
@@ -630,6 +661,7 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
               displayName: newName
             }));
           }}
+          onTreeRegenerate={handleTreeRegenerate}
         />
       )}
 
@@ -641,12 +673,13 @@ const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
         />
       )}
 
-      {showSurveyQRModal && (
+      {/* 설문 QR 모달 (비활성화) */}
+      {/* {showSurveyQRModal && (
         <SurveyQRModal
           onClose={() => setShowSurveyQRModal(false)}
           autoCloseDuration={15000}
         />
-      )}
+      )} */}
     </div>
   );
 }

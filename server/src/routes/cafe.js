@@ -114,6 +114,36 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Update own password (cafe self-service)
+router.put('/me/password', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'cafe') {
+      return res.status(403).json({ error: 'Cafe access required' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: '현재 비밀번호와 새 비밀번호를 모두 입력해주세요.' });
+    }
+
+    const cafe = await Cafe.findById(req.user.id);
+    if (!cafe) {
+      return res.status(404).json({ error: 'Cafe not found' });
+    }
+
+    if (!Cafe.verifyPassword(currentPassword, cafe.password_hash)) {
+      return res.status(401).json({ error: '현재 비밀번호가 올바르지 않습니다.' });
+    }
+
+    await Cafe.updatePassword(req.user.id, newPassword);
+    res.json({ message: '비밀번호가 변경되었습니다.' });
+  } catch (err) {
+    console.error('Change own password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Update cafe password (admin only)
 router.put('/:id/password', authenticateAdmin, async (req, res) => {
   try {

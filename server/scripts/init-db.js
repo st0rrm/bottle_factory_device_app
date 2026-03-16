@@ -48,8 +48,8 @@ async function initializeDatabase() {
     });
 
     console.log('\n👤 Default admin account created:');
-    console.log('   Username: admin');
-    console.log('   Password: admin1234');
+    console.log('   Username: ####');
+    console.log('   Password: ####');
 
   } catch (error) {
     console.error('❌ Error initializing database:', error.message);
