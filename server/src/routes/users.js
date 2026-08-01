@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, FieldValue } = require('../config/firebase');
 const Statistics = require('../models/Statistics');
 const pool = require('../config/database');
+const { queueRentalCreatedNotification } = require('../schedulers/bizmNotificationScheduler');
 
 /**
  * Mask phone number for privacy (010-0000-xxxx format)
@@ -277,6 +278,15 @@ router.post('/rental', async (req, res) => {
         count: rentalCount,
         rentalScore // Return awarded score
       }
+    });
+
+    queueRentalCreatedNotification({
+      rentIds: rentalIds,
+      uid,
+      phoneNumber: userData.mobile,
+      rentedDate: new Date(),
+      shopId,
+      shopName,
     });
 
   } catch (error) {

@@ -12,7 +12,7 @@ services:
   - type: web
     name: returnmecup-api
     runtime: node
-    plan: free
+    plan: pro
     region: singapore
     buildCommand: cd server && npm install
     startCommand: cd server && npm start
@@ -45,3 +45,25 @@ services:
           property: port
       - key: CORS_ORIGIN
         value: https://your-vercel-url.vercel.app
+      - key: BIZM_USER_ID
+        sync: false
+      - key: BIZM_PROFILE_KEY
+        sync: false
+      - key: BIZM_SMS_SENDER
+        sync: false
+      - key: BIZM_TEMPLATE_RENTAL_CREATED
+        value: remind00
+      - key: BIZM_TEMPLATE_D7
+        value: remind01
+      - key: BIZM_TEMPLATE_D13
+        value: remind02
+      - key: BIZM_TEMPLATE_D179
+        value: reset01
+      - key: BIZM_LOST_REPORT_URL
+        value: ""
+      - key: BIZM_SCHEDULER_ENABLED
+        value: true
+      - key: BIZM_RENTAL_CREATED_DELAY_MS
+        value: 0
+      - key: BIZM_TIMEOUT_MS
+        value: 100000
